@@ -1,6 +1,6 @@
 """Tests for MyExtender."""
 
-from placeholder.extenders.my_plugin import MyExtender
+from rag_integration.extenders.my_plugin import MyExtender
 from mloda.core.abstract_plugins.function_extender import Extender
 
 
