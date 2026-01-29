@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "placeholder-my-plugin"
+version = "0.2.3"
+description = "TEMPLATE PLACEHOLDER - Do not install directly. This package reserves the name for mloda-plugin-template. See https://github.com/mloda-ai/mloda-plugin-template"
+license = "Apache-2.0"
+authors = [{ name = "Your Name placeholder", email = "placeholder@placeholder.com" }]
+dependencies = ["mloda>=0.4.3", "mloda-testing>=0.2.6"]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+    "tox",
+    "tox-uv",
+    "pytest",
+    "ruff",
+    "mypy",
+    "bandit",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["placeholder*"]
+
+[tool.pytest.ini_options]
+testpaths = ["placeholder", "tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+namespace_packages = true
+explicit_package_bases = true
+
+[tool.bandit]
+exclude_dirs = [".tox", ".venv", "tests"]
