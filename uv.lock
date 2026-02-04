@@ -297,7 +297,7 @@ dev = [
 requires-dist = [
     { name = "bandit", marker = "extra == 'dev'" },
     { name = "mloda", specifier = ">=0.4.3" },
-    { name = "mloda-testing", specifier = ">=0.2.7" },
+    { name = "mloda-testing", specifier = ">=0.2.8" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
