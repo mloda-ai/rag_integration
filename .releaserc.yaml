@@ -64,7 +64,7 @@ plugins:
             hidden: false
 
   - - "@semantic-release/exec"
-    - prepareCmd: "sed -i 's/^version = .*$/version = \"${nextRelease.version}\"/' pyproject.toml"
+    - prepareCmd: "sed -i 's/^version = .*$/version = \"${nextRelease.version}\"/' pyproject.toml && uv lock"
 
   - - "@semantic-release/github"
     - releaseNameTemplate: "Version ${nextRelease.version}"
@@ -72,6 +72,7 @@ plugins:
   - - "@semantic-release/git"
     - assets:
         - pyproject.toml
+        - uv.lock
       message: "chore(release mloda-plugin-template): ${nextRelease.version}"
 
 repositoryUrl: "https://github.com/mloda-ai/mloda-plugin-template"

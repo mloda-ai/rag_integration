@@ -276,7 +276,7 @@ wheels = [
 
 [[package]]
 name = "placeholder-my-plugin"
-version = "0.2.4"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "mloda" },
@@ -297,7 +297,7 @@ dev = [
 requires-dist = [
     { name = "bandit", marker = "extra == 'dev'" },
     { name = "mloda", specifier = ">=0.4.3" },
-    { name = "mloda-testing", specifier = ">=0.2.6" },
+    { name = "mloda-testing", specifier = ">=0.2.7" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
