@@ -1,3 +1,3 @@
 # CLAUDE.md
 
-Must follow [AGENTS.md](AGENTS.md) for AI guidance and documentation links.
+Must read [AGENTS.md](AGENTS.md) first.

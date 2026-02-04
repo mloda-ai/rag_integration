@@ -22,7 +22,7 @@ This project uses three GitHub Actions workflows to automate testing, security s
 - Scheduled: Every Monday at 9:00 AM UTC
 - Manual dispatch (can be triggered from any branch)
 
-**Purpose:** Performs CVE vulnerability scanning on the latest published release using pip-audit via tox. The workflow fetches the latest release version from GitHub and scans it for known vulnerabilities.
+**Purpose:** Performs CVE vulnerability scanning on the local package using pip-audit via tox. The workflow builds the package and scans its dependencies for known vulnerabilities.
 
 **Requirements:** None. Uses only the default `GITHUB_TOKEN` with read permissions.
 

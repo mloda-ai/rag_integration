@@ -9,8 +9,6 @@ plugins:
       releaseRules:
         - type: feat
           release: minor
-        - type: impr
-          release: patch
         - type: fix
           release: patch
         - type: perf
@@ -36,9 +34,6 @@ plugins:
         types:
           - type: feat
             section: "Features"
-            hidden: false
-          - type: impr
-            section: "Improvements"
             hidden: false
           - type: fix
             section: "Bug Fixes"
