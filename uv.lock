@@ -191,14 +191,14 @@ wheels = [
 
 [[package]]
 name = "mloda-testing"
-version = "0.2.6"
+version = "0.2.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mloda" },
     { name = "pytest" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/77/25d0980b74610d0cdbb3a41026a67773a847f47e627e49b4cb5d849ffa0b/mloda_testing-0.2.6-py3-none-any.whl", hash = "sha256:e8b1b85b0350a46cacb6115ee8a4bfa6df6d219c273524ae90da7490ea765e42", size = 1781, upload-time = "2026-01-15T20:43:13.648Z" },
+    { url = "https://files.pythonhosted.org/packages/37/da/74d87e5a69dcd79d469772217328de508be2d317310c168ceacbb0942524/mloda_testing-0.2.8-py3-none-any.whl", hash = "sha256:982c8731e9bc0f8acc9a165f3436ede795e6353017d374b4fa9dff758e122b7e", size = 1782, upload-time = "2026-02-04T00:23:32.242Z" },
 ]
 
 [[package]]
@@ -276,7 +276,7 @@ wheels = [
 
 [[package]]
 name = "placeholder-my-plugin"
-version = "0.2.3"
+version = "0.2.4"
 source = { editable = "." }
 dependencies = [
     { name = "mloda" },
