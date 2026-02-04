@@ -1,5 +1,5 @@
 # AGENTS.md
 
-This file provides guidance to Claude Code when working with this repository.
+Must read [README.md](README.md) first.
 
-**Required reading:** Must start by reading [README.md](README.md) for project overview, structure, key files, and common tasks.
+This project uses the mloda framework. Assume any given task is related to mloda.
