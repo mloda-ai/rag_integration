@@ -46,5 +46,6 @@ Regardless of which option you chose, follow the setup steps in the [README](../
 1. Clone your new repository locally
 2. Rename the `placeholder/` directory
 3. Update `pyproject.toml`
-4. Update Python imports
-5. Verify with `tox`
+4. Update `.releaserc.yaml` (change `mloda-plugin-template` to your package name and update `repositoryUrl`)
+5. Update Python imports
+6. Verify with `tox`

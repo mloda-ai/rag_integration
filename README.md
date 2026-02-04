@@ -62,7 +62,14 @@ Edit the following fields in `pyproject.toml`:
 - `tool.setuptools.packages.find.include`: Change `["placeholder*"]` to `["acme*"]`
 - `tool.pytest.ini_options.testpaths`: Change `["placeholder", "tests"]` to `["acme", "tests"]`
 
-#### 3. Update Python imports
+#### 3. Update .releaserc.yaml
+
+Edit the following fields in `.releaserc.yaml`:
+
+- `message`: Change `mloda-plugin-template` to your package name (e.g., `"chore(release acme-my-plugin): ${nextRelease.version}"`)
+- `repositoryUrl`: Change to your repository URL
+
+#### 4. Update Python imports
 
 Update imports in these files (change `from placeholder.` to `from acme.`):
 
@@ -73,10 +80,10 @@ Update imports in these files (change `from placeholder.` to `from acme.`):
 - `acme/extenders/my_plugin/__init__.py`
 - `acme/extenders/my_plugin/tests/test_my_extender.py`
 
-#### 4. Verify setup
+#### 5. Verify setup
 
 ```bash
-uv venv && source .venv/bin/activate && uv pip install -e ".[dev]" && tox
+uv venv && source .venv/bin/activate && uv sync --all-extras && tox
 ```
 
 ### Development Setup with uv
@@ -90,7 +97,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```bash
 uv venv
 source .venv/bin/activate
-uv pip install -e ".[dev]"
+uv sync --all-extras
 ```
 
 **Run all checks with tox:**

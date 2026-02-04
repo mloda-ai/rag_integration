@@ -72,6 +72,6 @@ plugins:
   - - "@semantic-release/git"
     - assets:
         - pyproject.toml
-      message: "chore(release): ${nextRelease.version}"
+      message: "chore(release mloda-plugin-template): ${nextRelease.version}"
 
 repositoryUrl: "https://github.com/mloda-ai/mloda-plugin-template"
