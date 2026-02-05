@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import tempfile
+
 from pathlib import Path
 from typing import Any, Dict, List, Set, Type
 
@@ -30,7 +31,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     TfidfEmbedder,
     SentenceTransformerEmbedder,
 )
-from rag_integration.feature_groups.rag_pipeline.embedding import EmbeddingArtifact
+from tests.conftest import requires_spacy_model
 
 
 # =============================================================================
@@ -269,6 +270,7 @@ def make_config_based_pipeline_feature(
 class TestAlternativeProviders:
     """Test alternative provider implementations work correctly."""
 
+    @requires_spacy_model
     def test_all_provider_combinations(self) -> None:
         """
         Test 4 different provider combinations using config-based features:
@@ -385,7 +387,9 @@ class TestEmbeddingArtifactIntegration:
                 domain="artifact_test",
             )
 
-            api1 = mloda([feature1], {PythonDictFramework}, plugin_collector=PluginCollector.enabled_feature_groups(providers))
+            api1 = mloda(
+                [feature1], {PythonDictFramework}, plugin_collector=PluginCollector.enabled_feature_groups(providers)
+            )
             api1._batch_run()
             results1 = api1.get_result()
             artifacts1 = api1.get_artifacts()
@@ -411,10 +415,12 @@ class TestEmbeddingArtifactIntegration:
                 domain="artifact_test",
             )
 
-            api2 = mloda([feature2], {PythonDictFramework}, plugin_collector=PluginCollector.enabled_feature_groups(providers))
+            api2 = mloda(
+                [feature2], {PythonDictFramework}, plugin_collector=PluginCollector.enabled_feature_groups(providers)
+            )
             api2._batch_run()
             results2 = api2.get_result()
-            artifacts2 = api2.get_artifacts()
+            api2.get_artifacts()
 
             # Extract embeddings from second run
             embeddings_second_run = [

@@ -170,7 +170,9 @@ class EmbeddingArtifact(BaseArtifact):
                 return artifacts[artifact_key]  # type: ignore
             # If artifact_to_load is true but we can't find the specific key, that's an error
             available_keys = list(artifacts.keys()) if artifacts else []
-            raise ValueError(f"Embedding artifact not found for key '{artifact_key}'. Available artifacts: {available_keys}")
+            raise ValueError(
+                f"Embedding artifact not found for key '{artifact_key}'. Available artifacts: {available_keys}"
+            )
         return None
 
     @classmethod

@@ -75,7 +75,7 @@ COMPONENTS = {
 
 
 # Mapping from CLI method names to provider classes
-PROVIDER_CLASSES = {
+PROVIDER_CLASSES: Dict[str, Dict[str, Type[FeatureGroup]]] = {
     "chunking": {
         "fixed_size": FixedSizeChunker,
         "sentence": SentenceChunker,
@@ -132,40 +132,48 @@ def build_pipeline_feature(docs: List[Dict[str, Any]], args: argparse.Namespace)
     if args.pii:
         current_feature = Feature(
             "result_pii",
-            options=Options(context={
-                "redaction_method": args.pii,
-                "in_features": current_feature,
-            }),
+            options=Options(
+                context={
+                    "redaction_method": args.pii,
+                    "in_features": current_feature,
+                }
+            ),
         )
 
     # Chunking
     current_feature = Feature(
         "result_chunked",
-        options=Options(context={
-            "chunking_method": args.chunking,
-            "chunk_size": args.chunk_size,
-            "chunk_overlap": args.chunk_overlap,
-            "in_features": current_feature,
-        }),
+        options=Options(
+            context={
+                "chunking_method": args.chunking,
+                "chunk_size": args.chunk_size,
+                "chunk_overlap": args.chunk_overlap,
+                "in_features": current_feature,
+            }
+        ),
     )
 
     # Deduplication
     current_feature = Feature(
         "result_deduped",
-        options=Options(context={
-            "deduplication_method": args.dedup,
-            "in_features": current_feature,
-        }),
+        options=Options(
+            context={
+                "deduplication_method": args.dedup,
+                "in_features": current_feature,
+            }
+        ),
     )
 
     # Embedding
     current_feature = Feature(
         "result_embedded",
-        options=Options(context={
-            "embedding_method": args.embedding,
-            "embedding_dim": args.embedding_dim,
-            "in_features": current_feature,
-        }),
+        options=Options(
+            context={
+                "embedding_method": args.embedding,
+                "embedding_dim": args.embedding_dim,
+                "in_features": current_feature,
+            }
+        ),
     )
 
     return current_feature
@@ -262,10 +270,12 @@ def cmd_run(args: argparse.Namespace) -> None:
             embeddings.append(embedding)
             # Extract chunk text from the row if available
             chunk_text = row.get("result_deduped") or row.get("result_chunked") or ""
-            unique_chunks.append({
-                "chunk_idx": i,
-                "text": chunk_text if isinstance(chunk_text, str) else str(chunk_text),
-            })
+            unique_chunks.append(
+                {
+                    "chunk_idx": i,
+                    "text": chunk_text if isinstance(chunk_text, str) else str(chunk_text),
+                }
+            )
 
     if args.verbose:
         print(f"  {MAGENTA}▶{RESET} Pipeline complete: {len(embeddings)} embeddings generated")
@@ -284,11 +294,13 @@ def cmd_run(args: argparse.Namespace) -> None:
     ]
     if args.pii:
         lines.append(("🔒", "PII", f"{args.pii} redaction applied"))
-    lines.extend([
-        ("✂️ ", "Chunking", f"{args.chunking} (size={args.chunk_size})"),
-        ("🔍", "Dedup", f"{args.dedup}"),
-        ("📊", "Embeddings", f"{len(embeddings)} vectors (dim={args.embedding_dim})"),
-    ])
+    lines.extend(
+        [
+            ("✂️ ", "Chunking", f"{args.chunking} (size={args.chunk_size})"),
+            ("🔍", "Dedup", f"{args.dedup}"),
+            ("📊", "Embeddings", f"{len(embeddings)} vectors (dim={args.embedding_dim})"),
+        ]
+    )
     print_box("RAG Pipeline", lines)
 
     # Prepare output
@@ -345,33 +357,38 @@ Examples:
 
     # Method options
     method_group = run_parser.add_argument_group("Methods")
-    method_group.add_argument("--chunking", default="fixed_size",
-                              choices=list(COMPONENTS["chunking"].keys()),
-                              help="Chunking method (default: fixed_size)")
-    method_group.add_argument("--embedding", default="mock",
-                              choices=list(COMPONENTS["embedding"].keys()),
-                              help="Embedding method (default: mock)")
-    method_group.add_argument("--dedup", default="exact_hash",
-                              choices=list(COMPONENTS["dedup"].keys()),
-                              help="Deduplication method (default: exact_hash)")
-    method_group.add_argument("--pii", default=None,
-                              choices=list(COMPONENTS["pii"].keys()),
-                              help="PII redaction method (optional)")
+    method_group.add_argument(
+        "--chunking",
+        default="fixed_size",
+        choices=list(COMPONENTS["chunking"].keys()),
+        help="Chunking method (default: fixed_size)",
+    )
+    method_group.add_argument(
+        "--embedding",
+        default="mock",
+        choices=list(COMPONENTS["embedding"].keys()),
+        help="Embedding method (default: mock)",
+    )
+    method_group.add_argument(
+        "--dedup",
+        default="exact_hash",
+        choices=list(COMPONENTS["dedup"].keys()),
+        help="Deduplication method (default: exact_hash)",
+    )
+    method_group.add_argument(
+        "--pii", default=None, choices=list(COMPONENTS["pii"].keys()), help="PII redaction method (optional)"
+    )
 
     # Parameter options
     param_group = run_parser.add_argument_group("Parameters")
-    param_group.add_argument("--chunk-size", type=int, default=512,
-                             help="Chunk size in characters (default: 512)")
-    param_group.add_argument("--chunk-overlap", type=int, default=50,
-                             help="Overlap between chunks (default: 50)")
-    param_group.add_argument("--embedding-dim", type=int, default=384,
-                             help="Embedding dimension (default: 384)")
+    param_group.add_argument("--chunk-size", type=int, default=512, help="Chunk size in characters (default: 512)")
+    param_group.add_argument("--chunk-overlap", type=int, default=50, help="Overlap between chunks (default: 50)")
+    param_group.add_argument("--embedding-dim", type=int, default=384, help="Embedding dimension (default: 384)")
 
     # Output options
     output_group = run_parser.add_argument_group("Output")
     output_group.add_argument("--output", "-o", help="Output file (JSON)")
-    output_group.add_argument("--verbose", "-v", action="store_true",
-                              help="Verbose output")
+    output_group.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
 

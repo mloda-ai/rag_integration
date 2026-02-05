@@ -167,7 +167,7 @@ class SemanticChunker(BaseChunker):
 
         # Get sentence embeddings
         model = cls._get_model(model_name)
-        embeddings = model.encode(sentences)  # type: ignore[union-attr]
+        embeddings = model.encode(sentences)  # type: ignore[attr-defined]
 
         # Group sentences by semantic similarity
         chunks: List[str] = []
