@@ -20,6 +20,12 @@ dev = [
     "mypy",
     "bandit",
 ]
+# All advanced features (presidio, sentence-transformers, artifact persistence)
+advanced = [
+    "presidio-analyzer>=2.2.0",
+    "sentence-transformers>=2.2.0",
+    "joblib>=1.0.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
