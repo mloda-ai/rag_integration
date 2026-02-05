@@ -134,4 +134,8 @@ Guides for plugin development can be found in mloda-registry:
 
 - https://github.com/mloda-ai/mloda-registry/tree/main/docs/guides/
 
+Claude Code users can leverage the skills in mloda-registry for assisted plugin development:
+
+- https://github.com/mloda-ai/mloda-registry/tree/main/.claude/skills/
+
 This template includes pre-configured GitHub Actions workflows for testing, security scanning, and automated releases. See the [GitHub Workflows documentation](docs/github-workflows.md) for setup instructions and required secrets.
