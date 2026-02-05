@@ -5,7 +5,8 @@
       "Bash(source .venv/bin/activate)",
       "Bash(uv pip install:*)",
       "Bash(tox)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(tree:*)"
     ]
   }
 }
