@@ -1,6 +1,6 @@
 """Tests for MyComputeFramework."""
 
-from placeholder.compute_frameworks.my_plugin import MyComputeFramework
+from rag_integration.compute_frameworks.my_plugin import MyComputeFramework
 from mloda.provider import ComputeFramework
 
 
