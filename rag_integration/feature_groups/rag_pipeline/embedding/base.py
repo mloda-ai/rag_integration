@@ -176,7 +176,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
             embeddings: Optional[List[List[float]]] = None
             if artifact_cls is not None:
                 try:
-                    loaded = artifact_cls.load_embedding_artifact(features, artifact_key)
+                    loaded = artifact_cls.load_embedding_artifact(features, artifact_key)  # type: ignore[attr-defined]
                     if loaded is not None:
                         embeddings = loaded.get("embeddings")
                         model_name = loaded.get("model_name", model_name)
@@ -206,7 +206,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
                         "embedding_dim": len(embeddings[0]) if embeddings else embedding_dim,
                         "num_texts": len(texts),
                     }
-                    artifact_cls.save_embedding_artifact(features, artifact_key, artifact_data)
+                    artifact_cls.save_embedding_artifact(features, artifact_key, artifact_data)  # type: ignore[attr-defined]
 
             # Add results to data
             for i, row in enumerate(data):

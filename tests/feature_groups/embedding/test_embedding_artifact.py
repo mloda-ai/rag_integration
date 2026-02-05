@@ -1,8 +1,7 @@
 """Tests for EmbeddingArtifact."""
 
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -159,11 +158,7 @@ class TestEmbeddingArtifact:
         mock_features.save_artifact = None
 
         # This should not raise and should not modify save_artifact
-        EmbeddingArtifact.save_embedding_artifact(
-            mock_features,
-            "test_key",
-            {"embeddings": [[0.1]]}
-        )
+        EmbeddingArtifact.save_embedding_artifact(mock_features, "test_key", {"embeddings": [[0.1]]})
 
         # save_artifact should remain None since artifact_to_save is False
         assert mock_features.save_artifact is None
@@ -205,6 +200,8 @@ class TestEmbeddingArtifact:
         loaded1 = EmbeddingArtifact.load_embedding_artifact(mock_features, key1)
         loaded2 = EmbeddingArtifact.load_embedding_artifact(mock_features, key2)
 
+        assert loaded1 is not None
+        assert loaded2 is not None
         assert loaded1["embeddings"] == [[1.0, 2.0]]
         assert loaded1["model_name"] == "model1"
         assert loaded2["embeddings"] == [[3.0, 4.0, 5.0]]

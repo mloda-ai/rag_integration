@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Type
+from typing import TYPE_CHECKING, List, Optional, Type
+
+if TYPE_CHECKING:
+    from mloda.user import Feature
 
 from mloda.provider import BaseArtifact
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
@@ -67,10 +70,8 @@ class SentenceTransformerEmbedder(BaseEmbedder):
         return EmbeddingArtifact
 
     @classmethod
-    def _get_model_name(cls, feature: "Feature") -> str:  # type: ignore[name-defined]
+    def _get_model_name(cls, feature: "Feature") -> str:
         """Get model name from feature options, defaulting to all-MiniLM-L6-v2."""
-        from mloda.user import Feature  # noqa: F811
-
         name = feature.options.get(cls.MODEL_NAME)
         return str(name) if name is not None else cls.DEFAULT_MODEL
 
@@ -117,7 +118,7 @@ class SentenceTransformerEmbedder(BaseEmbedder):
         processed_texts = [t if t.strip() else " " for t in texts]
 
         # Generate embeddings
-        embeddings = model.encode(  # type: ignore[union-attr]
+        embeddings = model.encode(  # type: ignore[attr-defined]
             processed_texts,
             convert_to_numpy=True,
             normalize_embeddings=True,  # Return unit-normalized vectors
