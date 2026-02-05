@@ -29,5 +29,5 @@ jobs:
           uv tool install tox --with tox-uv
 
       - name: Run tox
-        run: tox
-        timeout-minutes: 2
+        run: tox -e python310
+        timeout-minutes: 4

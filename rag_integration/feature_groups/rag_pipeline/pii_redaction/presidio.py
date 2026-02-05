@@ -76,8 +76,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
                 from presidio_analyzer import AnalyzerEngine
             except ImportError as e:
                 raise ImportError(
-                    "presidio-analyzer is required for PresidioPIIRedactor. "
-                    "Install with: pip install presidio-analyzer"
+                    "presidio-analyzer is required for PresidioPIIRedactor. Install with: pip install presidio-analyzer"
                 ) from e
 
             cls._analyzer = AnalyzerEngine()
@@ -127,14 +126,14 @@ class PresidioPIIRedactor(BasePIIRedactor):
         analyzer = cls._get_analyzer()
         entities = cls._get_presidio_entities(pii_types)
 
-        result = []
+        result: List[str] = []
         for text in texts:
             if not text:
                 result.append(text)
                 continue
 
             # Analyze text for PII
-            results = analyzer.analyze(  # type: ignore[union-attr]
+            results = analyzer.analyze(  # type: ignore[attr-defined]
                 text=text,
                 entities=entities,
                 language="en",
