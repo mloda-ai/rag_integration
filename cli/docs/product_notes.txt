@@ -1,0 +1,12 @@
+Product Development Notes
+
+The new RAG pipeline feature allows users to process documents efficiently.
+Key components include chunking, deduplication, and embedding generation.
+
+Technical contact: dev-team@company.org
+Emergency hotline: 800-555-0199
+
+Next sprint goals:
+- Improve chunking algorithms
+- Add support for more embedding models
+- Optimize deduplication performance
