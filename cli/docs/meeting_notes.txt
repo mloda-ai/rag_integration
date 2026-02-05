@@ -1,0 +1,15 @@
+Meeting Notes - Project Kickoff
+
+Attendees: Alice Brown (alice@startup.io), Bob Wilson (bob.wilson@corp.net)
+
+Discussion points:
+- Review current architecture and identify bottlenecks
+- Plan migration to new infrastructure
+- Set timeline for Q1 deliverables
+
+Action items:
+1. Alice to prepare technical documentation
+2. Bob to schedule follow-up with stakeholders
+3. Team to complete security review by end of month
+
+Next meeting: Monday 10am
