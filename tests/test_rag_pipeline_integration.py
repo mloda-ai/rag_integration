@@ -213,79 +213,20 @@ def make_domain_providers(
     return {DomainDataCreator, DomainPIIRedactor, DomainChunker, DomainDeduplicator, DomainEmbedder}
 
 
-def make_config_based_pipeline_feature(
-    output_name: str,
-    domain_name: str,
-    redaction_method: str = "regex",
-    chunking_method: str = "fixed_size",
-    deduplication_method: str = "exact_hash",
-    embedding_method: str = "mock",
-) -> Feature:
-    """
-    Create a pipeline feature using configuration-based syntax.
-
-    Uses nested in_features with unique discriminator keys per feature group type
-    (following mloda's pattern like aggregation_type, scaler_type, etc.)
-
-    Chain: docs -> pii_redact -> chunk -> dedupe -> embed
-
-    Args:
-        output_name: Name for the final embedded feature
-        domain_name: Domain to use for all features in the chain
-        redaction_method: One of: regex, simple, pattern, presidio
-        chunking_method: One of: fixed_size, sentence, paragraph, semantic
-        deduplication_method: One of: exact_hash, normalized, ngram
-        embedding_method: One of: mock, hash, tfidf, sentence_transformer
-    """
-    # Build chain from inside out
-    docs_feature = Feature("docs", domain=domain_name)
-
-    pii_feature = Feature(
-        f"{output_name}_pii",
-        domain=domain_name,
-        options=Options(context={"redaction_method": redaction_method, "in_features": docs_feature}),
-    )
-
-    chunked_feature = Feature(
-        f"{output_name}_chunked",
-        domain=domain_name,
-        options=Options(context={"chunking_method": chunking_method, "in_features": pii_feature}),
-    )
-
-    deduped_feature = Feature(
-        f"{output_name}_deduped",
-        domain=domain_name,
-        options=Options(context={"deduplication_method": deduplication_method, "in_features": chunked_feature}),
-    )
-
-    embedded_feature = Feature(
-        output_name,
-        domain=domain_name,
-        options=Options(context={"embedding_method": embedding_method, "in_features": deduped_feature}),
-    )
-
-    return embedded_feature
-
-
 class TestAlternativeProviders:
     """Test alternative provider implementations work correctly."""
 
     @requires_spacy_model
     def test_all_provider_combinations(self) -> None:
         """
-        Test 4 different provider combinations using config-based features:
+        Test 4 different provider combinations using string-based features with domains.
+
+        Each domain isolates a different set of providers:
         1. set1: RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder
         2. set2: RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, HashEmbedder
         3. set3: RegexPIIRedactor, SentenceChunker, NormalizedDeduplicator, TfidfEmbedder
         4. set4: PresidioPIIRedactor, SemanticChunker, NormalizedDeduplicator, SentenceTransformerEmbedder
-
-        Uses configuration-based features with unique discriminator keys:
-        - redaction_method: regex, simple, pattern, presidio
-        - chunking_method: fixed_size, sentence, paragraph, semantic
-        - deduplication_method: exact_hash, normalized, ngram
-        - embedding_method: mock, hash, tfidf, sentence_transformer
         """
-        # Create domain-specific provider sets
         set1 = make_domain_providers("set1", FixedSizeChunker, ExactHashDeduplicator, MockEmbedder)
         set2 = make_domain_providers("set2", FixedSizeChunker, ExactHashDeduplicator, HashEmbedder)
         set3 = make_domain_providers("set3", SentenceChunker, NormalizedDeduplicator, TfidfEmbedder)
@@ -299,53 +240,23 @@ class TestAlternativeProviders:
 
         all_providers = set1 | set2 | set3 | set4
 
-        # Create config-based features with unique discriminator keys
-        feature1 = make_config_based_pipeline_feature(
-            "embedded_set1",
-            "set1",
-            chunking_method="fixed_size",
-            deduplication_method="exact_hash",
-            embedding_method="mock",
-        )
-        feature2 = make_config_based_pipeline_feature(
-            "embedded_set2",
-            "set2",
-            chunking_method="fixed_size",
-            deduplication_method="exact_hash",
-            embedding_method="hash",
-        )
-        feature3 = make_config_based_pipeline_feature(
-            "embedded_set3",
-            "set3",
-            chunking_method="sentence",
-            deduplication_method="normalized",
-            embedding_method="tfidf",
-        )
-        feature4 = make_config_based_pipeline_feature(
-            "embedded_set4",
-            "set4",
-            redaction_method="presidio",
-            chunking_method="semantic",
-            deduplication_method="normalized",
-            embedding_method="sentence_transformer",
-        )
+        feature_name = "docs__pii_redacted__chunked__deduped__embedded"
+        features: list[Feature | str] = [Feature(feature_name, domain=d) for d in ("set1", "set2", "set3", "set4")]
 
-        # Single API call with 4 features, each with different domain
         raw_result = mlodaAPI.run_all(
-            features=[feature1, feature2, feature3, feature4],
+            features=features,
             compute_frameworks={PythonDictFramework},
             plugin_collector=PluginCollector.enabled_feature_groups(all_providers),
         )
 
         assert len(raw_result) == 4, f"Should have 4 result sets, got {len(raw_result)}"
 
-        feature_names = ["embedded_set1", "embedded_set2", "embedded_set3", "embedded_set4"]
         for i, result_set in enumerate(raw_result):
             result = flatten_result([result_set])
             assert len(result) > 0, f"Set {i + 1}: Should produce results"
 
             for row in result:
-                embedding = row.get(feature_names[i])
+                embedding = row.get(feature_name)
                 assert isinstance(embedding, list), f"Set {i + 1}: Embedding should be a list"
                 magnitude = math.sqrt(sum(x * x for x in embedding))
                 assert abs(magnitude - 1.0) < 0.001, f"Set {i + 1}: Embedding should be unit length, got {magnitude}"
