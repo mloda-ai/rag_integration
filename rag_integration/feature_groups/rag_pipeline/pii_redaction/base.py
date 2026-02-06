@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Set, Type, Union
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
 from mloda.provider import FeatureChainParserMixin
-from mloda.user import Feature, FeatureName, Options
+from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -107,25 +107,6 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
             DefaultOptionKeys.context: True,
         },
     }
-
-    @classmethod
-    def match_feature_group_criteria(
-        cls,
-        feature_name: str | FeatureName,
-        options: Options,
-        data_access_collection: Any = None,
-    ) -> bool:
-        """
-        Match feature using mixin logic, catching ValueError for strict validation.
-
-        When multiple subclasses have different discriminator values in their
-        PROPERTY_MAPPING, strict validation raises ValueError for non-matching
-        subclasses. We catch this to return False, allowing other subclasses to match.
-        """
-        try:
-            return bool(super().match_feature_group_criteria(feature_name, options, data_access_collection))
-        except ValueError:
-            return False
 
     @classmethod
     def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
