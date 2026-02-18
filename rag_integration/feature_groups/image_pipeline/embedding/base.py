@@ -118,9 +118,14 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
 
     @classmethod
     def _get_model_name(cls, feature: Feature) -> str:
-        """Get model name from feature options."""
+        """Get model name from feature options, falling back to PROPERTY_MAPPING default."""
         name = feature.options.get(cls.MODEL_NAME)
-        return str(name) if name is not None else "default"
+        if name is not None:
+            return str(name)
+        # Check subclass PROPERTY_MAPPING for a provider-specific default
+        mapping = cls.PROPERTY_MAPPING.get(cls.MODEL_NAME, {})
+        default = mapping.get(DefaultOptionKeys.default, "default")
+        return str(default)
 
     @staticmethod
     def artifact() -> Optional[Type[BaseArtifact]]:
