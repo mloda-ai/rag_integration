@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 import math
+import os
+from pathlib import Path
 from typing import List
 
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
+
+# Default local model path (saved via save_pretrained)
+_DEFAULT_LOCAL_MODEL = str(
+    Path(__file__).resolve().parents[4] / "models" / "clip-vit-base-patch32"
+)
+# HuggingFace fallback
+_HF_MODEL_ID = "openai/clip-vit-base-patch32"
 
 
 class CLIPImageEmbedder(BaseImageEmbedder):
@@ -18,11 +27,15 @@ class CLIPImageEmbedder(BaseImageEmbedder):
     to generate semantically meaningful image embeddings that exist in
     a shared text-image embedding space.
 
+    Loads from a local directory if available, otherwise downloads from HuggingFace.
+
     Requires: transformers, torch, Pillow
 
     Config-based matching:
         image_embedding_method="clip"
     """
+
+    _model_cache: dict = {}
 
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
@@ -36,15 +49,24 @@ class CLIPImageEmbedder(BaseImageEmbedder):
             DefaultOptionKeys.default: 512,
         },
         BaseImageEmbedder.MODEL_NAME: {
-            "explanation": "CLIP model name (default: openai/clip-vit-base-patch32)",
+            "explanation": "Local path or HuggingFace model ID",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "openai/clip-vit-base-patch32",
+            DefaultOptionKeys.default: _HF_MODEL_ID,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing images to embed",
             DefaultOptionKeys.context: True,
         },
     }
+
+    @classmethod
+    def _resolve_model_path(cls, model_name: str) -> str:
+        """Resolve model name: use local path if it exists, otherwise use as-is (HuggingFace ID)."""
+        if os.path.isdir(model_name):
+            return model_name
+        if os.path.isdir(_DEFAULT_LOCAL_MODEL):
+            return _DEFAULT_LOCAL_MODEL
+        return model_name
 
     @classmethod
     def _embed_image(
@@ -81,15 +103,21 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
         img = Image.open(io.BytesIO(image_data)).convert("RGB")
 
-        model = CLIPModel.from_pretrained(model_name)
-        processor = CLIPProcessor.from_pretrained(model_name)
+        resolved = cls._resolve_model_path(model_name)
+        if resolved not in cls._model_cache:
+            cls._model_cache[resolved] = (
+                CLIPModel.from_pretrained(resolved),
+                CLIPProcessor.from_pretrained(resolved),
+            )
+        model, processor = cls._model_cache[resolved]
 
         inputs = processor(images=img, return_tensors="pt")
 
         with torch.no_grad():
-            outputs = model.get_image_features(**inputs)
+            vision_outputs = model.vision_model(**{k: v for k, v in inputs.items() if k == "pixel_values"})
+            image_features = model.visual_projection(vision_outputs.pooler_output)
 
-        embedding = outputs[0].tolist()
+        embedding = image_features.squeeze(0).tolist()
 
         # Normalize to unit length
         magnitude = math.sqrt(sum(x * x for x in embedding))
