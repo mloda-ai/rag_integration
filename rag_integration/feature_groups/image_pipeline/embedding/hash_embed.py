@@ -78,10 +78,10 @@ class HashImageEmbedder(BaseImageEmbedder):
             # Return zero vector for empty images
             return [0.0] * embedding_dim
 
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
         # Convert to grayscale and resize to manageable size
-        img = img.convert("L").resize((64, 64), Image.LANCZOS)
-        pixels = list(img.get_flattened_data())
+        img = img.convert("L").resize((64, 64), Image.Resampling.LANCZOS)
+        pixels: list[int] = list(img.get_flattened_data())  # type: ignore[arg-type]
 
         embedding = [0.0] * embedding_dim
 

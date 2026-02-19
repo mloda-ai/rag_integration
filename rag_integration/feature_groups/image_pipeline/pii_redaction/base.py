@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Set, Tuple, Type, Union
+from typing import Any, Dict, List, Set, Type, Union
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
 from mloda.provider import FeatureChainParserMixin
@@ -152,7 +152,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform PII redaction on images, processing row by row for memory efficiency."""
         for feature in features.features:
-            source_feature = cls._get_source_feature_name(feature)
+            cls._get_source_feature_name(feature)
             regions = cls._get_pii_regions(feature)
             feature_name = feature.get_name()
 

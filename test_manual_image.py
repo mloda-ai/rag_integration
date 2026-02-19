@@ -117,7 +117,9 @@ def main() -> None:
 
         if name == "image_docs":
             for row in rows:
-                print(f"  - {row.get('image_id')}: {len(row.get('image_data', b'')):,} bytes, format={row.get('format')}")
+                print(
+                    f"  - {row.get('image_id')}: {len(row.get('image_data', b'')):,} bytes, format={row.get('format')}"
+                )
 
         elif "pii_redacted" in name and "preprocessed" not in name:
             for row in rows:

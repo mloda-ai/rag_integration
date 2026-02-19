@@ -153,7 +153,7 @@ class BaseImageDeduplicator(FeatureChainParserMixin, FeatureGroup):
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform deduplication on images."""
         for feature in features.features:
-            source_feature = cls._get_source_feature_name(feature)
+            cls._get_source_feature_name(feature)
             threshold = cls._get_similarity_threshold(feature)
             keep_strategy = cls._get_keep_strategy(feature)
             feature_name = feature.get_name()

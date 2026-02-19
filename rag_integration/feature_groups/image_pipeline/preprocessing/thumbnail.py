@@ -66,11 +66,11 @@ class ThumbnailPreprocessor(BaseImagePreprocessor):
 
         import io
 
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
 
         # thumbnail() modifies in place and preserves aspect ratio
         width, height = target_size[0], target_size[1]
-        img.thumbnail((width, height), Image.LANCZOS)
+        img.thumbnail((width, height), Image.Resampling.LANCZOS)
 
         output = io.BytesIO()
         save_format = "PNG" if image_format.lower() == "png" else "JPEG"

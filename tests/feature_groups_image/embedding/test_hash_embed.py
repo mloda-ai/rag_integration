@@ -10,12 +10,13 @@ from rag_integration.feature_groups.image_pipeline.embedding import HashImageEmb
 def _can_import_pillow() -> bool:
     try:
         from PIL import Image  # noqa: F401
+
         return True
     except ImportError:
         return False
 
 
-def _create_test_image(color: tuple = (128, 64, 32)) -> bytes:
+def _create_test_image(color: tuple[int, ...] = (128, 64, 32)) -> bytes:
     """Create a simple test image."""
     from PIL import Image
     import io

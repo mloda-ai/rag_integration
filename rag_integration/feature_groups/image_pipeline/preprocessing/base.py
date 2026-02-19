@@ -140,7 +140,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Preprocess images row by row for memory efficiency."""
         for feature in features.features:
-            source_feature = cls._get_source_feature_name(feature)
+            cls._get_source_feature_name(feature)
             target_size = cls._get_target_size(feature)
             feature_name = feature.get_name()
 

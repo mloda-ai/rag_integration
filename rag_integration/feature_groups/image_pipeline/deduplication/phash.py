@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
 
@@ -74,11 +74,11 @@ class PerceptualHashImageDeduplicator(BaseImageDeduplicator):
 
         import io
 
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
         # Resize to hash_size x hash_size grayscale
-        img = img.convert("L").resize((hash_size, hash_size), Image.LANCZOS)
+        img = img.convert("L").resize((hash_size, hash_size), Image.Resampling.LANCZOS)
 
-        pixels = list(img.get_flattened_data())
+        pixels: list[int] = list(img.get_flattened_data())  # type: ignore[arg-type]
         mean_val = sum(pixels) / len(pixels)
 
         # Build hash: 1 if pixel > mean, 0 otherwise

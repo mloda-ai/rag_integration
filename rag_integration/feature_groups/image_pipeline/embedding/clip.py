@@ -5,16 +5,14 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
 # Default local model path (saved via save_pretrained)
-_DEFAULT_LOCAL_MODEL = str(
-    Path(__file__).resolve().parents[4] / "models" / "clip-vit-base-patch32"
-)
+_DEFAULT_LOCAL_MODEL = str(Path(__file__).resolve().parents[4] / "models" / "clip-vit-base-patch32")
 # HuggingFace fallback
 _HF_MODEL_ID = "openai/clip-vit-base-patch32"
 
@@ -35,7 +33,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         image_embedding_method="clip"
     """
 
-    _model_cache: dict = {}
+    _model_cache: dict[str, Any] = {}
 
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
@@ -106,8 +104,8 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         resolved = cls._resolve_model_path(model_name)
         if resolved not in cls._model_cache:
             cls._model_cache[resolved] = (
-                CLIPModel.from_pretrained(resolved),
-                CLIPProcessor.from_pretrained(resolved),
+                CLIPModel.from_pretrained(resolved),  # nosec B615
+                CLIPProcessor.from_pretrained(resolved),  # nosec B615
             )
         model, processor = cls._model_cache[resolved]
 
@@ -124,4 +122,4 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         if magnitude > 0:
             embedding = [x / magnitude for x in embedding]
 
-        return embedding
+        return embedding  # type: ignore[no-any-return]
