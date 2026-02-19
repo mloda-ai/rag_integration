@@ -65,9 +65,9 @@ class ResizePreprocessor(BaseImagePreprocessor):
 
         import io
 
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
         width, height = target_size[0], target_size[1]
-        resized = img.resize((width, height), Image.LANCZOS)
+        resized = img.resize((width, height), Image.Resampling.LANCZOS)
 
         output = io.BytesIO()
         save_format = "PNG" if image_format.lower() == "png" else "JPEG"

@@ -68,7 +68,7 @@ class NormalizePreprocessor(BaseImagePreprocessor):
 
         import io
 
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
 
         # Convert to RGB (handles RGBA, grayscale, etc.)
         if img.mode != "RGB":
@@ -76,7 +76,7 @@ class NormalizePreprocessor(BaseImagePreprocessor):
 
         # Resize to target dimensions
         width, height = target_size[0], target_size[1]
-        img = img.resize((width, height), Image.LANCZOS)
+        img = img.resize((width, height), Image.Resampling.LANCZOS)
 
         # Output as PNG for lossless standardization
         output = io.BytesIO()

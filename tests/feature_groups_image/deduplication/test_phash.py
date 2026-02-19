@@ -8,12 +8,13 @@ from rag_integration.feature_groups.image_pipeline.deduplication import Perceptu
 def _can_import_pillow() -> bool:
     try:
         from PIL import Image  # noqa: F401
+
         return True
     except ImportError:
         return False
 
 
-def _create_test_image(color: tuple = (255, 0, 0), size: tuple = (64, 64)) -> bytes:
+def _create_test_image(color: tuple[int, int, int] = (255, 0, 0), size: tuple[int, int] = (64, 64)) -> bytes:
     """Create a simple solid-color test image."""
     from PIL import Image
     import io

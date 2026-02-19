@@ -73,7 +73,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
 
         import io
 
-        img = Image.open(io.BytesIO(image_data))
+        img: Image.Image = Image.open(io.BytesIO(image_data))
         pixel_size = 10
 
         for region in regions:
@@ -97,8 +97,8 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
             # Downscale then upscale to pixelate
             small_w = max(1, region_w // pixel_size)
             small_h = max(1, region_h // pixel_size)
-            small = region_img.resize((small_w, small_h), Image.NEAREST)
-            pixelated = small.resize((region_w, region_h), Image.NEAREST)
+            small = region_img.resize((small_w, small_h), Image.Resampling.NEAREST)
+            pixelated = small.resize((region_w, region_h), Image.Resampling.NEAREST)
 
             img.paste(pixelated, (x1, y1))
 

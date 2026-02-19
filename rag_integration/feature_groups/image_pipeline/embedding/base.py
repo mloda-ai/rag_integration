@@ -157,7 +157,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Generate embeddings for images, processing row by row for memory efficiency."""
         for feature in features.features:
-            source_feature = cls._get_source_feature_name(feature)
+            cls._get_source_feature_name(feature)
             embedding_dim = cls._get_embedding_dim(feature)
             model_name = cls._get_model_name(feature)
             feature_name = feature.get_name()

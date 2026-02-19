@@ -8,6 +8,7 @@ from rag_integration.feature_groups.image_pipeline.preprocessing import Normaliz
 def _can_import_pillow() -> bool:
     try:
         from PIL import Image  # noqa: F401
+
         return True
     except ImportError:
         return False

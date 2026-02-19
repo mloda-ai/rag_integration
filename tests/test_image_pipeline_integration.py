@@ -19,14 +19,10 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 
 from rag_integration.feature_groups.image_pipeline import (
     SolidFillPIIRedactor,
-    BlurPIIRedactor,
-    PixelPIIRedactor,
     ResizePreprocessor,
     NormalizePreprocessor,
     ThumbnailPreprocessor,
     ExactHashImageDeduplicator,
-    PerceptualHashImageDeduplicator,
-    DifferenceHashImageDeduplicator,
     MockImageEmbedder,
     HashImageEmbedder,
 )
@@ -37,7 +33,7 @@ from rag_integration.feature_groups.image_pipeline import (
 # =============================================================================
 
 
-def _create_test_image_bytes(color: tuple = (255, 0, 0), size: tuple = (64, 64)) -> bytes:
+def _create_test_image_bytes(color: tuple[int, int, int] = (255, 0, 0), size: tuple[int, int] = (64, 64)) -> bytes:
     """Create a test PNG image as bytes."""
     try:
         from PIL import Image
@@ -284,9 +280,7 @@ def make_config_based_image_pipeline_feature(
     deduped_feature = Feature(
         f"{output_name}_deduped",
         domain=domain_name,
-        options=Options(
-            context={"image_deduplication_method": deduplication_method, "in_features": preproc_feature}
-        ),
+        options=Options(context={"image_deduplication_method": deduplication_method, "in_features": preproc_feature}),
     )
 
     embedded_feature = Feature(
