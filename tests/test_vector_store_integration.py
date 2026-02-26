@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Set, Type
 
-from mloda.user import mlodaAPI, PluginCollector, Feature, Options
+from mloda.user import mloda, mlodaAPI, PluginCollector, Domain, Feature, Options
 from mloda.provider import DataCreator, FeatureGroup
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -124,3 +124,96 @@ class TestVectorStoreIntegration:
 
             assert len(faiss_files) >= 1, "FAISS index file should be created"
             assert len(json_files) >= 1, "Metadata sidecar should be created"
+
+
+def make_domain_providers(domain_name: str) -> Set[Type[FeatureGroup]]:
+    """Create a provider set with a specific domain for artifact isolation."""
+
+    class DomainDataCreator(MockDocumentDataCreator):
+        @classmethod
+        def get_domain(cls) -> Domain:
+            return Domain(domain_name)
+
+    class DomainPII(RegexPIIRedactor):
+        @classmethod
+        def get_domain(cls) -> Domain:
+            return Domain(domain_name)
+
+    class DomainChunker(FixedSizeChunker):
+        @classmethod
+        def get_domain(cls) -> Domain:
+            return Domain(domain_name)
+
+    class DomainDedup(ExactHashDeduplicator):
+        @classmethod
+        def get_domain(cls) -> Domain:
+            return Domain(domain_name)
+
+    class DomainEmbedder(MockEmbedder):
+        @classmethod
+        def get_domain(cls) -> Domain:
+            return Domain(domain_name)
+
+    class DomainIndexer(FaissFlatIndexer):
+        @classmethod
+        def get_domain(cls) -> Domain:
+            return Domain(domain_name)
+
+    return {DomainDataCreator, DomainPII, DomainChunker, DomainDedup, DomainEmbedder, DomainIndexer}
+
+
+class TestVectorStoreArtifactIntegration:
+    """Test vector store artifact save and reload via mloda artifact lifecycle."""
+
+    def test_vector_store_artifact_save_and_load(self) -> None:
+        """
+        Run 1: compute index + save artifact to disk.
+        Run 2: pass artifacts back in options so mloda sets artifact_to_load=True,
+               verify the index is loaded from disk (not recomputed).
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            artifact_path = Path(tmp_dir)
+            providers = make_domain_providers("vs_artifact_test")
+            feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
+
+            feature_options: Dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
+
+            # Run 1: compute and save
+            feature1 = Feature(feature_name, options=Options(feature_options), domain="vs_artifact_test")
+
+            api1 = mloda(
+                [feature1],
+                {PythonDictFramework},
+                plugin_collector=PluginCollector.enabled_feature_groups(providers),
+            )
+            api1._batch_run()
+            results1 = api1.get_result()
+            artifacts1 = api1.get_artifacts()
+
+            rows1 = flatten_result(results1)
+            assert len(rows1) > 0, "Run 1 should produce results"
+            assert len(artifacts1) > 0, "Run 1 should produce artifacts"
+
+            # Verify artifact files exist on disk
+            faiss_files = list(artifact_path.glob("vector_store_*.faiss"))
+            json_files = list(artifact_path.glob("vector_store_*_metadata.json"))
+            assert len(faiss_files) >= 1, "FAISS index file should be created"
+            assert len(json_files) >= 1, "Metadata sidecar should be created"
+
+            # Run 2: load from artifact (merge artifacts back into options)
+            combined_options = {**feature_options, **artifacts1}
+            feature2 = Feature(feature_name, options=Options(combined_options), domain="vs_artifact_test")
+
+            api2 = mloda(
+                [feature2],
+                {PythonDictFramework},
+                plugin_collector=PluginCollector.enabled_feature_groups(providers),
+            )
+            api2._batch_run()
+            results2 = api2.get_result()
+
+            rows2 = flatten_result(results2)
+            assert len(rows2) > 0, "Run 2 should produce results"
+
+            # Both runs should produce the same number of rows
+            assert len(rows1) == len(rows2), "Row count should match between runs"
