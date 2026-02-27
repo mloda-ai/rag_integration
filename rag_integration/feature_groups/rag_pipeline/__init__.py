@@ -43,6 +43,10 @@ from rag_integration.feature_groups.rag_pipeline.retrieval import (
     BaseRetriever,
     FaissRetriever,
 )
+from rag_integration.feature_groups.rag_pipeline.llm_response import (
+    BaseLLMResponse,
+    ClaudeCliResponse,
+)
 
 __all__ = [
     # Document Source
@@ -81,4 +85,7 @@ __all__ = [
     # Retrieval
     "BaseRetriever",
     "FaissRetriever",
+    # LLM Response
+    "BaseLLMResponse",
+    "ClaudeCliResponse",
 ]
