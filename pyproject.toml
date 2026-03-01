@@ -20,12 +20,15 @@ dev = [
     "mypy",
     "bandit",
 ]
-# All advanced features (presidio, sentence-transformers, artifact persistence)
+# FAISS vector indexing
+faiss = ["faiss-cpu>=1.7.0"]
+# All advanced features (presidio, sentence-transformers, artifact persistence, faiss)
 advanced = [
     "presidio-analyzer>=2.2.0",
     "sentence-transformers>=2.2.0",
     "joblib>=1.0.0",
     "Pillow>=9.0.0",
+    "faiss-cpu>=1.7.0",
 ]
 # Evaluation datasets and metrics (no network access at eval time)
 eval = [

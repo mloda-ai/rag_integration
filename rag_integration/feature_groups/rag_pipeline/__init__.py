@@ -32,6 +32,21 @@ from rag_integration.feature_groups.rag_pipeline.embedding import (
     TfidfEmbedder,
     SentenceTransformerEmbedder,
 )
+from rag_integration.feature_groups.rag_pipeline.vector_store import (
+    BaseVectorStore,
+    FaissFlatIndexer,
+    FaissIVFIndexer,
+    FaissHNSWIndexer,
+    VectorStoreArtifact,
+)
+from rag_integration.feature_groups.rag_pipeline.retrieval import (
+    BaseRetriever,
+    FaissRetriever,
+)
+from rag_integration.feature_groups.rag_pipeline.llm_response import (
+    BaseLLMResponse,
+    ClaudeCliResponse,
+)
 
 __all__ = [
     # Document Source
@@ -61,4 +76,16 @@ __all__ = [
     "HashEmbedder",
     "TfidfEmbedder",
     "SentenceTransformerEmbedder",
+    # Vector Store
+    "BaseVectorStore",
+    "FaissFlatIndexer",
+    "FaissIVFIndexer",
+    "FaissHNSWIndexer",
+    "VectorStoreArtifact",
+    # Retrieval
+    "BaseRetriever",
+    "FaissRetriever",
+    # LLM Response
+    "BaseLLMResponse",
+    "ClaudeCliResponse",
 ]
