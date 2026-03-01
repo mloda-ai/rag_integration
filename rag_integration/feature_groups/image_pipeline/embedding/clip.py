@@ -1,18 +1,27 @@
-"""CLIP model image embedding."""
+"""CLIP model image and text embedding.
+
+CLIPImageEmbedder handles mixed image+text rows: corpus rows are embedded via
+CLIP's vision encoder; query rows that have a ``caption`` field but no
+``image_data`` are embedded via CLIP's text encoder.  Both encoders project
+into the same 512-d shared embedding space, enabling cross-modal similarity.
+"""
 
 from __future__ import annotations
 
 import math
 import os
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Dict, List
 
+from mloda.provider import FeatureSet
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
-# Default local model path (saved via save_pretrained)
-_DEFAULT_LOCAL_MODEL = str(Path(__file__).resolve().parents[4] / "models" / "clip-vit-base-patch32")
+# Default local model path: looks two levels above the git repo root (mloda/models/)
+# clip.py lives at rag_integration/rag_integration/feature_groups/image_pipeline/embedding/clip.py
+# parents[4] = rag_integration repo root, parents[5] = mloda/ directory
+_DEFAULT_LOCAL_MODEL = str(Path(__file__).resolve().parents[5] / "models" / "clip-vit-base-patch32")
 # HuggingFace fallback
 _HF_MODEL_ID = "openai/clip-vit-base-patch32"
 
@@ -123,3 +132,94 @@ class CLIPImageEmbedder(BaseImageEmbedder):
             embedding = [x / magnitude for x in embedding]
 
         return embedding  # type: ignore[no-any-return]
+
+    @classmethod
+    def _embed_text(
+        cls,
+        text: str,
+        embedding_dim: int,
+        model_name: str,
+    ) -> List[float]:
+        """
+        Generate CLIP embedding for a text string using the text encoder.
+
+        Projects the caption into the same 512-d space as the image embeddings,
+        enabling cross-modal cosine similarity (text-to-image retrieval).
+
+        Args:
+            text: Caption or query string
+            embedding_dim: Expected output dimension (used for zero fallback)
+            model_name: CLIP model identifier
+
+        Returns:
+            Unit-normalised CLIP text embedding vector
+        """
+        try:
+            from transformers import CLIPProcessor, CLIPModel
+            import torch
+        except ImportError:
+            raise ImportError(
+                "transformers and torch are required for CLIPImageEmbedder. "
+                "Install with: pip install transformers torch"
+            )
+
+        if not text:
+            return [0.0] * embedding_dim
+
+        resolved = cls._resolve_model_path(model_name)
+        if resolved not in cls._model_cache:
+            cls._model_cache[resolved] = (
+                CLIPModel.from_pretrained(resolved),  # nosec B615
+                CLIPProcessor.from_pretrained(resolved),  # nosec B615
+            )
+        model, processor = cls._model_cache[resolved]
+
+        inputs = processor(text=[text], return_tensors="pt", padding=True, truncation=True)
+
+        with torch.no_grad():
+            text_outputs = model.text_model(**{k: v for k, v in inputs.items() if k != "pixel_values"})
+            text_features = model.text_projection(text_outputs.pooler_output)
+
+        embedding = text_features.squeeze(0).tolist()
+
+        # Normalize to unit length
+        magnitude = math.sqrt(sum(x * x for x in embedding))
+        if magnitude > 0:
+            embedding = [x / magnitude for x in embedding]
+
+        return embedding  # type: ignore[no-any-return]
+
+    @classmethod
+    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+        """
+        Embed each row using CLIP's vision or text encoder based on row content.
+
+        - Corpus rows (``image_data`` present): embedded via CLIP vision encoder.
+        - Query rows (``image_data`` is None, ``caption`` present): embedded via
+          CLIP text encoder, projecting into the same shared embedding space.
+
+        This cross-modal dispatch is what makes text-to-image Recall@K meaningful.
+        """
+        for feature in features.features:
+            embedding_dim = cls._get_embedding_dim(feature)
+            model_name = cls._get_model_name(feature)
+            feature_name = feature.get_name()
+
+            for row in data:
+                image_data = row.get("image_data")
+                caption = row.get("caption")
+
+                if image_data:
+                    if not isinstance(image_data, bytes):
+                        image_data = bytes(image_data)
+                    embedding = cls._embed_image(image_data, embedding_dim, model_name)
+                elif caption:
+                    embedding = cls._embed_text(str(caption), embedding_dim, model_name)
+                else:
+                    embedding = [0.0] * embedding_dim
+
+                row[feature_name] = embedding
+                row["embedding_dim"] = len(embedding)
+                row["embedding_model"] = model_name
+
+        return data
