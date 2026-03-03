@@ -1,141 +1,235 @@
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/mloda-ai/mloda-plugin-template/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![mloda](https://img.shields.io/badge/built%20with-mloda-blue.svg)](https://github.com/mloda-ai/mloda)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
-# mloda-plugin-template
+# rag_integration
 
-> **A GitHub template for creating standalone mloda plugins.** Part of the [mloda](https://github.com/mloda-ai/mloda) ecosystem for open data access. Visit [mloda.ai](https://mloda.ai) for an overview and business context, the [GitHub repository](https://github.com/mloda-ai/mloda) for technical context, or the [documentation](https://mloda-ai.github.io/mloda/) for detailed guides.
+> End-to-end RAG as composable mloda plugins: PII redaction, chunking, deduplication, embedding, vector indexing, retrieval, and LLM response with pluggable backends.
 
-Create your own FeatureGroups, ComputeFrameworks, and Extenders as standalone packages. See the [Getting Started guide](docs/getting-started.md) to create your repository, then follow the setup steps below.
+## What is this?
 
-## Related Repositories
+`rag_integration` is a family of [mloda](https://github.com/mloda-ai/mloda) plugins that implement every stage of a RAG pipeline. Each stage (document loading, PII redaction, chunking, deduplication, embedding, vector indexing, retrieval, LLM response) is an independent, swappable `FeatureGroup`. mloda resolves the dependency graph automatically: declare the feature you want and the framework assembles the pipeline.
 
-- **[mloda](https://github.com/mloda-ai/mloda)**: The core library for open data access. Declaratively define what data you need, not how to get it. mloda handles feature resolution, dependency management, and compute framework abstraction automatically.
+The MVP covers the full end-to-end pipeline: text and image ingestion, FAISS vector indexing with artifact persistence, semantic retrieval, and LLM response generation via Claude CLI.
 
-- **[mloda-registry](https://github.com/mloda-ai/mloda-registry)**: The central hub for discovering and sharing mloda plugins. Browse community-contributed FeatureGroups, find integration guides, and publish your own plugins for others to use.
+## Why mloda for RAG?
 
-## Structure
+### 1. Swap any stage with one line
 
-```
-placeholder/
-├── feature_groups/
-│   └── my_plugin/
-│       ├── __init__.py           # Package exports
-│       ├── my_feature_group.py   # Example FeatureGroup implementation
-│       └── tests/
-│           └── test_my_feature_group.py
-├── compute_frameworks/
-│   └── my_framework/
-│       ├── __init__.py
-│       └── my_compute_framework.py
-└── extenders/
-    └── my_extender/
-        ├── __init__.py
-        └── my_extender.py
-```
+Change `FixedSizeChunker` to `SentenceChunker`, or `FaissFlatIndexer` to `FaissHNSWIndexer`, by swapping one class in the providers set. The feature name (`docs__pii_redacted__chunked__deduped__embedded__indexed`) is identical across all configurations.
 
-## Key Files
+```python
+from rag_integration.feature_groups.rag_pipeline import (
+    RegexPIIRedactor, PresidioPIIRedactor,
+    FixedSizeChunker, SentenceChunker,
+    ExactHashDeduplicator, NormalizedDeduplicator,
+    MockEmbedder, SentenceTransformerEmbedder,
+    FaissFlatIndexer, FaissHNSWIndexer,
+)
 
-- `placeholder/` - Root namespace (users rename to company name)
-- `pyproject.toml` - Package config (users edit directly, not auto-generated)
-- `.github/workflows/test.yml` - CI workflow running pytest
+# Config A: regex PII, fixed-size chunks, flat FAISS index
+providers_a = {MyDocSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder, FaissFlatIndexer}
 
-## Common Tasks
+# Config B: neural PII, sentence chunks, HNSW index — swap one class per stage
+providers_b = {MyDocSource, PresidioPIIRedactor, SentenceChunker, NormalizedDeduplicator, SentenceTransformerEmbedder, FaissHNSWIndexer}
 
-### Setup Your Plugin
-
-Follow these steps to customize the template for your organization:
-
-#### 1. Rename the directory
-
-```bash
-mv placeholder acme
+result = mlodaAPI.run_all(
+    features=["docs__pii_redacted__chunked__deduped__embedded__indexed"],
+    compute_frameworks={PythonDictFramework},
+    plugin_collector=PluginCollector.enabled_feature_groups(providers_a),  # swap to providers_b here
+)
 ```
 
-#### 2. Update pyproject.toml
+### 2. Compare multiple configs in a single API call
 
-Edit the following fields in `pyproject.toml`:
+Run 4 different pipeline configurations in one `mlodaAPI.run_all()` call using mloda's domain system. The framework routes each domain to its own provider set and executes everything in one pass.
 
-- `name`: Change `"placeholder-my-plugin"` to `"acme-my-plugin"`
-- `authors`: Update name and email
-- `description`: Update to describe your plugin
-- `tool.setuptools.packages.find.include`: Change `["placeholder*"]` to `["acme*"]`
-- `tool.pytest.ini_options.testpaths`: Change `["placeholder", "tests"]` to `["acme", "tests"]`
+```python
+from mloda.user import Feature
 
-#### 3. Update .releaserc.yaml
+features = [
+    Feature("docs__pii_redacted__chunked__deduped__embedded", domain="regex_fixed_tfidf"),
+    Feature("docs__pii_redacted__chunked__deduped__embedded", domain="regex_sentence_hash"),
+    Feature("docs__pii_redacted__chunked__deduped__embedded", domain="presidio_semantic_st"),
+    Feature("docs__pii_redacted__chunked__deduped__embedded", domain="regex_paragraph_ngram"),
+]
 
-Edit the following fields in `.releaserc.yaml`:
-
-- `message`: Change `mloda-plugin-template` to your package name (e.g., `"chore(release acme-my-plugin): ${nextRelease.version}"`)
-- `repositoryUrl`: Change to your repository URL
-
-#### 4. Update Python imports
-
-Update imports in these files (change `from placeholder.` to `from acme.`):
-
-- `acme/feature_groups/my_plugin/__init__.py`
-- `acme/feature_groups/my_plugin/tests/test_my_feature_group.py`
-- `acme/compute_frameworks/my_plugin/__init__.py`
-- `acme/compute_frameworks/my_plugin/tests/test_my_compute_framework.py`
-- `acme/extenders/my_plugin/__init__.py`
-- `acme/extenders/my_plugin/tests/test_my_extender.py`
-
-#### 5. Verify setup
-
-```bash
-uv venv && source .venv/bin/activate && uv sync --all-extras && tox
+raw_results = mlodaAPI.run_all(
+    features=features,
+    compute_frameworks={PythonDictFramework},
+    plugin_collector=PluginCollector.enabled_feature_groups(all_providers),
+)
+# raw_results[0] = TF-IDF config, raw_results[1] = hash config, etc.
 ```
 
-### Development Setup with uv
+See `TestAlternativeProviders.test_all_provider_combinations` in `tests/test_rag_pipeline_integration.py` for the working 4-config comparison.
 
-**Install uv** (if not already installed):
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+### 3. Request any pipeline stage independently
+
+mloda resolves the dependency graph automatically. Request `docs__pii_redacted` alone to inspect redacted text without running the rest of the pipeline. Each stage is also independently unit-tested.
+
+```python
+# PII redaction only (no chunking, no embedding)
+mlodaAPI.run_all(features=["docs__pii_redacted"], ...)
+
+# Up to deduplication
+mlodaAPI.run_all(features=["docs__pii_redacted__chunked__deduped"], ...)
+
+# Full ingestion pipeline including vector indexing
+mlodaAPI.run_all(features=["docs__pii_redacted__chunked__deduped__embedded__indexed"], ...)
 ```
 
-**Create virtual environment and install dependencies:**
+PII redaction is a first-class stage, not an afterthought: 4 text implementations (regex, Presidio NLP, pattern-based, word-list) plus image redaction (blur, pixelate, solid fill). Most RAG tutorials skip PII entirely.
+
+## Pipeline Overview
+
+| Stage | Implementations | Feature suffix |
+|-------|----------------|----------------|
+| Document Source | `DictDocumentSource`, `FileDocumentSource` | `docs` |
+| PII Redaction | `RegexPIIRedactor`, `PresidioPIIRedactor`, `PatternPIIRedactor`, `SimplePIIRedactor` | `__pii_redacted` |
+| Chunking | `FixedSizeChunker`, `SentenceChunker`, `ParagraphChunker`, `SemanticChunker` | `__chunked` |
+| Deduplication | `ExactHashDeduplicator`, `NormalizedDeduplicator`, `NGramDeduplicator` | `__deduped` |
+| Embedding | `MockEmbedder`, `HashEmbedder`, `TfidfEmbedder`, `SentenceTransformerEmbedder` | `__embedded` |
+| Vector Store | `FaissFlatIndexer`, `FaissIVFIndexer`, `FaissHNSWIndexer` | `__indexed` |
+| Retrieval | `FaissRetriever` | `retrieved` (separate query feature) |
+| LLM Response | `ClaudeCliResponse` | `llm_response` (separate query feature) |
+
+An image pipeline mirrors the ingestion structure with image-specific providers (CLIP embeddings, perceptual hash dedup, blur/pixelate PII redaction).
+
+## Quick Start
+
+### Install
+
 ```bash
 uv venv
 source .venv/bin/activate
 uv sync --all-extras
 ```
 
-**Run all checks with tox:**
-```bash
-# Install tox with uv backend
-uv tool install tox --with tox-uv
+### Run the example
 
-# Run all checks (pytest, ruff, mypy, bandit)
+```bash
+python examples/quickstart.py
+```
+
+[`examples/quickstart.py`](examples/quickstart.py) is a self-contained script that runs the full ingestion pipeline (PII redact, chunk, dedup, embed, FAISS index) and then queries the index with `FaissRetriever`. No external services required.
+
+### Minimal code example
+
+```python
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, List, Set, Type
+
+from mloda.user import mlodaAPI, PluginCollector, Feature, Options
+from mloda.provider import DataCreator, FeatureGroup
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
+from rag_integration.feature_groups.rag_pipeline import (
+    RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder,
+    FaissFlatIndexer, FaissRetriever,
+)
+
+DOCUMENTS = [
+    {"doc_id": "doc_1", "text": "Contact john@example.com or call 555-123-4567."},
+    {"doc_id": "doc_2", "text": "Meeting with jane@test.org at 800-555-0199."},
+]
+
+class DocumentSource(FeatureGroup):
+    @classmethod
+    def input_data(cls) -> DataCreator:
+        return DataCreator({"docs"})
+
+    @classmethod
+    def match_feature_group_criteria(cls, feature_name: Any, options: Any, data_access_collection: Any = None) -> bool:
+        return str(feature_name) == "docs"
+
+    @classmethod
+    def compute_framework_rule(cls) -> Set[Type[Any]]:
+        return {PythonDictFramework}
+
+    @classmethod
+    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
+        return [{"docs": doc["text"], "doc_id": doc["doc_id"]} for doc in DOCUMENTS]
+
+
+with tempfile.TemporaryDirectory() as tmp_dir:
+    # Phase 1: ingest and build FAISS index
+    ingestion_providers = {DocumentSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder, FaissFlatIndexer}
+    mlodaAPI.run_all(
+        features=[Feature("docs__pii_redacted__chunked__deduped__embedded__indexed", options=Options({"artifact_storage_path": tmp_dir}))],
+        compute_frameworks={PythonDictFramework},
+        plugin_collector=PluginCollector.enabled_feature_groups(ingestion_providers),
+    )
+
+    # Phase 2: discover artifacts and query
+    index_path = str(next(Path(tmp_dir).glob("vector_store_*.faiss")))
+    metadata_path = str(next(Path(tmp_dir).glob("vector_store_*_metadata.json")))
+
+    raw = mlodaAPI.run_all(
+        features=[Feature("retrieved", options=Options({"index_path": index_path, "metadata_path": metadata_path, "query_text": "email contact", "embedding_method": "mock", "top_k": 2}))],
+        compute_frameworks={PythonDictFramework},
+        plugin_collector=PluginCollector.enabled_feature_groups({FaissRetriever}),
+    )
+    result = raw[0] if raw and isinstance(raw[0], list) else raw
+    print(result[0]["retrieved"])
+```
+
+## What's in the MVP
+
+**In scope (done):**
+
+- Text pipeline: 8 stages (source, PII, chunk, dedup, embed, vector store, retrieval, LLM), multiple provider implementations each, all independently unit-tested
+- Image pipeline: image loading, PII redaction (blur/pixelate/solid fill), preprocessing (resize, normalize, thumbnail), deduplication (exact hash, pHash, dHash), CLIP embedding
+- Vector store: `FaissFlatIndexer`, `FaissIVFIndexer`, `FaissHNSWIndexer` with FAISS artifact persistence (index + metadata sidecar)
+- Retrieval: `FaissRetriever` with configurable `top_k`, returns indices, distances, texts, and doc_ids
+- LLM response: `ClaudeCliResponse` via `claude -p` for zero-dependency local inference
+- Artifact persistence: embeddings and FAISS indexes persist to disk, so repeated pipeline runs skip recomputation
+- CLI demo: interactive pipeline explorer with configurable providers (`cli/rag_demo.py`)
+
+**What's next:**
+
+- Additional vector store backends (Chroma, Qdrant, pgvector)
+- Cloud LLM providers (OpenAI, Bedrock) alongside Claude CLI
+- Evaluation and benchmarking stage
+- Streaming retrieval for large corpora
+
+## CLI Demo
+
+Interactive pipeline explorer: pick your chunker, embedder, PII redactor, and input documents from a menu.
+
+```bash
+python -m cli.rag_demo
+```
+
+Or with arguments directly:
+
+```bash
+python -m cli.rag_demo --chunking sentence --embedding tfidf --pii regex
+```
+
+## Development
+
+```bash
+uv venv
+source .venv/bin/activate
+uv sync --all-extras
 tox
 ```
 
-### Run individual checks
+Individual checks:
 
 ```bash
-# Tests only
 pytest
-
-# Format check
 ruff format --check --line-length 120 .
-
-# Lint check
 ruff check .
-
-# Type check
 mypy --strict --ignore-missing-imports .
-
-# Security check
 bandit -c pyproject.toml -r -q .
 ```
 
-## Related Documentation
+## Related
 
-Guides for plugin development can be found in mloda-registry:
-
-- https://github.com/mloda-ai/mloda-registry/tree/main/docs/guides/
-
-Claude Code users can leverage the skills in mloda-registry for assisted plugin development:
-
-- https://github.com/mloda-ai/mloda-registry/tree/main/.claude/skills/
-
-This template includes pre-configured GitHub Actions workflows for testing, security scanning, and automated releases. See the [GitHub Workflows documentation](docs/github-workflows.md) for setup instructions and required secrets.
+- [mloda](https://github.com/mloda-ai/mloda): the core library
+- [mloda-registry](https://github.com/mloda-ai/mloda-registry): community plugins and 40+ development guides
+- [mloda.ai](https://mloda.ai): overview and business context
