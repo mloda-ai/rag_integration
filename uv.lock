@@ -182,14 +182,14 @@ wheels = [
 
 [[package]]
 name = "mloda-testing"
-version = "0.2.10"
+version = "0.2.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mloda" },
     { name = "pytest" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/dd/6847637fff09f650d2e7de2338bfe5397cb220144c1e97772353f88c9be8/mloda_testing-0.2.10-py3-none-any.whl", hash = "sha256:a52d7267dce3699c19486adeeb80d68a0330893c78d567afb3042a5caa203652", size = 1790, upload-time = "2026-02-13T18:20:58.85Z" },
+    { url = "https://files.pythonhosted.org/packages/03/94/d6abd5ec0f20766cbf00447eff2e68829530c5e05f2277e847e1062e713a/mloda_testing-0.2.11-py3-none-any.whl", hash = "sha256:6d5555c152714f206e58b4444b49861b781c66f6a8d29dc0c4a5347032f62ad0", size = 1791, upload-time = "2026-03-03T09:05:23.978Z" },
 ]
 
 [[package]]
