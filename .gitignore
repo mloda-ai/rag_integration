@@ -213,4 +213,6 @@ security-reports/
 # Local evaluation datasets (stored on external volume, not in repo)
 # Root-anchored so it only ignores /datasets/ at repo root, NOT source code subdirs
 /datasets/
+ignored_folder/*
+!ignored_folder/.keep
 *.zip
