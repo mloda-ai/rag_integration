@@ -1,29 +1,35 @@
 """Retrieval evaluation demo.
 
-Runs the full evaluation pipeline (dataset load → embed → Recall@K) directly,
-without going through the mloda feature chain (which requires careful wiring for
-cross-row operations like evaluation).
+Two pipeline modes:
+
+``--pipeline direct`` (default):
+    Calls embedders directly and uses brute-force numpy cosine similarity.
+    Fast, no mloda wiring needed.
+
+``--pipeline faiss``:
+    Runs the *full* mloda ingestion chain end-to-end::
+
+        eval_docs → __chunked → __deduped → __embedded → __indexed → __evaluated
+
+    This exercises every stage of the production pipeline (chunking, dedup,
+    embedding, FAISS indexing) and reports Recall@K through real FAISS search.
 
 Usage::
 
-    # SciFact with mock embedder (fast, for testing)
-    python cli/eval_demo.py \\
-        --dataset scifact \\
-        --data-dir /Volumes/ExtraStorage/mlodadatasetevaluation/datasets/scifact
-
-    # SciFact with sentence-transformers (real embeddings, slower)
+    # SciFact — direct (brute-force cosine sim)
     python cli/eval_demo.py \\
         --dataset scifact \\
         --data-dir /Volumes/ExtraStorage/mlodadatasetevaluation/datasets/scifact \\
         --embedder sentence-transformer
 
-    # Flickr30K with mock image embedder (first 50 images)
+    # SciFact — full pipeline through FAISS
     python cli/eval_demo.py \\
-        --dataset flickr30k \\
-        --data-dir /Volumes/ExtraStorage/mlodadatasetevaluation/datasets/flickr30k_raw \\
-        --max-samples 50
+        --dataset scifact \\
+        --data-dir /Volumes/ExtraStorage/mlodadatasetevaluation/datasets/scifact \\
+        --embedder sentence-transformer \\
+        --pipeline faiss
 
-    # Flickr30K with CLIP (real cross-modal text-to-image retrieval)
+    # Flickr30K with CLIP
     python cli/eval_demo.py \\
         --dataset flickr30k \\
         --data-dir /Volumes/ExtraStorage/mlodadatasetevaluation/datasets/flickr30k_raw \\
@@ -179,15 +185,96 @@ def run_image_eval(data_dir: str, embedder_name: str, max_samples: int) -> None:
     _print_results(f"Flickr30K (n={max_samples})", embedder_name, results)
 
 
+def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
+    """Run SciFact through the full mloda pipeline with FAISS indexing."""
+    from mloda.user import mlodaAPI, PluginCollector, Feature, Options as MlodaOptions
+    from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+        PythonDictFramework,
+    )
+    from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
+    from rag_integration.feature_groups.evaluation.faiss_retrieval_evaluator import FaissRetrievalEvaluator
+    from rag_integration.feature_groups.rag_pipeline.chunking.fixed_size import FixedSizeChunker
+    from rag_integration.feature_groups.rag_pipeline.deduplication.exact_hash import ExactHashDeduplicator
+    from rag_integration.feature_groups.rag_pipeline.embedding.mock import MockEmbedder
+    from rag_integration.feature_groups.rag_pipeline.embedding.sentence_transformer import SentenceTransformerEmbedder
+    from rag_integration.feature_groups.rag_pipeline.vector_store.faiss_flat import FaissFlatIndexer
+
+    embedder_cls = SentenceTransformerEmbedder if embedder_name == "sentence-transformer" else MockEmbedder
+    embedding_method = "sentence_transformer" if embedder_name == "sentence-transformer" else "mock"
+    model_name = "all-MiniLM-L6-v2" if embedder_name == "sentence-transformer" else "default"
+
+    feature_name = "eval_docs__chunked__deduped__embedded__indexed__evaluated"
+    print(f"Running full pipeline: {feature_name}")
+    print(f"  Dataset: {data_dir}")
+    print(f"  Embedder: {embedder_name}")
+
+    feature = Feature(
+        feature_name,
+        options=MlodaOptions(
+            {ScifactDatasetSource.DATA_DIR: data_dir},  # group → propagates down chain to eval_docs
+            context={
+                "chunking_method": "fixed_size",
+                "deduplication_method": "exact_hash",
+                "keep_strategy": "all_unique",
+                "embedding_method": embedding_method,
+                "model_name": model_name,
+                "index_method": "flat",
+            },
+        ),
+    )
+
+    raw_result = mlodaAPI.run_all(
+        features=[feature],
+        compute_frameworks={PythonDictFramework},
+        plugin_collector=PluginCollector.enabled_feature_groups(
+            {
+                ScifactDatasetSource,
+                FixedSizeChunker,
+                ExactHashDeduplicator,
+                embedder_cls,
+                FaissFlatIndexer,
+                FaissRetrievalEvaluator,
+            }
+        ),
+    )
+
+    rows = raw_result[0] if raw_result else []
+    if rows and isinstance(rows[0], list):
+        rows = rows[0]
+
+    row = rows[0] if rows else {}
+    metrics = row.get(feature_name, row)
+
+    results: Dict[str, object] = {
+        "recall@1": metrics.get("recall@1", 0.0),
+        "recall@5": metrics.get("recall@5", 0.0),
+        "recall@10": metrics.get("recall@10", 0.0),
+        "num_corpus": metrics.get("num_corpus", 0),
+        "num_queries": metrics.get("num_queries", 0),
+    }
+    _print_results("BeIR/SciFact (full pipeline + FAISS)", embedder_name, results)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="RAG retrieval evaluation demo")
     parser.add_argument("--dataset", choices=["scifact", "flickr30k"], required=True)
     parser.add_argument("--data-dir", required=True, help="Local path to dataset folder")
     parser.add_argument("--embedder", default="mock", choices=["mock", "sentence-transformer", "clip"])
     parser.add_argument("--max-samples", type=int, default=100, help="Max images for Flickr30K (default: 100)")
+    parser.add_argument(
+        "--pipeline",
+        default="direct",
+        choices=["direct", "faiss"],
+        help="'direct' = brute-force cosine sim (default), 'faiss' = full mloda chain with FAISS indexing",
+    )
     args = parser.parse_args()
 
-    if args.dataset == "scifact":
+    if args.pipeline == "faiss":
+        if args.dataset != "scifact":
+            print("--pipeline faiss currently only supports --dataset scifact")
+            return
+        run_faiss_eval(args.data_dir, args.embedder)
+    elif args.dataset == "scifact":
         run_text_eval(args.data_dir, args.embedder)
     else:
         run_image_eval(args.data_dir, args.embedder, args.max_samples)
