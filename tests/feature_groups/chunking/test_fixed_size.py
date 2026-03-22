@@ -1,10 +1,18 @@
 """Tests for FixedSizeChunker."""
 
+from typing import Type
+
 from rag_integration.feature_groups.rag_pipeline.chunking import FixedSizeChunker
+from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
+from tests.feature_groups.chunking.text_chunking_test_base import TextChunkingTestBase
 
 
-class TestFixedSizeChunker:
+class TestFixedSizeChunker(TextChunkingTestBase):
     """Tests for FixedSizeChunker."""
+
+    @property
+    def chunker_class(self) -> Type[BaseChunker]:
+        return FixedSizeChunker
 
     def test_chunk_short_text(self) -> None:
         """Short text should return single chunk."""
@@ -23,17 +31,4 @@ class TestFixedSizeChunker:
         """Chunks should have overlap."""
         text = "word " * 100  # 500 chars
         chunks = FixedSizeChunker._chunk_text(text, 100, 50)
-        # With 50 char overlap, chunks should share some content
         assert len(chunks) > 2
-
-    def test_empty_text(self) -> None:
-        """Empty text should return empty chunk."""
-        chunks = FixedSizeChunker._chunk_text("", 100, 10)
-        assert len(chunks) == 1
-
-    def test_feature_matching_pattern(self) -> None:
-        """Should match chunked features."""
-        from mloda.user import Options
-
-        assert FixedSizeChunker.match_feature_group_criteria("docs__pii_redacted__chunked", Options())
-        assert not FixedSizeChunker.match_feature_group_criteria("docs__pii_redacted", Options())

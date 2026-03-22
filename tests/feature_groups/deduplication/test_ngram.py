@@ -1,34 +1,50 @@
 """Tests for NGramDeduplicator."""
 
+from typing import List, Optional, Type
+
 from rag_integration.feature_groups.rag_pipeline.deduplication import NGramDeduplicator
+from rag_integration.feature_groups.rag_pipeline.deduplication.base import BaseDeduplicator
+from tests.feature_groups.deduplication.text_dedup_test_base import TextDeduplicationTestBase
 
 
-class TestNGramDeduplicator:
+class TestNGramDeduplicator(TextDeduplicationTestBase):
     """Tests for NGramDeduplicator."""
 
-    def test_find_similar_texts(self) -> None:
-        """Should find near-duplicates with low threshold."""
-        texts = [
+    @property
+    def deduplicator_class(self) -> Type[BaseDeduplicator]:
+        return NGramDeduplicator
+
+    @property
+    def duplicate_texts(self) -> List[str]:
+        return [
             "The quick brown fox jumps over the lazy dog",
-            "The quick brown fox jumped over the lazy dog",  # Similar
+            "The quick brown fox jumped over the lazy dog",
             "Completely different text here",
         ]
-        result = NGramDeduplicator._find_duplicates(texts, 0.7)
-        assert result[0] is None  # First is canonical
-        assert result[1] == 0  # Second is similar to first
-        assert result[2] is None  # Third is unique
+
+    @property
+    def duplicate_expected_indices(self) -> List[Optional[int]]:
+        return [None, 0, None]
+
+    @property
+    def unique_texts(self) -> List[str]:
+        return ["apple", "banana", "cherry"]
+
+    @property
+    def default_threshold(self) -> float:
+        return 0.7
 
     def test_exact_match_threshold(self) -> None:
         """Should only find exact matches with threshold=1.0."""
         texts = [
             "The quick brown fox",
-            "The quick brown fox",  # Exact match
-            "The quick brown foxes",  # Slightly different
+            "The quick brown fox",
+            "The quick brown foxes",
         ]
         result = NGramDeduplicator._find_duplicates(texts, 1.0)
         assert result[0] is None
-        assert result[1] == 0  # Exact match
-        assert result[2] is None  # Not exact, so unique
+        assert result[1] == 0
+        assert result[2] is None
 
     def test_jaccard_similarity(self) -> None:
         """Should compute Jaccard similarity correctly."""
@@ -53,16 +69,3 @@ class TestNGramDeduplicator:
         """Should handle text shorter than n-gram size."""
         ngrams = NGramDeduplicator._get_ngrams("ab", 3)
         assert ngrams == {"ab"}
-
-    def test_no_duplicates(self) -> None:
-        """Should return None for all unique texts."""
-        texts = ["apple", "banana", "cherry"]
-        result = NGramDeduplicator._find_duplicates(texts, 0.9)
-        assert all(r is None for r in result)
-
-    def test_feature_matching_pattern(self) -> None:
-        """Should match deduped features."""
-        from mloda.user import Options
-
-        assert NGramDeduplicator.match_feature_group_criteria("docs__chunked__deduped", Options())
-        assert not NGramDeduplicator.match_feature_group_criteria("docs__chunked", Options())

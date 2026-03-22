@@ -1,25 +1,34 @@
 """Tests for ExactHashImageDeduplicator."""
 
+from typing import List, Optional, Type
+
 from rag_integration.feature_groups.image_pipeline.deduplication import ExactHashImageDeduplicator
+from rag_integration.feature_groups.image_pipeline.deduplication.base import BaseImageDeduplicator
+from tests.feature_groups_image.deduplication.image_dedup_test_base import ImageDeduplicationTestBase
 
 
-class TestExactHashImageDeduplicator:
+class TestExactHashImageDeduplicator(ImageDeduplicationTestBase):
     """Tests for ExactHashImageDeduplicator."""
 
-    def test_find_exact_duplicates(self) -> None:
-        """Should find exact byte-identical duplicates."""
-        images = [b"image_a", b"image_b", b"image_a", b"image_c"]
-        result = ExactHashImageDeduplicator._find_duplicates(images, 1.0)
-        assert result[0] is None  # First "image_a"
-        assert result[1] is None  # "image_b"
-        assert result[2] == 0  # Second "image_a" is dup of index 0
-        assert result[3] is None  # "image_c"
+    @property
+    def deduplicator_class(self) -> Type[BaseImageDeduplicator]:
+        return ExactHashImageDeduplicator
 
-    def test_no_duplicates(self) -> None:
-        """Should return None for all unique images."""
-        images = [b"img_1", b"img_2", b"img_3"]
-        result = ExactHashImageDeduplicator._find_duplicates(images, 1.0)
-        assert all(r is None for r in result)
+    @property
+    def duplicate_images(self) -> List[bytes]:
+        return [b"image_a", b"image_b", b"image_a", b"image_c"]
+
+    @property
+    def duplicate_expected_indices(self) -> List[Optional[int]]:
+        return [None, None, 0, None]
+
+    @property
+    def unique_images(self) -> List[bytes]:
+        return [b"img_1", b"img_2", b"img_3"]
+
+    @property
+    def default_threshold(self) -> float:
+        return 1.0
 
     def test_all_same(self) -> None:
         """Should detect all-same images."""
@@ -28,10 +37,3 @@ class TestExactHashImageDeduplicator:
         assert result[0] is None
         assert result[1] == 0
         assert result[2] == 0
-
-    def test_feature_matching_pattern(self) -> None:
-        """Should match deduped features."""
-        from mloda.user import Options
-
-        assert ExactHashImageDeduplicator.match_feature_group_criteria("image_docs__preprocessed__deduped", Options())
-        assert not ExactHashImageDeduplicator.match_feature_group_criteria("image_docs__preprocessed", Options())
