@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import re
-from typing import Dict, List, Pattern, Any
+from typing import Any, Dict, List, Pattern
 
 from mloda.user import Feature
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
 
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
+
+logger = logging.getLogger(__name__)
 
 
 class PatternPIIRedactor(BasePIIRedactor):
@@ -58,40 +61,40 @@ class PatternPIIRedactor(BasePIIRedactor):
 
     # Default patterns (can be extended via options)
     DEFAULT_PATTERNS: Dict[str, str] = {
-        "EMAIL": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-        "PHONE": r"(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}",
-        "SSN": r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b",
+        "EMAIL": BasePIIRedactor.EMAIL_REGEX,
+        "PHONE": BasePIIRedactor.PHONE_REGEX,
+        "SSN": BasePIIRedactor.SSN_REGEX,
         "CREDIT_CARD": r"\b(?:\d{4}[-\s]?){3}\d{4}\b",
         "IP_ADDRESS": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
     }
 
+    _active_patterns: Dict[str, Pattern[str]] | None = None
+
     @classmethod
     def _get_patterns(cls, feature: Feature) -> Dict[str, Pattern[str]]:
-        """Get compiled patterns including custom ones."""
+        """Get compiled patterns including custom ones from feature options."""
         patterns: Dict[str, Pattern[str]] = {}
 
-        # Add default patterns
         for name, pattern_str in cls.DEFAULT_PATTERNS.items():
             patterns[name] = re.compile(pattern_str)
 
-        # Add custom patterns from options
         custom_patterns: Any = feature.options.get("custom_patterns")
         if custom_patterns is None:
             custom_patterns = {}
         for name, pattern_str in custom_patterns.items():
             try:
                 patterns[name] = re.compile(pattern_str)
-            except re.error:
-                pass  # Skip invalid patterns
+            except re.error as e:
+                logger.warning("Skipping invalid regex pattern '%s': %s", name, e)
 
         return patterns
 
     @classmethod
-    def _get_replacement(cls, pii_type: str, replacement_strategy: str) -> str:
-        """Get the replacement string based on strategy."""
-        if replacement_strategy == "type_label":
-            return f"[{pii_type}]"
-        return "[REDACTED]"
+    def calculate_feature(cls, data: List[Dict[str, Any]], features: Any) -> List[Dict[str, Any]]:
+        """Extract custom patterns from feature options before redacting."""
+        for feature in features.features:
+            cls._active_patterns = cls._get_patterns(feature)
+        return super().calculate_feature(data, features)
 
     @classmethod
     def _redact_pii(
@@ -100,13 +103,11 @@ class PatternPIIRedactor(BasePIIRedactor):
         pii_types: List[str],
         replacement_strategy: str,
     ) -> List[str]:
-        """
-        Redact PII using configurable patterns.
-
-        Note: This implementation uses the default patterns.
-        Custom patterns are added via calculate_feature override.
-        """
-        patterns = {name: re.compile(p) for name, p in cls.DEFAULT_PATTERNS.items()}
+        """Redact PII using configurable patterns (default + custom)."""
+        if cls._active_patterns is not None:
+            patterns = cls._active_patterns
+        else:
+            patterns = {name: re.compile(p) for name, p in cls.DEFAULT_PATTERNS.items()}
 
         if "ALL" in pii_types:
             active_types = list(patterns.keys())

@@ -23,6 +23,8 @@ class FaissRetriever(BaseRetriever):
 
     Config-based matching:
         retrieval_method="faiss"
+
+    Note: Caches the index at class level for performance. Not thread-safe.
     """
 
     RETRIEVAL_METHODS = {

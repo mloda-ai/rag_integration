@@ -28,6 +28,8 @@ class SemanticChunker(BaseChunker):
 
     Config-based matching:
         chunking_method="semantic"
+
+    Note: Caches the model at class level for performance. Not thread-safe.
     """
 
     # Additional configuration keys
@@ -44,11 +46,6 @@ class SemanticChunker(BaseChunker):
             "explanation": "Maximum size of each chunk (in characters, soft limit)",
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: 512,
-        },
-        BaseChunker.CHUNK_OVERLAP: {
-            "explanation": "Not used for semantic chunking",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 0,
         },
         SIMILARITY_THRESHOLD: {
             "explanation": "Cosine similarity threshold for grouping sentences (0.0-1.0)",

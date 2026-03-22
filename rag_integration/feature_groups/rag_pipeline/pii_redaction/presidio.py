@@ -29,6 +29,8 @@ class PresidioPIIRedactor(BasePIIRedactor):
 
     Config-based matching:
         redaction_method="presidio"
+
+    Note: Caches the analyzer at class level for performance. Not thread-safe.
     """
 
     PROPERTY_MAPPING = {

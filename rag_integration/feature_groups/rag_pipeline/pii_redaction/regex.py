@@ -51,14 +51,9 @@ class RegexPIIRedactor(BasePIIRedactor):
 
     # Regex patterns for different PII types
     PATTERNS = {
-        "EMAIL": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
-        "PHONE": re.compile(
-            r"(?:\+?1[-.\s]?)?"  # Optional country code
-            r"(?:\(?\d{3}\)?[-.\s]?)"  # Area code
-            r"\d{3}[-.\s]?"  # First 3 digits
-            r"\d{4}"  # Last 4 digits
-        ),
-        "SSN": re.compile(r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b"),
+        "EMAIL": re.compile(BasePIIRedactor.EMAIL_REGEX),
+        "PHONE": re.compile(BasePIIRedactor.PHONE_REGEX),
+        "SSN": re.compile(BasePIIRedactor.SSN_REGEX),
         "NAME": re.compile(
             r"\b(?:Mr\.|Mrs\.|Ms\.|Dr\.)?\s*"
             r"[A-Z][a-z]+\s+"  # First name
@@ -66,13 +61,6 @@ class RegexPIIRedactor(BasePIIRedactor):
             r"[A-Z][a-z]+\b"  # Last name
         ),
     }
-
-    @classmethod
-    def _get_replacement(cls, pii_type: str, replacement_strategy: str) -> str:
-        """Get the replacement string based on strategy."""
-        if replacement_strategy == "type_label":
-            return f"[{pii_type}]"
-        return "[REDACTED]"
 
     @classmethod
     def _redact_pii(

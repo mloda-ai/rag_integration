@@ -112,16 +112,9 @@ class SimplePIIRedactor(BasePIIRedactor):
     }
 
     # Simple patterns for non-name PII
-    EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
-    PHONE_PATTERN = re.compile(r"(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}")
-    SSN_PATTERN = re.compile(r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b")
-
-    @classmethod
-    def _get_replacement(cls, pii_type: str, replacement_strategy: str) -> str:
-        """Get the replacement string based on strategy."""
-        if replacement_strategy == "type_label":
-            return f"[{pii_type}]"
-        return "[REDACTED]"
+    EMAIL_PATTERN = re.compile(BasePIIRedactor.EMAIL_REGEX)
+    PHONE_PATTERN = re.compile(BasePIIRedactor.PHONE_REGEX)
+    SSN_PATTERN = re.compile(BasePIIRedactor.SSN_REGEX)
 
     @classmethod
     def _redact_names(cls, text: str, replacement: str) -> str:
