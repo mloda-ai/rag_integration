@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-import logging
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from mloda.provider import BaseArtifact, FeatureSet
-
-logger = logging.getLogger(__name__)
 
 
 class EmbeddingArtifact(BaseArtifact):
@@ -147,8 +144,7 @@ class EmbeddingArtifact(BaseArtifact):
                         loaded_artifacts[key_hash] = artifact_data
 
             except (OSError, ValueError) as e:
-                logger.warning("Failed to load artifact from %s: %s", file_path, e)
-                continue
+                raise OSError(f"Failed to load artifact from {file_path}: {e}") from e
 
         if loaded_artifacts:
             return loaded_artifacts

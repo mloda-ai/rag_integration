@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import re
 from typing import Any, Dict, List, Pattern
 
@@ -10,8 +9,6 @@ from mloda.user import Feature
 from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
 
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
-
-logger = logging.getLogger(__name__)
 
 
 class PatternPIIRedactor(BasePIIRedactor):
@@ -82,10 +79,7 @@ class PatternPIIRedactor(BasePIIRedactor):
         if custom_patterns is None:
             custom_patterns = {}
         for name, pattern_str in custom_patterns.items():
-            try:
-                patterns[name] = re.compile(pattern_str)
-            except re.error as e:
-                logger.warning("Skipping invalid regex pattern '%s': %s", name, e)
+            patterns[name] = re.compile(pattern_str)
 
         return patterns
 
