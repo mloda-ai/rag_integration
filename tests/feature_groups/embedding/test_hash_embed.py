@@ -1,57 +1,38 @@
 """Tests for HashEmbedder."""
 
-import math
+from typing import List, Type
 
 from rag_integration.feature_groups.rag_pipeline.embedding import HashEmbedder
+from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
+from tests.feature_groups.embedding.text_embedding_test_base import TextEmbeddingTestBase
 
 
-class TestHashEmbedder:
+class TestHashEmbedder(TextEmbeddingTestBase):
     """Tests for HashEmbedder."""
 
-    def test_embedding_dimension(self) -> None:
-        """Embeddings should have correct dimension."""
-        texts = ["Hello world"]
-        embeddings = HashEmbedder._embed_texts(texts, 256, "default")
-        assert len(embeddings) == 1
-        assert len(embeddings[0]) == 256
+    @property
+    def embedder_class(self) -> Type[BaseEmbedder]:
+        return HashEmbedder
 
-    def test_deterministic(self) -> None:
-        """Same text should produce same embedding."""
-        texts = ["Hello world"]
-        emb1 = HashEmbedder._embed_texts(texts, 128, "default")
-        emb2 = HashEmbedder._embed_texts(texts, 128, "default")
-        assert emb1[0] == emb2[0]
+    @property
+    def sample_texts(self) -> List[str]:
+        return ["Hello world", "Different text"]
 
-    def test_different_texts_different_embeddings(self) -> None:
-        """Different texts should produce different embeddings."""
-        texts = ["Hello", "World"]
-        embeddings = HashEmbedder._embed_texts(texts, 128, "default")
-        assert embeddings[0] != embeddings[1]
+    @property
+    def embedding_dim(self) -> int:
+        return 128
 
-    def test_unit_length_normalization(self) -> None:
-        """Embeddings should be normalized to unit length."""
-        texts = ["Test text with multiple words"]
-        embeddings = HashEmbedder._embed_texts(texts, 128, "default")
-        magnitude = math.sqrt(sum(x * x for x in embeddings[0]))
-        assert abs(magnitude - 1.0) < 0.001
+    @property
+    def model_name(self) -> str:
+        return "default"
 
     def test_empty_text_zero_vector(self) -> None:
         """Empty text should produce zero vector (not normalized)."""
-        texts = [""]
-        embeddings = HashEmbedder._embed_texts(texts, 128, "default")
-        # Empty text has no words, so all zeros
+        embeddings = HashEmbedder._embed_texts([""], 128, "default")
         assert all(x == 0.0 for x in embeddings[0])
 
     def test_multiple_texts(self) -> None:
         """Should handle multiple texts."""
-        texts = ["First text", "Second text", "Third text"]
-        embeddings = HashEmbedder._embed_texts(texts, 64, "default")
+        embeddings = HashEmbedder._embed_texts(["First text", "Second text", "Third text"], 64, "default")
         assert len(embeddings) == 3
         assert all(len(e) == 64 for e in embeddings)
-
-    def test_feature_matching_pattern(self) -> None:
-        """Should match embedded features."""
-        from mloda.user import Options
-
-        assert HashEmbedder.match_feature_group_criteria("docs__deduped__embedded", Options())
-        assert not HashEmbedder.match_feature_group_criteria("docs__deduped", Options())

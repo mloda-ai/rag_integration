@@ -1,29 +1,31 @@
 """Tests for ExactHashDeduplicator."""
 
+from typing import List, Optional, Type
+
 from rag_integration.feature_groups.rag_pipeline.deduplication import ExactHashDeduplicator
+from rag_integration.feature_groups.rag_pipeline.deduplication.base import BaseDeduplicator
+from tests.feature_groups.deduplication.text_dedup_test_base import TextDeduplicationTestBase
 
 
-class TestExactHashDeduplicator:
+class TestExactHashDeduplicator(TextDeduplicationTestBase):
     """Tests for ExactHashDeduplicator."""
 
-    def test_find_exact_duplicates(self) -> None:
-        """Should find exact duplicates."""
-        texts = ["Hello", "World", "Hello", "Test"]
-        result = ExactHashDeduplicator._find_duplicates(texts, 1.0)
-        assert result[0] is None  # First "Hello"
-        assert result[1] is None  # "World"
-        assert result[2] == 0  # Second "Hello" is dup of index 0
-        assert result[3] is None  # "Test"
+    @property
+    def deduplicator_class(self) -> Type[BaseDeduplicator]:
+        return ExactHashDeduplicator
 
-    def test_no_duplicates(self) -> None:
-        """Should return None for all unique texts."""
-        texts = ["A", "B", "C"]
-        result = ExactHashDeduplicator._find_duplicates(texts, 1.0)
-        assert all(r is None for r in result)
+    @property
+    def duplicate_texts(self) -> List[str]:
+        return ["Hello", "World", "Hello", "Test"]
 
-    def test_feature_matching_pattern(self) -> None:
-        """Should match deduped features."""
-        from mloda.user import Options
+    @property
+    def duplicate_expected_indices(self) -> List[Optional[int]]:
+        return [None, None, 0, None]
 
-        assert ExactHashDeduplicator.match_feature_group_criteria("docs__chunked__deduped", Options())
-        assert not ExactHashDeduplicator.match_feature_group_criteria("docs__chunked", Options())
+    @property
+    def unique_texts(self) -> List[str]:
+        return ["A", "B", "C"]
+
+    @property
+    def default_threshold(self) -> float:
+        return 1.0

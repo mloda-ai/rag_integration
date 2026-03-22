@@ -2,21 +2,26 @@
 
 import tempfile
 from pathlib import Path
+from typing import Type
 
 import pytest
+from mloda.user import Options
 
 from rag_integration.feature_groups.image_pipeline.image_source import FileImageSource
+from rag_integration.feature_groups.image_pipeline.image_source.base import BaseImageSource
+from tests.feature_groups_image.image_source.image_source_test_base import ImageSourceTestBase
 
 
-class TestFileImageSource:
+class TestFileImageSource(ImageSourceTestBase):
     """Tests for FileImageSource."""
+
+    @property
+    def source_class(self) -> Type[BaseImageSource]:
+        return FileImageSource
 
     def test_load_from_file_paths(self) -> None:
         """Should load images from explicit file paths."""
-        from mloda.user import Options
-
         with tempfile.TemporaryDirectory() as tmp_dir:
-            # Create test image files
             img_path = Path(tmp_dir) / "test.png"
             img_path.write_bytes(b"\x89PNG_test_content")
 
@@ -28,8 +33,6 @@ class TestFileImageSource:
 
     def test_load_from_directory(self) -> None:
         """Should load all images from directory."""
-        from mloda.user import Options
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             (Path(tmp_dir) / "a.png").write_bytes(b"img_a")
             (Path(tmp_dir) / "b.jpg").write_bytes(b"img_b")
@@ -43,14 +46,10 @@ class TestFileImageSource:
 
     def test_missing_source_error(self) -> None:
         """Should raise ValueError when no source provided."""
-        from mloda.user import Options
-
         with pytest.raises(ValueError, match="Either image_dir or file_paths is required"):
             FileImageSource._load_images(Options())
 
     def test_directory_not_found_error(self) -> None:
         """Should raise ValueError for nonexistent directory."""
-        from mloda.user import Options
-
         with pytest.raises(ValueError, match="Directory not found"):
             FileImageSource._load_images(Options(context={"image_dir": "/nonexistent/path"}))
