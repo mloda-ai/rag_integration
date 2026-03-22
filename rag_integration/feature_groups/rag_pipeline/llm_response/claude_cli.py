@@ -29,6 +29,7 @@ class ClaudeCliResponse(BaseLLMResponse):
 
     ALLOWED_TOOLS = "allowed_tools"
     MAX_TURNS = "max_turns"
+    TIMEOUT = "timeout"
 
     LLM_METHODS = {
         "claude_cli": "Claude CLI (claude -p) response generation",
@@ -62,6 +63,11 @@ class ClaudeCliResponse(BaseLLMResponse):
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: 1,
         },
+        TIMEOUT: {
+            "explanation": "Subprocess timeout in seconds for Claude CLI",
+            DefaultOptionKeys.context: True,
+            DefaultOptionKeys.default: 300,
+        },
     }
 
     @classmethod
@@ -81,6 +87,14 @@ class ClaudeCliResponse(BaseLLMResponse):
         return int(val)
 
     @classmethod
+    def _get_timeout(cls, options: Options) -> int:
+        """Get timeout in seconds from options, default 300."""
+        val = options.get(cls.TIMEOUT)
+        if val is None:
+            return 300
+        return int(val)
+
+    @classmethod
     def _build_prompt(cls, query: str, context: str, system_prompt: str) -> str:
         """Assemble the full prompt text for Claude CLI."""
         parts: List[str] = [system_prompt, ""]
@@ -93,7 +107,7 @@ class ClaudeCliResponse(BaseLLMResponse):
         return "\n".join(parts)
 
     @classmethod
-    def _call_claude_cli(cls, prompt: str, allowed_tools: str, max_turns: int) -> str:
+    def _call_claude_cli(cls, prompt: str, allowed_tools: str, max_turns: int, timeout: int = 300) -> str:
         """
         Run claude -p and return the result text.
 
@@ -103,7 +117,7 @@ class ClaudeCliResponse(BaseLLMResponse):
         if allowed_tools:
             cmd.extend(["--allowedTools", allowed_tools])
 
-        result = subprocess.run(cmd, input=prompt, capture_output=True, text=True)  # nosec B603
+        result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=timeout)  # nosec B603
         if result.returncode != 0:
             raise ValueError(f"claude -p failed (exit {result.returncode}): {result.stderr}")
 
@@ -115,5 +129,6 @@ class ClaudeCliResponse(BaseLLMResponse):
         """Generate a response by calling Claude CLI."""
         allowed_tools = cls._get_allowed_tools(options)
         max_turns = cls._get_max_turns(options)
+        timeout = cls._get_timeout(options)
         prompt = cls._build_prompt(query, context, system_prompt)
-        return cls._call_claude_cli(prompt, allowed_tools, max_turns)
+        return cls._call_claude_cli(prompt, allowed_tools, max_turns, timeout=timeout)

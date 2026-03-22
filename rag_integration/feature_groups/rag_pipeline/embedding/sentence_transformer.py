@@ -34,6 +34,8 @@ class SentenceTransformerEmbedder(BaseEmbedder):
 
     Config-based matching:
         embedding_method="sentence_transformer"
+
+    Note: Caches the model at class level for performance. Not thread-safe.
     """
 
     PROPERTY_MAPPING = {

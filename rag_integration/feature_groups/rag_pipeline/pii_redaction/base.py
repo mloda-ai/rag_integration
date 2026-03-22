@@ -80,6 +80,18 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         "type_label": "Replace with [PII_TYPE]",
     }
 
+    # Shared regex pattern strings for common PII types
+    EMAIL_REGEX = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+    PHONE_REGEX = r"(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}"
+    SSN_REGEX = r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b"
+
+    @classmethod
+    def _get_replacement(cls, pii_type: str, replacement_strategy: str) -> str:
+        """Get the replacement string based on strategy."""
+        if replacement_strategy == "type_label":
+            return f"[{pii_type}]"
+        return "[REDACTED]"
+
     # Pattern for feature chain parsing
     PREFIX_PATTERN = r".*__pii_redacted$"
 

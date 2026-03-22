@@ -1,51 +1,131 @@
 # Getting Started
 
-There are two ways to create your own mloda plugin from this template.
+## Installation
 
-## Option 1: Use as Template (Recommended)
+Install with pip:
 
-GitHub's template feature creates a new repository with all files but a clean commit history.
+```bash
+pip install rag-integration
+```
 
-1. Click the green **"Use this template"** button on the [repository page](https://github.com/mloda-ai/mloda-plugin-template)
-2. Choose **"Create a new repository"**
-3. Name your repository (e.g., `acme-features`, `acme-data-plugins`, or `mycompany-feature-groups`)
+For advanced features (PII redaction with Presidio, sentence-transformer embeddings, FAISS indexing):
 
-   > **Note:** Please don't use "mloda" in your package or repository name. However, you can use formulations like "for mloda" or "mloda-compatible" in descriptions.
+```bash
+pip install rag-integration[advanced]
+```
 
-4. Choose public or private visibility
-5. Click **"Create repository"**
+Other extras:
 
-**Advantages:**
-- Clean commit history (starts fresh)
-- No fork relationship to maintain
-- Your repo is completely independent
-- One-click setup in GitHub UI
+| Extra      | What it adds                                      |
+|------------|---------------------------------------------------|
+| `faiss`    | FAISS vector indexing (`faiss-cpu`)                |
+| `advanced` | Presidio, sentence-transformers, joblib, Pillow, FAISS |
+| `eval`     | BEIR benchmark datasets, pandas, numpy            |
+| `dev`      | tox, pytest, ruff, mypy, bandit                   |
 
-## Option 2: Fork
+## Quick Start
 
-Forking creates a copy that maintains a connection to the original repository.
+rag-integration is a set of mloda FeatureGroups that compose into a RAG pipeline. Each stage is a feature that chains onto the previous one using the `__` naming convention.
 
-1. Click the **"Fork"** button on the [repository page](https://github.com/mloda-ai/mloda-plugin-template)
-2. Choose your account or organization
-3. Name your forked repository
-4. Click **"Create fork"**
+```python
+from mloda.user import mlodaAPI, PluginCollector, Feature, Options
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
 
-**Advantages:**
-- Can pull updates from the original template
-- Familiar workflow for open source contributors
+from rag_integration.feature_groups.rag_pipeline import (
+    DictDocumentSource,
+    RegexPIIRedactor,
+    FixedSizeChunker,
+    ExactHashDeduplicator,
+    MockEmbedder,
+)
+```
 
-**Disadvantages:**
-- Maintains fork relationship (shows "forked from" on your repo)
-- Copies entire commit history
-- GitHub may suggest contributing back to the original
+### 1. Define your documents
 
-## After Creating Your Repository
+Documents are loaded through a `DataCreator`-based FeatureGroup. The simplest option is `DictDocumentSource`, which loads from a Python list:
 
-Regardless of which option you chose, follow the setup steps in the [README](../README.md#setup-your-plugin) to customize the template:
+```python
+documents = [
+    {"doc_id": "1", "text": "Contact support@example.com for help."},
+    {"doc_id": "2", "text": "Our office is at 123 Main St."},
+]
+```
 
-1. Clone your new repository locally
-2. Rename the `placeholder/` directory
-3. Update `pyproject.toml`
-4. Update `.releaserc.yaml` (change `mloda-plugin-template` to your package name and update `repositoryUrl`)
-5. Update Python imports
-6. Verify with `tox`
+### 2. Build the pipeline
+
+Each pipeline stage is expressed as a feature name. Stages chain with `__`:
+
+```
+docs                                    # raw documents
+docs__pii_redacted                      # PII removed
+docs__pii_redacted__chunked             # text split into chunks
+docs__pii_redacted__chunked__deduped    # duplicates removed
+docs__pii_redacted__chunked__deduped__embedded  # vector embeddings
+```
+
+### 3. Run with mlodaAPI
+
+```python
+providers = {
+    DictDocumentSource,
+    RegexPIIRedactor,
+    FixedSizeChunker,
+    ExactHashDeduplicator,
+    MockEmbedder,
+}
+
+results = mlodaAPI.run_all(
+    features=["docs__pii_redacted__chunked__deduped__embedded"],
+    compute_frameworks={PythonDictFramework},
+    plugin_collector=PluginCollector.enabled_feature_groups(providers),
+)
+```
+
+### 4. Configure pipeline stages
+
+Use `Options` to select specific implementations and tune parameters:
+
+```python
+feature = Feature(
+    "docs__pii_redacted__chunked__deduped__embedded",
+    options=Options(context={
+        "redaction_method": "regex",        # or "simple", "pattern", "presidio"
+        "chunking_method": "sentence",      # or "fixed_size", "paragraph", "semantic"
+        "deduplication_method": "exact_hash",  # or "normalized", "ngram"
+        "embedding_method": "sentence-transformer",  # or "hash", "tfidf", "mock"
+        "chunk_size": 512,
+        "chunk_overlap": 50,
+    }),
+)
+```
+
+## Available Components
+
+| Stage         | Implementations                                          |
+|---------------|----------------------------------------------------------|
+| Document Source | `DictDocumentSource`, `FileDocumentSource`             |
+| PII Redaction | `RegexPIIRedactor`, `SimplePIIRedactor`, `PatternPIIRedactor`, `PresidioPIIRedactor` |
+| Chunking      | `FixedSizeChunker`, `SentenceChunker`, `ParagraphChunker`, `SemanticChunker` |
+| Deduplication | `ExactHashDeduplicator`, `NormalizedDeduplicator`, `NGramDeduplicator` |
+| Embedding     | `MockEmbedder`, `HashEmbedder`, `TfidfEmbedder`, `SentenceTransformerEmbedder` |
+| Vector Store  | `FaissFlatIndexer`, `FaissIVFIndexer`, `FaissHNSWIndexer` |
+| Retrieval     | `FaissRetriever`                                         |
+| LLM Response  | `ClaudeCliResponse`                                      |
+
+## Development Setup
+
+```bash
+# Clone and set up
+git clone <repo-url>
+cd rag_integration
+
+# Create virtual environment and install all deps
+uv venv
+source .venv/bin/activate
+uv sync --all-extras
+
+# Run all checks (pytest, ruff, mypy, bandit)
+tox
+```

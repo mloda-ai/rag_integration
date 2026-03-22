@@ -7,7 +7,7 @@ version = "0.3.1"
 dependencies = ["mloda>=0.4.8", "mloda-testing>=0.2.11"]
 name = "rag-integration"
 description = "RAG integration plugin for mloda"
-license = {text = "Proprietary"}
+license = {text = "Apache-2.0"}
 authors = [{ name = "mloda", email = "plugin-dev@mloda.ai" }]
 requires-python = ">=3.10"
 
