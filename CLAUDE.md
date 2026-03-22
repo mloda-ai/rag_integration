@@ -43,6 +43,7 @@ bandit -c pyproject.toml -r -q .
 ## Commit messages
 
 Use Conventional Commit format for all commits so semantic versioning/release tooling can parse intent.
+Do not add any AI co-authorship lines (e.g. `Co-Authored-By`) to commit messages.
 
 Examples:
 - `fix: handle empty feature set`

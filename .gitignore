@@ -216,3 +216,6 @@ security-reports/
 ignored_folder/*
 !ignored_folder/.keep
 *.zip
+
+# macOS
+.DS_Store

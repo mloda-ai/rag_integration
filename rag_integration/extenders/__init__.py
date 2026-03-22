@@ -1,1 +1,0 @@
-"""Extenders namespace package."""
