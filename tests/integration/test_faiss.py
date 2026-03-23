@@ -1,14 +1,17 @@
 """
-Integration tests for the vector store pipeline stage.
+FAISS integration tests: vector store indexing, artifact persistence, and retrieval.
 
-Tests the full pipeline through __indexed, verifying artifact persistence.
+Covers three scenarios:
+1. Full pipeline through __indexed (vector store pipeline)
+2. Artifact save/load roundtrip (vector store persistence)
+3. Two-phase workflow: ingest + query with FaissRetriever
 """
 
 from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Set, Type
+from typing import Any, Dict, Set, Type
 
 from mloda.user import mloda, mlodaAPI, PluginCollector, Domain, Feature, Options
 from mloda.provider import DataCreator, FeatureGroup
@@ -22,12 +25,16 @@ from rag_integration.feature_groups.rag_pipeline import (
     ExactHashDeduplicator,
     MockEmbedder,
     FaissFlatIndexer,
+    FaissRetriever,
 )
+from tests.integration.helpers import flatten_result
 
 SAMPLE_DOCUMENTS = [
-    {"doc_id": "doc_001", "text": "Contact john@example.com for details."},
-    {"doc_id": "doc_002", "text": "Meeting with jane@test.org tomorrow."},
-    {"doc_id": "doc_003", "text": "Unique content here."},
+    {"doc_id": "doc_001", "text": "Contact john@example.com for email support."},
+    {"doc_id": "doc_002", "text": "Meeting with jane@test.org at the office."},
+    {"doc_id": "doc_003", "text": "Technical documentation for the API service."},
+    {"doc_id": "doc_004", "text": "Customer feedback about the new product launch."},
+    {"doc_id": "doc_005", "text": "Quarterly financial report summary and analysis."},
 ]
 
 
@@ -47,15 +54,8 @@ class MockDocumentDataCreator(FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
         return [{"docs": doc["text"], "doc_id": doc["doc_id"]} for doc in SAMPLE_DOCUMENTS]
-
-
-def flatten_result(result: List[Any]) -> List[Dict[str, Any]]:
-    """Flatten nested mlodaAPI result."""
-    if result and isinstance(result[0], list):
-        return result[0]
-    return result
 
 
 def get_test_providers() -> Set[Type[FeatureGroup]]:
@@ -69,17 +69,16 @@ def get_test_providers() -> Set[Type[FeatureGroup]]:
     }
 
 
-class TestVectorStoreIntegration:
+# =============================================================================
+# Vector Store Pipeline
+# =============================================================================
+
+
+class TestVectorStorePipeline:
     """Test full pipeline through __indexed stage."""
 
     def test_full_pipeline_through_indexed(self) -> None:
-        """
-        Run the full pipeline: docs -> pii_redacted -> chunked -> deduped -> embedded -> indexed.
-
-        Verify that:
-        - Rows are produced
-        - Feature value is an integer (vector_id)
-        """
+        """Run docs -> pii_redacted -> chunked -> deduped -> embedded -> indexed."""
         feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
 
         raw_result = mlodaAPI.run_all(
@@ -92,14 +91,11 @@ class TestVectorStoreIntegration:
         assert len(rows) > 0, "Should produce results"
 
         for row in rows:
-            # mlodaAPI.run_all() returns only the requested feature column
             feature_value = row.get(feature_name)
             assert isinstance(feature_value, int), f"Feature value should be int (vector_id), got {type(feature_value)}"
 
     def test_indexed_with_artifact_persistence(self) -> None:
-        """
-        Test that the FAISS index is saved to disk via artifact persistence.
-        """
+        """FAISS index should be saved to disk via artifact persistence."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
 
@@ -117,13 +113,17 @@ class TestVectorStoreIntegration:
             rows = flatten_result(raw_result)
             assert len(rows) > 0
 
-            # Verify artifact files were created
             artifact_path = Path(tmp_dir)
             faiss_files = list(artifact_path.glob("vector_store_*.faiss"))
             json_files = list(artifact_path.glob("vector_store_*_metadata.json"))
 
             assert len(faiss_files) >= 1, "FAISS index file should be created"
             assert len(json_files) >= 1, "Metadata sidecar should be created"
+
+
+# =============================================================================
+# Artifact Save/Load Roundtrip
+# =============================================================================
 
 
 def make_domain_providers(domain_name: str) -> Set[Type[FeatureGroup]]:
@@ -162,14 +162,13 @@ def make_domain_providers(domain_name: str) -> Set[Type[FeatureGroup]]:
     return {DomainDataCreator, DomainPII, DomainChunker, DomainDedup, DomainEmbedder, DomainIndexer}
 
 
-class TestVectorStoreArtifactIntegration:
+class TestVectorStoreArtifactPersistence:
     """Test vector store artifact save and reload via mloda artifact lifecycle."""
 
     def test_vector_store_artifact_save_and_load(self) -> None:
         """
         Run 1: compute index + save artifact to disk.
-        Run 2: pass artifacts back in options so mloda sets artifact_to_load=True,
-               verify the index is loaded from disk (not recomputed).
+        Run 2: pass artifacts back in options, verify index is loaded from disk.
         """
         with tempfile.TemporaryDirectory() as tmp_dir:
             artifact_path = Path(tmp_dir)
@@ -194,13 +193,12 @@ class TestVectorStoreArtifactIntegration:
             assert len(rows1) > 0, "Run 1 should produce results"
             assert len(artifacts1) > 0, "Run 1 should produce artifacts"
 
-            # Verify artifact files exist on disk
             faiss_files = list(artifact_path.glob("vector_store_*.faiss"))
             json_files = list(artifact_path.glob("vector_store_*_metadata.json"))
             assert len(faiss_files) >= 1, "FAISS index file should be created"
             assert len(json_files) >= 1, "Metadata sidecar should be created"
 
-            # Run 2: load from artifact (merge artifacts back into options)
+            # Run 2: load from artifact
             combined_options = {**feature_options, **artifacts1}
             feature2 = Feature(feature_name, options=Options(combined_options), domain="vs_artifact_test")
 
@@ -214,6 +212,100 @@ class TestVectorStoreArtifactIntegration:
 
             rows2 = flatten_result(results2)
             assert len(rows2) > 0, "Run 2 should produce results"
-
-            # Both runs should produce the same number of rows
             assert len(rows1) == len(rows2), "Row count should match between runs"
+
+
+# =============================================================================
+# Index and Retrieve (two-phase workflow)
+# =============================================================================
+
+
+class TestIndexAndRetrieve:
+    """End-to-end test: ingest, index, persist, then retrieve."""
+
+    def test_full_write_then_read_workflow(self) -> None:
+        """
+        1. Run full ingestion pipeline to build + persist a FAISS index
+        2. Discover artifact paths on disk
+        3. Query with FaissRetriever and verify results
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Phase 1: Ingestion
+            ingestion_feature = Feature(
+                "docs__pii_redacted__chunked__deduped__embedded__indexed",
+                options=Options({"artifact_storage_path": tmp_dir}),
+            )
+
+            ingestion_result = mlodaAPI.run_all(
+                features=[ingestion_feature],
+                compute_frameworks={PythonDictFramework},
+                plugin_collector=PluginCollector.enabled_feature_groups(get_test_providers()),
+            )
+
+            ingestion_rows = flatten_result(ingestion_result)
+            assert len(ingestion_rows) > 0, "Ingestion should produce rows"
+
+            indexed_feature = "docs__pii_redacted__chunked__deduped__embedded__indexed"
+            for row in ingestion_rows:
+                assert isinstance(row.get(indexed_feature), int)
+
+            # Phase 2: Discover artifact paths
+            artifact_path = Path(tmp_dir)
+            faiss_files = list(artifact_path.glob("vector_store_*.faiss"))
+            metadata_files = list(artifact_path.glob("vector_store_*_metadata.json"))
+
+            assert len(faiss_files) >= 1, "FAISS index file should exist"
+            assert len(metadata_files) >= 1, "Metadata sidecar should exist"
+
+            index_path = str(faiss_files[0])
+            metadata_path = str(metadata_files[0])
+
+            # Phase 3: Retrieval
+            top_k = 3
+            retrieval_feature = Feature(
+                "retrieved",
+                options=Options(
+                    {
+                        "index_path": index_path,
+                        "metadata_path": metadata_path,
+                        "query_text": "email contact information",
+                        "embedding_method": "mock",
+                        "top_k": top_k,
+                    }
+                ),
+            )
+
+            retrieval_result = mlodaAPI.run_all(
+                features=[retrieval_feature],
+                compute_frameworks={PythonDictFramework},
+                plugin_collector=PluginCollector.enabled_feature_groups({FaissRetriever}),
+            )
+
+            retrieval_rows = flatten_result(retrieval_result)
+            assert len(retrieval_rows) > 0, "Retrieval should produce results"
+
+            row = retrieval_rows[0]
+            result = row.get("retrieved", row)
+            assert isinstance(result, dict), "Result should be a dict"
+
+            # Phase 4: Assertions
+            assert "indices" in result
+            assert "distances" in result
+            assert "texts" in result
+            assert "doc_ids" in result
+
+            assert len(result["indices"]) == top_k
+            assert len(result["distances"]) == top_k
+            assert len(result["texts"]) == top_k
+            assert len(result["doc_ids"]) == top_k
+
+            num_indexed = len(ingestion_rows)
+            for idx in result["indices"]:
+                assert 0 <= idx < num_indexed
+
+            for dist in result["distances"]:
+                assert dist >= 0
+
+            for text in result["texts"]:
+                assert isinstance(text, str)
+                assert len(text) > 0

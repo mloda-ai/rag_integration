@@ -1,11 +1,12 @@
-"""Integration tests for the evaluation pipeline.
+"""
+Integration tests for evaluation pipelines.
 
-Tests the full end-to-end evaluation pipeline via the mloda feature chain:
+Tests three evaluation scenarios:
+1. Text: eval_docs -> embedded -> evaluated (cosine similarity)
+2. Image: eval_images -> embedded -> evaluated (cosine similarity)
+3. FAISS: eval_docs -> chunked -> deduped -> embedded -> indexed -> evaluated (FAISS search)
 
-    dataset source → embedder → RetrievalEvaluator (→ Recall@K)
-
-Uses in-memory fixture data — no file system access, no network, no large datasets.
-The same mlodaAPI.run_all() pattern used in the RAG/image pipeline integration tests.
+Uses in-memory fixture data. No file system access, no network, no large datasets.
 """
 
 from __future__ import annotations
@@ -24,20 +25,21 @@ from rag_integration.feature_groups.datasets.image.base import BaseImageDatasetS
 from rag_integration.feature_groups.evaluation.retrieval_evaluator import RetrievalEvaluator
 from rag_integration.feature_groups.rag_pipeline.embedding.mock import MockEmbedder
 from rag_integration.feature_groups.image_pipeline.embedding.mock import MockImageEmbedder
+from tests.integration.helpers import get_metrics
 
 pytest.importorskip("numpy")
 
 
 # =============================================================================
-# In-memory fixture dataset sources (no file system / network access needed)
+# Fixture dataset sources
 # =============================================================================
 
 
 class FixtureTextDatasetSource(BaseTextDatasetSource):
-    """Tiny in-memory text corpus + queries for integration testing.
+    """Tiny in-memory text corpus + queries.
 
     Query texts are identical to their target corpus texts so that
-    the deterministic MockEmbedder assigns the same vector → Recall@1 = 1.0.
+    the deterministic MockEmbedder assigns the same vector, giving Recall@1 = 1.0.
     """
 
     @classmethod
@@ -61,11 +63,11 @@ class FixtureTextDatasetSource(BaseTextDatasetSource):
 
 
 class FixtureImageDatasetSource(BaseImageDatasetSource):
-    """Tiny in-memory image corpus + caption queries for integration testing."""
+    """Tiny in-memory image corpus + caption queries."""
 
     @classmethod
     def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
-        img0 = b"fixture_image_data_corpus_0" * 8  # deterministic non-empty bytes
+        img0 = b"fixture_image_data_corpus_0" * 8
         img1 = b"fixture_image_data_corpus_1" * 8
         return [
             {"image_id": "img0", "image_data": img0, "format": "jpeg", "row_type": "corpus"},
@@ -88,42 +90,15 @@ class FixtureImageDatasetSource(BaseImageDatasetSource):
 
 
 # =============================================================================
-# Helpers
-# =============================================================================
-
-
-def flatten_result(raw: Any) -> List[Dict[str, Any]]:
-    """Unwrap nested mlodaAPI result to a flat list of dicts."""
-    if raw and isinstance(raw[0], list):
-        return raw[0]
-    return list(raw)
-
-
-# =============================================================================
 # Text evaluation pipeline
 # =============================================================================
-
 
 _TEXT_FEATURE = "eval_docs__embedded__evaluated"
 _IMAGE_FEATURE = "eval_images__embedded__evaluated"
 
 
-def _get_metrics(raw_result: Any, feature_name: str) -> Dict[str, Any]:
-    """Unwrap the mloda result and extract the metrics dict stored under feature_name."""
-    rows = flatten_result(raw_result[0])
-    assert len(rows) == 1, "RetrievalEvaluator should return exactly one aggregate row"
-    row = rows[0]
-    assert feature_name in row, f"Expected '{feature_name}' key in result row, got keys: {list(row.keys())}"
-    metrics: Dict[str, Any] = row[feature_name]
-    return metrics
-
-
 class TestTextEvaluationPipeline:
-    """
-    Full mloda chain: eval_docs → eval_docs__embedded → eval_docs__embedded__evaluated
-
-    FixtureTextDatasetSource  →  MockEmbedder  →  RetrievalEvaluator
-    """
+    """eval_docs -> eval_docs__embedded -> eval_docs__embedded__evaluated"""
 
     def test_pipeline_produces_recall_metrics(self) -> None:
         """Pipeline runs end-to-end and returns Recall@1/5/10 plus corpus/query counts."""
@@ -137,12 +112,10 @@ class TestTextEvaluationPipeline:
             ),
         )
 
-        metrics = _get_metrics(raw_result, _TEXT_FEATURE)
+        metrics = get_metrics(raw_result, _TEXT_FEATURE)
         assert "recall@1" in metrics
         assert "recall@5" in metrics
         assert "recall@10" in metrics
-        assert "num_corpus" in metrics
-        assert "num_queries" in metrics
         assert metrics["num_corpus"] == 2
         assert metrics["num_queries"] == 2
 
@@ -158,17 +131,13 @@ class TestTextEvaluationPipeline:
             ),
         )
 
-        metrics = _get_metrics(raw_result, _TEXT_FEATURE)
+        metrics = get_metrics(raw_result, _TEXT_FEATURE)
         for key in ("recall@1", "recall@5", "recall@10"):
             assert isinstance(metrics[key], float), f"{key} should be a float"
             assert 0.0 <= metrics[key] <= 1.0, f"{key}={metrics[key]} outside [0, 1]"
 
     def test_perfect_recall_when_query_matches_corpus(self) -> None:
-        """
-        MockEmbedder is deterministic: identical text → identical unit vector.
-        Both queries use the exact same text as their target corpus document,
-        so cosine similarity is 1.0 for the relevant doc → Recall@1 = 1.0.
-        """
+        """Identical text gives identical MockEmbedder vector, so Recall@1 = 1.0."""
         feature = Feature(_TEXT_FEATURE)
 
         raw_result = mlodaAPI.run_all(
@@ -179,10 +148,8 @@ class TestTextEvaluationPipeline:
             ),
         )
 
-        metrics = _get_metrics(raw_result, _TEXT_FEATURE)
-        assert metrics["recall@1"] == pytest.approx(1.0), (
-            "Recall@1 should be 1.0 when query text == corpus text (deterministic mock embedder)"
-        )
+        metrics = get_metrics(raw_result, _TEXT_FEATURE)
+        assert metrics["recall@1"] == pytest.approx(1.0)
         assert metrics["recall@10"] == pytest.approx(1.0)
 
 
@@ -192,11 +159,7 @@ class TestTextEvaluationPipeline:
 
 
 class TestImageEvaluationPipeline:
-    """
-    Full mloda chain: eval_images → eval_images__embedded → eval_images__embedded__evaluated
-
-    FixtureImageDatasetSource  →  MockImageEmbedder  →  RetrievalEvaluator
-    """
+    """eval_images -> eval_images__embedded -> eval_images__embedded__evaluated"""
 
     def test_pipeline_produces_recall_metrics(self) -> None:
         """Pipeline runs end-to-end and returns Recall@1/5/10 plus corpus/query counts."""
@@ -210,7 +173,7 @@ class TestImageEvaluationPipeline:
             ),
         )
 
-        metrics = _get_metrics(raw_result, _IMAGE_FEATURE)
+        metrics = get_metrics(raw_result, _IMAGE_FEATURE)
         assert "recall@1" in metrics
         assert "recall@5" in metrics
         assert "recall@10" in metrics
@@ -229,16 +192,13 @@ class TestImageEvaluationPipeline:
             ),
         )
 
-        metrics = _get_metrics(raw_result, _IMAGE_FEATURE)
+        metrics = get_metrics(raw_result, _IMAGE_FEATURE)
         for key in ("recall@1", "recall@5", "recall@10"):
             assert isinstance(metrics[key], float), f"{key} should be a float"
             assert 0.0 <= metrics[key] <= 1.0, f"{key}={metrics[key]} outside [0, 1]"
 
     def test_recall_at_k_covers_full_corpus(self) -> None:
-        """
-        With 2 corpus images and k >= 2, every query's relevant image is
-        reachable → Recall@2 = 1.0 (and Recall@5 / Recall@10 the same).
-        """
+        """With 2 corpus images and k >= 2, every query's relevant image is reachable."""
         feature = Feature(_IMAGE_FEATURE)
 
         raw_result = mlodaAPI.run_all(
@@ -249,7 +209,110 @@ class TestImageEvaluationPipeline:
             ),
         )
 
-        metrics = _get_metrics(raw_result, _IMAGE_FEATURE)
-        # k=5 and k=10 both exceed corpus size (2) → all relevant docs reachable
+        metrics = get_metrics(raw_result, _IMAGE_FEATURE)
         assert metrics["recall@5"] == pytest.approx(1.0)
         assert metrics["recall@10"] == pytest.approx(1.0)
+
+
+# =============================================================================
+# FAISS evaluation pipeline (full ingestion chain)
+# =============================================================================
+
+_FAISS_FEATURE = "eval_docs__chunked__deduped__embedded__indexed__evaluated"
+
+
+class FixtureFaissTextDatasetSource(BaseTextDatasetSource):
+    """Tiny in-memory corpus + queries for FAISS pipeline testing.
+
+    Query texts are identical to their target corpus texts so MockEmbedder
+    assigns the same deterministic vector. FAISS ranks the exact match first,
+    giving Recall@1 = 1.0.
+
+    ``keep_strategy="all_unique"`` must be passed in Options so the
+    ExactHashDeduplicator does not remove query rows that share text with
+    corpus rows.
+    """
+
+    @classmethod
+    def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
+        return [
+            {"doc_id": "d0", "text": "antigen regulates protein expression levels", "row_type": "corpus"},
+            {"doc_id": "d1", "text": "neural networks learn from gradient descent", "row_type": "corpus"},
+            {
+                "doc_id": "q0",
+                "text": "antigen regulates protein expression levels",
+                "row_type": "query",
+                "relevant_doc_ids": ["d0"],
+            },
+            {
+                "doc_id": "q1",
+                "text": "neural networks learn from gradient descent",
+                "row_type": "query",
+                "relevant_doc_ids": ["d1"],
+            },
+        ]
+
+
+class TestFaissEvaluationPipeline:
+    """End-to-end: full ingestion pipeline through FAISS evaluation."""
+
+    def _run(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        from rag_integration.feature_groups.evaluation.faiss_retrieval_evaluator import FaissRetrievalEvaluator
+        from rag_integration.feature_groups.rag_pipeline.chunking.fixed_size import FixedSizeChunker
+        from rag_integration.feature_groups.rag_pipeline.deduplication.exact_hash import ExactHashDeduplicator
+        from rag_integration.feature_groups.rag_pipeline.vector_store.faiss_flat import FaissFlatIndexer
+
+        feature = Feature(_FAISS_FEATURE, options=Options(options))
+        raw_result = mlodaAPI.run_all(
+            features=[feature],
+            compute_frameworks={PythonDictFramework},
+            plugin_collector=PluginCollector.enabled_feature_groups(
+                {
+                    FixtureFaissTextDatasetSource,
+                    FixedSizeChunker,
+                    ExactHashDeduplicator,
+                    MockEmbedder,
+                    FaissFlatIndexer,
+                    FaissRetrievalEvaluator,
+                }
+            ),
+        )
+        return get_metrics(raw_result, _FAISS_FEATURE)
+
+    @pytest.mark.skipif(not pytest.importorskip("faiss", reason="faiss required"), reason="faiss required")
+    def test_perfect_recall_through_full_pipeline(self) -> None:
+        """Identical query/corpus texts with same MockEmbedding gives FAISS Recall@1 = 1.0."""
+        metrics = self._run(
+            {
+                "chunking_method": "fixed_size",
+                "deduplication_method": "exact_hash",
+                "keep_strategy": "all_unique",
+                "embedding_method": "mock",
+                "index_method": "flat",
+            }
+        )
+
+        assert metrics["recall@1"] == pytest.approx(1.0)
+        assert metrics["recall@5"] == pytest.approx(1.0)
+        assert metrics["recall@10"] == pytest.approx(1.0)
+
+    @pytest.mark.skipif(not pytest.importorskip("faiss", reason="faiss required"), reason="faiss required")
+    def test_metrics_shape(self) -> None:
+        """Result row contains all expected metric keys."""
+        metrics = self._run(
+            {
+                "chunking_method": "fixed_size",
+                "deduplication_method": "exact_hash",
+                "keep_strategy": "all_unique",
+                "embedding_method": "mock",
+                "index_method": "flat",
+            }
+        )
+
+        assert "recall@1" in metrics
+        assert "recall@5" in metrics
+        assert "recall@10" in metrics
+        assert "num_corpus" in metrics
+        assert "num_queries" in metrics
+        assert metrics["num_queries"] == 2
+        assert metrics["num_corpus"] >= 2

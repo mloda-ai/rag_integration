@@ -10,7 +10,7 @@ import math
 import tempfile
 
 from pathlib import Path
-from typing import Any, Dict, List, Set, Type
+from typing import Any, Dict, Set, Type
 
 from mloda.user import mlodaAPI, mloda, PluginCollector, Domain, Feature, Options
 from mloda.provider import DataCreator, FeatureGroup
@@ -32,11 +32,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     SentenceTransformerEmbedder,
 )
 from tests.conftest import requires_spacy_model
-
-
-# =============================================================================
-# Test Data
-# =============================================================================
+from tests.integration.helpers import flatten_result, get_results_by_feature
 
 SAMPLE_DOCUMENTS = [
     {"doc_id": "doc_001", "text": "Contact john@example.com or call 555-123-4567."},
@@ -44,11 +40,6 @@ SAMPLE_DOCUMENTS = [
     {"doc_id": "doc_003", "text": "Duplicate content here."},
     {"doc_id": "doc_004", "text": "Duplicate content here."},  # Exact duplicate
 ]
-
-
-# =============================================================================
-# DataCreator for test data
-# =============================================================================
 
 
 class MockDocumentDataCreator(FeatureGroup):
@@ -67,30 +58,8 @@ class MockDocumentDataCreator(FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
         return [{"docs": doc["text"], "doc_id": doc["doc_id"]} for doc in SAMPLE_DOCUMENTS]
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-
-def flatten_result(result: List[Any]) -> List[Dict[str, Any]]:
-    """Flatten nested mlodaAPI result."""
-    if result and isinstance(result[0], list):
-        return result[0]
-    return result
-
-
-def get_results_by_feature(raw_result: List[Any], feature_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    Map mlodaAPI results to feature names.
-
-    mlodaAPI.run_all() returns a list where each element corresponds to each requested feature.
-    This helper creates a dict mapping feature_name -> result_rows.
-    """
-    return {name: flatten_result([raw_result[i]]) for i, name in enumerate(feature_names)}
 
 
 def get_test_providers() -> Set[Type[FeatureGroup]]:

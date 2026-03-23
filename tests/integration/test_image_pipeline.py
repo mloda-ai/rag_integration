@@ -16,6 +16,7 @@ from mloda.provider import DataCreator, FeatureGroup
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
+from tests.integration.helpers import flatten_result, get_results_by_feature
 
 from rag_integration.feature_groups.image_pipeline import (
     SolidFillPIIRedactor,
@@ -104,23 +105,6 @@ class MockImageDataCreator(FeatureGroup):
             }
             for img in SAMPLE_IMAGES
         ]
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-
-def flatten_result(result: List[Any]) -> List[Dict[str, Any]]:
-    """Flatten nested mlodaAPI result."""
-    if result and isinstance(result[0], list):
-        return result[0]
-    return result
-
-
-def get_results_by_feature(raw_result: List[Any], feature_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-    """Map mlodaAPI results to feature names."""
-    return {name: flatten_result([raw_result[i]]) for i, name in enumerate(feature_names)}
 
 
 def get_test_providers() -> Set[Type[FeatureGroup]]:
