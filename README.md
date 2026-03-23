@@ -1,141 +1,182 @@
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/mloda-ai/mloda-plugin-template/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/mloda-ai/rag_integration/blob/main/LICENSE)
 [![mloda](https://img.shields.io/badge/built%20with-mloda-blue.svg)](https://github.com/mloda-ai/mloda)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
-# mloda-plugin-template
+# rag-integration
 
-> **A GitHub template for creating standalone mloda plugins.** Part of the [mloda](https://github.com/mloda-ai/mloda) ecosystem for open data access. Visit [mloda.ai](https://mloda.ai) for an overview and business context, the [GitHub repository](https://github.com/mloda-ai/mloda) for technical context, or the [documentation](https://mloda-ai.github.io/mloda/) for detailed guides.
+RAG integration plugin for [mloda](https://github.com/mloda-ai/mloda). Composes modular FeatureGroups into text and image processing pipelines with PII redaction, chunking, deduplication, embedding, FAISS vector search, retrieval, evaluation, and LLM response generation.
 
-Create your own FeatureGroups, ComputeFrameworks, and Extenders as standalone packages. See the [Getting Started guide](docs/getting-started.md) to create your repository, then follow the setup steps below.
+See the [demo notebook](demo.ipynb) for an interactive walkthrough or the [CLI](cli/README.md) for command-line usage.
 
-## Related Repositories
-
-- **[mloda](https://github.com/mloda-ai/mloda)**: The core library for open data access. Declaratively define what data you need, not how to get it. mloda handles feature resolution, dependency management, and compute framework abstraction automatically.
-
-- **[mloda-registry](https://github.com/mloda-ai/mloda-registry)**: The central hub for discovering and sharing mloda plugins. Browse community-contributed FeatureGroups, find integration guides, and publish your own plugins for others to use.
-
-## Structure
+## Project Structure
 
 ```
-placeholder/
-├── feature_groups/
-│   └── my_plugin/
-│       ├── __init__.py           # Package exports
-│       ├── my_feature_group.py   # Example FeatureGroup implementation
-│       └── tests/
-│           └── test_my_feature_group.py
-├── compute_frameworks/
-│   └── my_framework/
-│       ├── __init__.py
-│       └── my_compute_framework.py
-└── extenders/
-    └── my_extender/
-        ├── __init__.py
-        └── my_extender.py
+rag_integration/
+  feature_groups/
+    rag_pipeline/       # Text: source, PII, chunk, dedup, embed, index, retrieve, LLM
+    image_pipeline/     # Image: source, PII, preprocess, dedup, embed
+    datasets/           # BEIR (SciFact) and image (Flickr30k) loaders
+    evaluation/         # Retrieval metrics (precision, recall, NDCG, MAP)
+cli/                    # Command-line demo tools (see cli/README.md)
+tests/                  # Unit and integration tests
+docs/                   # Detailed guides
 ```
 
-## Key Files
+## Quick Start
 
-- `placeholder/` - Root namespace (users rename to company name)
-- `pyproject.toml` - Package config (users edit directly, not auto-generated)
-- `.github/workflows/test.yml` - CI workflow running pytest
+### 1. Define your documents
 
-## Common Tasks
+Documents are loaded through a `DataCreator`-based FeatureGroup. The simplest option is `DictDocumentSource`, which loads from a Python list:
 
-### Setup Your Plugin
+```python
+documents = [
+    {"doc_id": "1", "text": "Contact support@example.com for help."},
+    {"doc_id": "2", "text": "Our office is at 123 Main St."},
+]
+```
 
-Follow these steps to customize the template for your organization:
+### 2. Build the pipeline
 
-#### 1. Rename the directory
+Each pipeline stage is expressed as a feature name. Stages chain with `__`:
+
+```
+docs                                    # raw documents
+docs__pii_redacted                      # PII removed
+docs__pii_redacted__chunked             # text split into chunks
+docs__pii_redacted__chunked__deduped    # duplicates removed
+docs__pii_redacted__chunked__deduped__embedded  # vector embeddings
+```
+
+### 3. Run with mlodaAPI
+
+```python
+from mloda.user import mlodaAPI, PluginCollector, Feature, Options
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
+
+from rag_integration.feature_groups.rag_pipeline import (
+    DictDocumentSource,
+    RegexPIIRedactor,
+    FixedSizeChunker,
+    ExactHashDeduplicator,
+    MockEmbedder,
+)
+
+providers = {
+    DictDocumentSource,
+    RegexPIIRedactor,
+    FixedSizeChunker,
+    ExactHashDeduplicator,
+    MockEmbedder,
+}
+
+results = mlodaAPI.run_all(
+    features=["docs__pii_redacted__chunked__deduped__embedded"],
+    compute_frameworks={PythonDictFramework},
+    plugin_collector=PluginCollector.enabled_feature_groups(providers),
+)
+```
+
+### 4. Configure pipeline stages
+
+Use `Options` to select specific implementations and tune parameters:
+
+```python
+feature = Feature(
+    "docs__pii_redacted__chunked__deduped__embedded",
+    options=Options(context={
+        "redaction_method": "regex",        # or "simple", "pattern", "presidio"
+        "chunking_method": "sentence",      # or "fixed_size", "paragraph", "semantic"
+        "deduplication_method": "exact_hash",  # or "normalized", "ngram"
+        "embedding_method": "sentence-transformer",  # or "hash", "tfidf", "mock"
+        "chunk_size": 512,
+        "chunk_overlap": 50,
+    }),
+)
+```
+
+## Available Components
+
+### Text Pipeline
+
+| Stage           | Implementations                                                                           |
+|-----------------|-------------------------------------------------------------------------------------------|
+| Document Source | `DictDocumentSource`, `FileDocumentSource`                                                |
+| PII Redaction   | `RegexPIIRedactor`, `SimplePIIRedactor`, `PatternPIIRedactor`, `PresidioPIIRedactor`      |
+| Chunking        | `FixedSizeChunker`, `SentenceChunker`, `ParagraphChunker`, `SemanticChunker`              |
+| Deduplication   | `ExactHashDeduplicator`, `NormalizedDeduplicator`, `NGramDeduplicator`                    |
+| Embedding       | `MockEmbedder`, `HashEmbedder`, `TfidfEmbedder`, `SentenceTransformerEmbedder`            |
+| Vector Store    | `FaissFlatIndexer`, `FaissIVFIndexer`, `FaissHNSWIndexer`                                 |
+| Retrieval       | `FaissRetriever`                                                                          |
+| LLM Response    | `ClaudeCliResponse`                                                                       |
+
+### Image Pipeline
+
+| Stage           | Implementations                                                                                       |
+|-----------------|-------------------------------------------------------------------------------------------------------|
+| Image Source    | `DictImageSource`, `FileImageSource`                                                                  |
+| PII Redaction   | `BlurPIIRedactor`, `PixelPIIRedactor`, `SolidFillPIIRedactor`                                        |
+| Preprocessing   | `ResizePreprocessor`, `NormalizePreprocessor`, `ThumbnailPreprocessor`                                |
+| Deduplication   | `ExactHashImageDeduplicator`, `PerceptualHashImageDeduplicator`, `DifferenceHashImageDeduplicator`   |
+| Embedding       | `MockImageEmbedder`, `HashImageEmbedder`, `CLIPImageEmbedder`                                        |
+
+## Installation
+
+Clone the repository and install with uv:
 
 ```bash
-mv placeholder acme
+git clone https://github.com/mloda-ai/rag_integration.git
+cd rag_integration
+uv venv
+source .venv/bin/activate
+uv sync --all-extras
 ```
 
-#### 2. Update pyproject.toml
+To install only specific extras, use `uv sync --extra <name>`:
 
-Edit the following fields in `pyproject.toml`:
+| Extra      | What it adds                                         |
+|------------|------------------------------------------------------|
+| `faiss`    | FAISS vector indexing (`faiss-cpu`)                   |
+| `advanced` | Presidio, sentence-transformers, joblib, Pillow, FAISS|
+| `eval`     | BEIR benchmark datasets, pandas, numpy               |
+| `dev`      | tox, pytest, ruff, mypy, bandit                      |
 
-- `name`: Change `"placeholder-my-plugin"` to `"acme-my-plugin"`
-- `authors`: Update name and email
-- `description`: Update to describe your plugin
-- `tool.setuptools.packages.find.include`: Change `["placeholder*"]` to `["acme*"]`
-- `tool.pytest.ini_options.testpaths`: Change `["placeholder", "tests"]` to `["acme", "tests"]`
+## CLI
 
-#### 3. Update .releaserc.yaml
-
-Edit the following fields in `.releaserc.yaml`:
-
-- `message`: Change `mloda-plugin-template` to your package name (e.g., `"chore(release acme-my-plugin): ${nextRelease.version}"`)
-- `repositoryUrl`: Change to your repository URL
-
-#### 4. Update Python imports
-
-Update imports in these files (change `from placeholder.` to `from acme.`):
-
-- `acme/feature_groups/my_plugin/__init__.py`
-- `acme/feature_groups/my_plugin/tests/test_my_feature_group.py`
-- `acme/compute_frameworks/my_plugin/__init__.py`
-- `acme/compute_frameworks/my_plugin/tests/test_my_compute_framework.py`
-- `acme/extenders/my_plugin/__init__.py`
-- `acme/extenders/my_plugin/tests/test_my_extender.py`
-
-#### 5. Verify setup
+A command-line interface is available for running pipelines interactively. See [cli/README.md](cli/README.md) for full usage.
 
 ```bash
-uv venv && source .venv/bin/activate && uv sync --all-extras && tox
+python3 -m cli.rag_demo run --input cli/docs/ --pii regex --chunking sentence --embedding tfidf -v
 ```
 
-### Development Setup with uv
+## Development Setup
 
-**Install uv** (if not already installed):
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-**Create virtual environment and install dependencies:**
 ```bash
 uv venv
 source .venv/bin/activate
 uv sync --all-extras
 ```
 
-**Run all checks with tox:**
-```bash
-# Install tox with uv backend
-uv tool install tox --with tox-uv
+Run all checks (pytest, ruff, mypy, bandit):
 
-# Run all checks (pytest, ruff, mypy, bandit)
+```bash
 tox
 ```
 
 ### Run individual checks
 
 ```bash
-# Tests only
 pytest
-
-# Format check
 ruff format --check --line-length 120 .
-
-# Lint check
 ruff check .
-
-# Type check
 mypy --strict --ignore-missing-imports .
-
-# Security check
 bandit -c pyproject.toml -r -q .
 ```
 
-## Related Documentation
+## Related
 
-Guides for plugin development can be found in mloda-registry:
-
-- https://github.com/mloda-ai/mloda-registry/tree/main/docs/guides/
-
-Claude Code users can leverage the skills in mloda-registry for assisted plugin development:
-
-- https://github.com/mloda-ai/mloda-registry/tree/main/.claude/skills/
-
-This template includes pre-configured GitHub Actions workflows for testing, security scanning, and automated releases. See the [GitHub Workflows documentation](docs/github-workflows.md) for setup instructions and required secrets.
+- [Getting Started Guide](docs/getting-started.md) for a detailed walkthrough
+- [GitHub Workflows](docs/github-workflows.md) for CI/CD setup and required secrets
+- [mloda](https://github.com/mloda-ai/mloda) core library
+- [mloda-registry](https://github.com/mloda-ai/mloda-registry) for plugin guides and community plugins
