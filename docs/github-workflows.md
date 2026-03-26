@@ -63,7 +63,7 @@ git merge template/main
 4. Builds and publishes the package to PyPI
 
 **Requirements:**
-- `SEMANTIC_RELEASE_TOKEN` - GitHub Personal Access Token with `repo` write permissions
+- `SEMANTIC_RELEASE_TOKEN_RAG_INTEGRATION` - GitHub Personal Access Token with `repo` write permissions
 - `PYPI_API_TOKEN` - PyPI API token for package publishing
 
 **Prerequisites:** Commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) format for semantic-release to determine version bumps:
@@ -75,7 +75,7 @@ git merge template/main
 
 To configure the required secrets for the release workflow:
 
-### SEMANTIC_RELEASE_TOKEN
+### SEMANTIC_RELEASE_TOKEN_RAG_INTEGRATION
 
 1. Go to GitHub **Settings** > **Developer settings** > **Personal access tokens** > **Tokens (classic)**
 2. Click **Generate new token (classic)**
@@ -84,7 +84,7 @@ To configure the required secrets for the release workflow:
 5. Click **Generate token** and copy the token
 6. In your repository, go to **Settings** > **Secrets and variables** > **Actions**
 7. Click **New repository secret**
-8. Name: `SEMANTIC_RELEASE_TOKEN`
+8. Name: `SEMANTIC_RELEASE_TOKEN_RAG_INTEGRATION`
 9. Value: Paste the token
 10. Click **Add secret**
 

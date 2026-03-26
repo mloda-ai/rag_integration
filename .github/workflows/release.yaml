@@ -70,7 +70,7 @@ jobs:
           fi
         env:
           CI: true
-          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN_RAG_INTEGRATION }}
 
   publish:
     name: Publish to PyPI
