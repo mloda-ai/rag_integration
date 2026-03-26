@@ -18,5 +18,5 @@ def _spacy_model_available(model_name: str) -> bool:
 
 requires_spacy_model = pytest.mark.skipif(
     not _spacy_model_available("en_core_web_lg"),
-    reason="Requires en_core_web_lg spaCy model (install with: pip install 'rag-integration[models]')",
+    reason="Requires en_core_web_lg spaCy model (install with: uv pip install -r requirements-models.txt)",
 )

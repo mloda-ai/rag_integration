@@ -1,0 +1,3 @@
+# Heavy models for local testing only (not installed in CI)
+# Install with: uv pip install -r requirements-models.txt
+en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl
