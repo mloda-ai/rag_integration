@@ -52,7 +52,7 @@ jobs:
           fi
 
           # Extract version from dry run output
-          version=$(echo "$dry_run_output" | grep -oP "The next release version is \K[0-9]+\.[0-9]+\.[0-9]+")
+          version=$(echo "$dry_run_output" | grep -oiP "the next release version is \K[0-9]+\.[0-9]+\.[0-9]+")
           if [ -z "$version" ]; then
             echo "::error ::Could not determine version"
             exit 1
