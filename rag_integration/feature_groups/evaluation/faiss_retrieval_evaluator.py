@@ -22,14 +22,14 @@ chunk from the relevant document appears in the top-K results.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
 from mloda.provider import FeatureChainParserMixin
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
 
@@ -74,7 +74,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -92,7 +92,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
         for feature in features.features:
             # source_feature = ...__indexed  (the FAISS indexing step output)
             source_feature = cls._extract_source_features(feature)[0]
-            feature_name = feature.get_name()
+            feature_name = feature.name
 
             # embedding_feature = ...__embedded  (one level above __indexed)
             # The chunker/embedder store vectors under this key; the indexer adds

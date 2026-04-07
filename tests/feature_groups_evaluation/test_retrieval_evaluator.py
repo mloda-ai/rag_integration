@@ -15,12 +15,11 @@ pytest.importorskip("numpy")
 def _make_features(source_name: str = "eval_docs__embedded") -> Any:
     """Build a minimal FeatureSet mock."""
     feature = MagicMock()
-    feature.get_name.return_value = f"{source_name}__evaluated"
+    feature.name = f"{source_name}__evaluated"
     feature.options.get.return_value = None
 
     # FeatureChainParserMixin._extract_source_features reads feature_name
-    feature.feature_name = MagicMock()
-    feature.feature_name.name = f"{source_name}__evaluated"
+    feature.feature_name = f"{source_name}__evaluated"
 
     features = MagicMock()
     features.features = [feature]

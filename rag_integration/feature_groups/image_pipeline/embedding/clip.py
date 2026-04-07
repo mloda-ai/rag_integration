@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from mloda.provider import FeatureSet
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
@@ -203,7 +203,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         for feature in features.features:
             embedding_dim = cls._get_embedding_dim(feature)
             model_name = cls._get_model_name(feature)
-            feature_name = feature.get_name()
+            feature_name = feature.name
 
             for row in data:
                 image_data = row.get("image_data")

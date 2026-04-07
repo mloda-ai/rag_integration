@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
 from mloda.provider import FeatureChainParserMixin
@@ -11,7 +11,7 @@ from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 
 class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
@@ -96,7 +96,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
             return False
 
     @classmethod
-    def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -142,7 +142,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
         for feature in features.features:
             cls._get_source_feature_name(feature)
             target_size = cls._get_target_size(feature)
-            feature_name = feature.get_name()
+            feature_name = feature.name
 
             for row in data:
                 image_data = row.get("image_data", b"")

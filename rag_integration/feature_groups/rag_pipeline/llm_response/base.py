@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Answer the question using the provided context."
 
@@ -59,7 +59,7 @@ class BaseLLMResponse(FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -74,8 +74,6 @@ class BaseLLMResponse(FeatureGroup):
         data_access_collection: Any = None,
     ) -> bool:
         """Match features named 'llm_response' exactly."""
-        if isinstance(feature_name, FeatureName):
-            feature_name = feature_name.name
         return feature_name == "llm_response"
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:

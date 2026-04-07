@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.deduplication.base import BaseImageDeduplicator
 

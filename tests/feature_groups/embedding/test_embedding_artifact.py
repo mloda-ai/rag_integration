@@ -15,7 +15,7 @@ class TestEmbeddingArtifact:
         """Test that embeddings are saved on first run and loaded on second run."""
         # Create mock features
         mock_feature = MagicMock()
-        mock_feature.get_name.return_value = "text__embedded"
+        mock_feature.name = "text__embedded"
         mock_feature.options = MagicMock()
         mock_feature.options.get.side_effect = lambda key: str(tmp_path) if key == "artifact_storage_path" else None
 
@@ -67,7 +67,7 @@ class TestEmbeddingArtifact:
     def test_artifact_not_found_raises_error(self, tmp_path: Path) -> None:
         """Test that loading a non-existent artifact raises ValueError."""
         mock_feature = MagicMock()
-        mock_feature.get_name.return_value = "text__embedded"
+        mock_feature.name = "text__embedded"
         mock_feature.options = MagicMock()
         mock_feature.options.get.side_effect = lambda key: str(tmp_path) if key == "artifact_storage_path" else None
 

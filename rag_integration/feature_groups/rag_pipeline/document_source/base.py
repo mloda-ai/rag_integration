@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
 from mloda.user import Options, FeatureName
@@ -30,7 +30,7 @@ class BaseDocumentSource(FeatureGroup):
     """
 
     @classmethod
-    def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -41,8 +41,6 @@ class BaseDocumentSource(FeatureGroup):
         data_access_collection: Any = None,
     ) -> bool:
         """Match features named 'docs' exactly."""
-        if isinstance(feature_name, FeatureName):
-            feature_name = feature_name.name
         return feature_name == "docs"
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:

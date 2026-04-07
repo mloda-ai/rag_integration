@@ -6,14 +6,14 @@ brute-force cosine similarity. No external vector index required.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
 from mloda.provider import FeatureChainParserMixin
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
 
@@ -62,7 +62,7 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -75,7 +75,7 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
 
         for feature in features.features:
             source_feature = cls._extract_source_features(feature)[0]
-            feature_name = feature.get_name()
+            feature_name = feature.name
 
             corpus_rows = [r for r in data if r.get("row_type") == "corpus"]
             query_rows = [r for r in data if r.get("row_type") == "query"]

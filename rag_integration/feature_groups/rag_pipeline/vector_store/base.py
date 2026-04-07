@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type, Union
+from typing import Any, Dict, List, Optional, Set, Type
 
 from mloda.provider import BaseArtifact, FeatureGroup, ComputeFramework, FeatureSet
 from mloda.provider import FeatureChainParserMixin
@@ -11,7 +11,7 @@ from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
@@ -59,7 +59,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Union[bool, Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
         return {PythonDictFramework}
 
     @staticmethod
@@ -101,7 +101,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
 
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
-            feature_name = feature.get_name()
+            feature_name = feature.name
             artifact_key = feature_name
 
             # Try to load from artifact

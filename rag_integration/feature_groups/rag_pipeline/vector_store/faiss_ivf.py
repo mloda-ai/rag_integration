@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, List
 
 import numpy as np
-from mloda_plugins.feature_group.experimental.default_options_key import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.rag_pipeline.vector_store.base import BaseVectorStore
 

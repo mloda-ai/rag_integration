@@ -21,11 +21,10 @@ _FEATURE_NAME = f"{_INDEXED_FEATURE}__evaluated"
 def _make_features(indexed_feature: str = _INDEXED_FEATURE) -> Any:
     """Build a minimal FeatureSet mock for FaissRetrievalEvaluator."""
     feature = MagicMock()
-    feature.get_name.return_value = f"{indexed_feature}__evaluated"
+    feature.name = f"{indexed_feature}__evaluated"
     feature.options.get.return_value = None
 
-    feature.feature_name = MagicMock()
-    feature.feature_name.name = f"{indexed_feature}__evaluated"
+    feature.feature_name = f"{indexed_feature}__evaluated"
 
     features = MagicMock()
     features.features = [feature]

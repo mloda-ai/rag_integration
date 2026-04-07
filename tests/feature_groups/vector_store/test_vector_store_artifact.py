@@ -19,7 +19,7 @@ class TestVectorStoreArtifact:
     def _make_mock_features(self, tmp_path: Path) -> MagicMock:
         """Create mock features with artifact_storage_path pointing to tmp_path."""
         mock_feature = MagicMock()
-        mock_feature.get_name.return_value = "test__indexed"
+        mock_feature.name = "test__indexed"
         mock_feature.options = MagicMock()
         mock_feature.options.get.side_effect = lambda key: str(tmp_path) if key == "artifact_storage_path" else None
 
