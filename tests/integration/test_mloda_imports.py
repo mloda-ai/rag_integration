@@ -18,6 +18,6 @@ def test_mloda_core_imports() -> None:
 
 def test_mloda_testing_imports() -> None:
     """Verify mloda.testing module imports work."""
-    from mloda.testing import FeatureGroupTestBase
+    from mloda.testing.base import FeatureGroupTestBase
 
     assert FeatureGroupTestBase is not None
