@@ -35,9 +35,9 @@ class ParagraphChunker(BaseChunker):
             DefaultOptionKeys.default: 512,
         },
         BaseChunker.CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks",
+            "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 50,
+            DefaultOptionKeys.default: 128,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing text to chunk",
@@ -79,6 +79,9 @@ class ParagraphChunker(BaseChunker):
         if not paragraphs:
             return [text]
 
+        # Clamp overlap below chunk_size so it cannot stall progress (matching FixedSizeChunker).
+        chunk_overlap = max(0, min(chunk_overlap, chunk_size - 1))
+
         # If only one paragraph, use fixed-size fallback
         if len(paragraphs) == 1:
             if len(paragraphs[0]) <= chunk_size:
@@ -107,18 +110,8 @@ class ParagraphChunker(BaseChunker):
                 # Save current chunk
                 chunks.append("\n\n".join(current_chunk))
 
-                # Start new chunk with overlap (keep last paragraph)
-                if chunk_overlap > 0 and current_chunk:
-                    last_para = current_chunk[-1]
-                    if len(last_para) <= chunk_overlap:
-                        current_chunk = [last_para]
-                        current_length = len(last_para)
-                    else:
-                        current_chunk = []
-                        current_length = 0
-                else:
-                    current_chunk = []
-                    current_length = 0
+                # Start new chunk with overlapping trailing paragraphs (current_length recomputed below).
+                current_chunk = cls._overlap_paragraphs(current_chunk, chunk_overlap)
 
             current_chunk.append(para)
             current_length = sum(len(p) for p in current_chunk) + 2 * (len(current_chunk) - 1)
@@ -128,6 +121,28 @@ class ParagraphChunker(BaseChunker):
             chunks.append("\n\n".join(current_chunk))
 
         return chunks if chunks else [""]
+
+    @classmethod
+    def _overlap_paragraphs(cls, paragraphs: List[str], chunk_overlap: int) -> List[str]:
+        """
+        Return the trailing paragraphs whose joined length stays within chunk_overlap characters.
+
+        chunk_overlap is measured in characters, matching FixedSizeChunker and
+        SentenceChunker. Paragraphs are taken from the end until adding the next one
+        would exceed the budget; the two-character "\\n\\n" separator counts toward the
+        length. Returns an empty list when no whole paragraph fits (or overlap is 0).
+        """
+        if chunk_overlap <= 0:
+            return []
+        overlap: List[str] = []
+        length = 0
+        for paragraph in reversed(paragraphs):
+            added = len(paragraph) + (2 if overlap else 0)
+            if length + added > chunk_overlap:
+                break
+            overlap.insert(0, paragraph)
+            length += added
+        return overlap
 
     @classmethod
     def _split_long_paragraph(cls, text: str, chunk_size: int, chunk_overlap: int) -> List[str]:

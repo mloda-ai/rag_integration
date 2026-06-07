@@ -18,7 +18,7 @@ class FixedSizeChunker(BaseChunker):
 
     Configuration:
         chunk_size: Maximum characters per chunk (default: 512)
-        chunk_overlap: Characters to overlap between chunks (default: 50)
+        chunk_overlap: Characters to overlap between chunks (default: 128)
 
     Config-based matching:
         chunking_method="fixed_size"
@@ -36,9 +36,9 @@ class FixedSizeChunker(BaseChunker):
             DefaultOptionKeys.default: 512,
         },
         BaseChunker.CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks",
+            "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 50,
+            DefaultOptionKeys.default: 128,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing text to chunk",

@@ -51,3 +51,37 @@ class TestParagraphChunker(TextChunkingTestBase):
         chunks = ParagraphChunker._chunk_text(text, 500, 0)
         assert len(chunks) == 1
         assert "\n\n" in chunks[0]
+
+    def test_overlap_repeats_trailing_paragraph(self) -> None:
+        """chunk_overlap (characters) should repeat whole trailing paragraphs across chunks."""
+        text = "\n\n".join(f"Paragraph number {i} here ok." for i in range(8))
+        # chunk_size forces multiple chunks; overlap large enough to fit a trailing paragraph.
+        chunks = ParagraphChunker._chunk_text(text, 90, 40)
+        assert len(chunks) >= 2
+        # Each chunk must start by repeating the last paragraph of the previous chunk.
+        for prev, nxt in zip(chunks, chunks[1:]):
+            assert nxt.split("\n\n")[0] == prev.split("\n\n")[-1]
+
+    def test_overlap_clamped_to_chunk_size(self) -> None:
+        """overlap >= chunk_size is clamped so it cannot stall progress or duplicate unboundedly."""
+        text = "\n\n".join(f"Paragraph number {i} here ok." for i in range(8))
+        # An overlap at/above chunk_size collapses to the same output as chunk_size - 1.
+        clamped = ParagraphChunker._chunk_text(text, 90, 89)
+        assert ParagraphChunker._chunk_text(text, 90, 100000) == clamped
+
+    def test_zero_overlap_no_repeat(self) -> None:
+        """With chunk_overlap=0 no paragraph should be repeated between consecutive chunks."""
+        text = "\n\n".join(f"Paragraph number {i} here ok." for i in range(8))
+        chunks = ParagraphChunker._chunk_text(text, 90, 0)
+        joined = "\n\n".join(chunks)
+        for i in range(8):
+            assert joined.count(f"Paragraph number {i} here ok.") == 1
+
+    def test_overlap_helper_respects_character_budget(self) -> None:
+        """_overlap_paragraphs should only keep trailing paragraphs within the character budget."""
+        paragraphs = ["aaaa", "bb", "cccccc"]
+        # Budget 12: 'cccccc' (6) fits, adding 'bb' needs 6+2+2=10 which fits, 'aaaa' would exceed.
+        assert ParagraphChunker._overlap_paragraphs(paragraphs, 12) == ["bb", "cccccc"]
+        # Budget smaller than the last paragraph -> no overlap.
+        assert ParagraphChunker._overlap_paragraphs(paragraphs, 3) == []
+        assert ParagraphChunker._overlap_paragraphs(paragraphs, 0) == []

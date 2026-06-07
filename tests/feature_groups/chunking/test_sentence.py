@@ -46,3 +46,38 @@ class TestSentenceChunker(TextChunkingTestBase):
         chunks = SentenceChunker._chunk_text(text, 100, 0)
         assert len(chunks) == 1
         assert chunks[0] == text
+
+    def test_overlap_repeats_trailing_sentence(self) -> None:
+        """chunk_overlap (characters) should repeat whole trailing sentences across chunks."""
+        text = "Alpha one. Beta two. Gamma three. Delta four."
+        # chunk_size forces multiple chunks; overlap large enough to fit a trailing sentence.
+        chunks = SentenceChunker._chunk_text(text, 22, 12)
+        assert len(chunks) >= 2
+        # Each chunk must start by repeating the last sentence of the previous chunk.
+        for prev, nxt in zip(chunks, chunks[1:]):
+            assert nxt.split(". ")[0].rstrip(".") == prev.split(". ")[-1].rstrip(".")
+
+    def test_overlap_clamped_to_chunk_size(self) -> None:
+        """overlap >= chunk_size is clamped so it cannot stall progress or duplicate unboundedly."""
+        text = "Alpha one. Beta two. Gamma three. Delta four."
+        # An overlap at/above chunk_size collapses to the same output as chunk_size - 1.
+        clamped = SentenceChunker._chunk_text(text, 22, 21)
+        assert SentenceChunker._chunk_text(text, 22, 1000) == clamped
+
+    def test_zero_overlap_no_repeat(self) -> None:
+        """With chunk_overlap=0 no sentence should be repeated between consecutive chunks."""
+        text = "Alpha one. Beta two. Gamma three. Delta four."
+        chunks = SentenceChunker._chunk_text(text, 22, 0)
+        joined = " ".join(chunks)
+        # Each sentence appears exactly once when there is no overlap.
+        assert joined.count("Alpha one") == 1
+        assert joined.count("Beta two") == 1
+
+    def test_overlap_helper_respects_character_budget(self) -> None:
+        """_overlap_sentences should only keep trailing sentences within the character budget."""
+        sentences = ["aaaa", "bb", "cccccc"]
+        # Budget 9: 'cccccc' (6) fits, adding 'bb' needs 6+1+2=9 which fits, 'aaaa' would exceed.
+        assert SentenceChunker._overlap_sentences(sentences, 9) == ["bb", "cccccc"]
+        # Budget smaller than the last sentence -> no overlap.
+        assert SentenceChunker._overlap_sentences(sentences, 3) == []
+        assert SentenceChunker._overlap_sentences(sentences, 0) == []
