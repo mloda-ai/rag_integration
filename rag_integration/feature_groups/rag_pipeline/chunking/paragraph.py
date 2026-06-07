@@ -35,7 +35,7 @@ class ParagraphChunker(BaseChunker):
             DefaultOptionKeys.default: 512,
         },
         BaseChunker.CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks",
+            "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: 50,
         },

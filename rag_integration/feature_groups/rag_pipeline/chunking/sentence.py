@@ -35,7 +35,7 @@ class SentenceChunker(BaseChunker):
             DefaultOptionKeys.default: 512,
         },
         BaseChunker.CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks",
+            "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: 50,
         },
@@ -68,7 +68,9 @@ class SentenceChunker(BaseChunker):
         Args:
             text: Text to split
             chunk_size: Maximum characters per chunk
-            chunk_overlap: Number of sentences to overlap (reinterpreted)
+            chunk_overlap: Characters to overlap between chunks. Whole trailing
+                sentences are repeated until adding the next one would exceed this
+                many characters (consistent with the other chunkers).
 
         Returns:
             List of text chunks
@@ -99,11 +101,10 @@ class SentenceChunker(BaseChunker):
                 # Save current chunk
                 chunks.append(" ".join(current_chunk))
 
-                # Start new chunk with overlap
-                # Overlap: keep last N sentences where N ~ chunk_overlap / avg_sentence_length
-                overlap_sentences = max(1, chunk_overlap // 50)  # Rough estimate
-                current_chunk = current_chunk[-overlap_sentences:] if overlap_sentences < len(current_chunk) else []
-                current_length = sum(len(s) for s in current_chunk) + len(current_chunk) - 1 if current_chunk else 0
+                # Start new chunk with overlap: repeat trailing sentences up to
+                # chunk_overlap characters.
+                current_chunk = cls._overlap_sentences(current_chunk, chunk_overlap)
+                current_length = (sum(len(s) for s in current_chunk) + len(current_chunk) - 1) if current_chunk else 0
 
             current_chunk.append(sentence)
             current_length = sum(len(s) for s in current_chunk) + len(current_chunk) - 1
@@ -113,3 +114,25 @@ class SentenceChunker(BaseChunker):
             chunks.append(" ".join(current_chunk))
 
         return chunks if chunks else [""]
+
+    @classmethod
+    def _overlap_sentences(cls, sentences: List[str], chunk_overlap: int) -> List[str]:
+        """
+        Return the trailing sentences whose joined length stays within chunk_overlap characters.
+
+        chunk_overlap is measured in characters, matching FixedSizeChunker and
+        ParagraphChunker. Sentences are taken from the end until adding the next one
+        would exceed the budget; the single space joining sentences counts toward the
+        length. Returns an empty list when no whole sentence fits (or overlap is 0).
+        """
+        if chunk_overlap <= 0:
+            return []
+        overlap: List[str] = []
+        length = 0
+        for sentence in reversed(sentences):
+            added = len(sentence) + (1 if overlap else 0)
+            if length + added > chunk_overlap:
+                break
+            overlap.insert(0, sentence)
+            length += added
+        return overlap

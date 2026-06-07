@@ -78,7 +78,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
             DefaultOptionKeys.default: 512,
         },
         CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks",
+            "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: 50,
         },

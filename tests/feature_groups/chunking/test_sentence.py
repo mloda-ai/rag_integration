@@ -46,3 +46,32 @@ class TestSentenceChunker(TextChunkingTestBase):
         chunks = SentenceChunker._chunk_text(text, 100, 0)
         assert len(chunks) == 1
         assert chunks[0] == text
+
+    def test_overlap_repeats_trailing_sentence(self) -> None:
+        """chunk_overlap (characters) should repeat whole trailing sentences across chunks."""
+        text = "Alpha one. Beta two. Gamma three. Delta four."
+        # chunk_size forces multiple chunks; overlap large enough to fit a trailing sentence.
+        chunks = SentenceChunker._chunk_text(text, 22, 12)
+        assert len(chunks) >= 2
+        # Consecutive chunks should share at least one repeated sentence.
+        first_sentences = set(chunks[0].split(". "))
+        second_start = chunks[1].split(". ")[0]
+        assert any(second_start in s or s in second_start for s in first_sentences)
+
+    def test_zero_overlap_no_repeat(self) -> None:
+        """With chunk_overlap=0 no sentence should be repeated between consecutive chunks."""
+        text = "Alpha one. Beta two. Gamma three. Delta four."
+        chunks = SentenceChunker._chunk_text(text, 22, 0)
+        joined = " ".join(chunks)
+        # Each sentence appears exactly once when there is no overlap.
+        assert joined.count("Alpha one") == 1
+        assert joined.count("Beta two") == 1
+
+    def test_overlap_helper_respects_character_budget(self) -> None:
+        """_overlap_sentences should only keep trailing sentences within the character budget."""
+        sentences = ["aaaa", "bb", "cccccc"]
+        # Budget 9: 'cccccc' (6) fits, adding 'bb' needs 6+1+2=9 which fits, 'aaaa' would exceed.
+        assert SentenceChunker._overlap_sentences(sentences, 9) == ["bb", "cccccc"]
+        # Budget smaller than the last sentence -> no overlap.
+        assert SentenceChunker._overlap_sentences(sentences, 3) == []
+        assert SentenceChunker._overlap_sentences(sentences, 0) == []
