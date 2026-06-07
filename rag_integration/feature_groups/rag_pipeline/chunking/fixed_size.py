@@ -70,7 +70,6 @@ class FixedSizeChunker(BaseChunker):
         # Ensure valid parameters
         chunk_size = max(1, chunk_size)
         chunk_overlap = max(0, min(chunk_overlap, chunk_size - 1))
-        step = chunk_size - chunk_overlap
 
         chunks = []
         start = 0
@@ -91,10 +90,12 @@ class FixedSizeChunker(BaseChunker):
 
             chunks.append(chunk.strip())
 
-            # Move to next chunk
             if end >= text_len:
                 break
-            start = start + step
+
+            # Advance from the (possibly trimmed) end to keep overlap at
+            # chunk_overlap; the start + 1 floor guarantees forward progress.
+            start = max(end - chunk_overlap, start + 1)
             if start >= text_len:
                 break
 
