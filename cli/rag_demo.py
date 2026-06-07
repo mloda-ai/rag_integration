@@ -216,7 +216,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     elif args.input:
         input_path = Path(args.input)
         if input_path.is_file():
-            with open(input_path) as f:
+            with open(input_path, encoding="utf-8") as f:
                 content = f.read()
                 if input_path.suffix == ".json":
                     docs = json.loads(content)
@@ -225,7 +225,7 @@ def cmd_run(args: argparse.Namespace) -> None:
         elif input_path.is_dir():
             for file_path in input_path.glob("*"):
                 if file_path.is_file() and file_path.suffix in (".txt", ".md", ".json"):
-                    with open(file_path) as f:
+                    with open(file_path, encoding="utf-8") as f:
                         content = f.read()
                     if file_path.suffix == ".json":
                         docs.extend(json.loads(content))
@@ -321,7 +321,7 @@ def cmd_run(args: argparse.Namespace) -> None:
 
     # Output
     if args.output:
-        with open(args.output, "w") as f:
+        with open(args.output, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
         print(f"\n{GREEN}Output written to {args.output}{RESET}")
 

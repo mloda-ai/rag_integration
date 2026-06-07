@@ -132,14 +132,23 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
+    def _chunk_text_for_feature(cls, text: str, feature: Feature) -> List[str]:
+        """
+        Chunk a single text using the options of the given feature.
+
+        Default implementation reads chunk_size/chunk_overlap. Subclasses that
+        expose additional options (e.g. semantic similarity_threshold) override
+        this hook to thread those options through.
+        """
+        return cls._chunk_text(text, cls._get_chunk_size(feature), cls._get_chunk_overlap(feature))
+
+    @classmethod
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform chunking on the source feature."""
         result = []
 
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
-            chunk_size = cls._get_chunk_size(feature)
-            chunk_overlap = cls._get_chunk_overlap(feature)
             feature_name = feature.name
 
             for row in data:
@@ -151,7 +160,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
                 else:
                     text = ""
 
-                chunks = cls._chunk_text(text, chunk_size, chunk_overlap)
+                chunks = cls._chunk_text_for_feature(text, feature)
 
                 # Create a new row for each chunk
                 for chunk_idx, chunk in enumerate(chunks):

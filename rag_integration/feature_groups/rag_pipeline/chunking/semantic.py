@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional
+import threading
+from typing import TYPE_CHECKING, List, Optional
 
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
+
+if TYPE_CHECKING:
+    from mloda.user import Feature
 
 
 class SemanticChunker(BaseChunker):
@@ -29,12 +33,17 @@ class SemanticChunker(BaseChunker):
     Config-based matching:
         chunking_method="semantic"
 
-    Note: Caches the model at class level for performance. Not thread-safe.
+    Note: Caches the model at class level for performance. Initialization is
+    guarded by a lock so concurrent callers do not build the model twice.
     """
 
     # Additional configuration keys
     SIMILARITY_THRESHOLD = "similarity_threshold"
     MODEL_NAME = "model_name"
+
+    # Defaults for the additional options (kept in sync with PROPERTY_MAPPING).
+    DEFAULT_SIMILARITY_THRESHOLD = 0.5
+    DEFAULT_MODEL = "all-MiniLM-L6-v2"
 
     PROPERTY_MAPPING = {
         BaseChunker.CHUNKING_METHOD: {
@@ -50,12 +59,12 @@ class SemanticChunker(BaseChunker):
         SIMILARITY_THRESHOLD: {
             "explanation": "Cosine similarity threshold for grouping sentences (0.0-1.0)",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 0.5,
+            DefaultOptionKeys.default: DEFAULT_SIMILARITY_THRESHOLD,
         },
         MODEL_NAME: {
             "explanation": "Sentence transformer model name",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "all-MiniLM-L6-v2",
+            DefaultOptionKeys.default: DEFAULT_MODEL,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing text to chunk",
@@ -65,25 +74,54 @@ class SemanticChunker(BaseChunker):
 
     _model: Optional[object] = None
     _model_name: Optional[str] = None
+    _model_lock = threading.Lock()
 
     # Pattern to split on sentence boundaries
     SENTENCE_PATTERN = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
 
     @classmethod
-    def _get_model(cls, model_name: str) -> object:
-        """Get or create the sentence transformer model."""
-        if cls._model is None or cls._model_name != model_name:
-            try:
-                from sentence_transformers import SentenceTransformer
-            except ImportError as e:
-                raise ImportError(
-                    "sentence-transformers is required for SemanticChunker. "
-                    "Install with: pip install sentence-transformers"
-                ) from e
+    def _get_similarity_threshold(cls, feature: "Feature") -> float:
+        """Get the similarity threshold from feature options."""
+        value = feature.options.get(cls.SIMILARITY_THRESHOLD)
+        return float(value) if value is not None else cls.DEFAULT_SIMILARITY_THRESHOLD
 
-            cls._model = SentenceTransformer(model_name)
-            cls._model_name = model_name
-        return cls._model
+    @classmethod
+    def _get_model_name(cls, feature: "Feature") -> str:
+        """Get the model name from feature options."""
+        value = feature.options.get(cls.MODEL_NAME)
+        return str(value) if value is not None else cls.DEFAULT_MODEL
+
+    @classmethod
+    def _chunk_text_for_feature(cls, text: str, feature: "Feature") -> List[str]:
+        """Chunk text using the per-feature similarity threshold and model."""
+        return cls._chunk_text_semantic(
+            text,
+            cls._get_chunk_size(feature),
+            cls._get_similarity_threshold(feature),
+            cls._get_model_name(feature),
+        )
+
+    @classmethod
+    def _get_model(cls, model_name: str) -> object:
+        """Get or create the sentence transformer model (thread-safe)."""
+        # Fast path: model already cached for this name.
+        if cls._model is not None and cls._model_name == model_name:
+            return cls._model
+
+        with cls._model_lock:
+            # Re-check inside the lock: another thread may have built it.
+            if cls._model is None or cls._model_name != model_name:
+                try:
+                    from sentence_transformers import SentenceTransformer
+                except ImportError as e:
+                    raise ImportError(
+                        "sentence-transformers is required for SemanticChunker. "
+                        "Install with: pip install sentence-transformers"
+                    ) from e
+
+                cls._model = SentenceTransformer(model_name)
+                cls._model_name = model_name
+            return cls._model
 
     @classmethod
     def _split_sentences(cls, text: str) -> List[str]:
@@ -128,8 +166,8 @@ class SemanticChunker(BaseChunker):
         return cls._chunk_text_semantic(
             text,
             chunk_size,
-            similarity_threshold=0.5,
-            model_name="all-MiniLM-L6-v2",
+            similarity_threshold=cls.DEFAULT_SIMILARITY_THRESHOLD,
+            model_name=cls.DEFAULT_MODEL,
         )
 
     @classmethod

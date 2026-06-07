@@ -149,6 +149,23 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
+    def _redact_region_for_feature(
+        cls,
+        image_data: bytes,
+        image_format: str,
+        regions: List[Dict[str, Any]],
+        feature: Feature,
+    ) -> bytes:
+        """
+        Redact image regions using the options of the given feature.
+
+        Default implementation ignores extra options. Subclasses that expose
+        additional options (e.g. blur radius) override this hook to thread
+        those options through.
+        """
+        return cls._redact_region(image_data, image_format, regions)
+
+    @classmethod
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform PII redaction on images, processing row by row for memory efficiency."""
         for feature in features.features:
@@ -164,7 +181,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
                     image_data = bytes(image_data) if image_data else b""
 
                 if regions and image_data:
-                    redacted = cls._redact_region(image_data, image_format, regions)
+                    redacted = cls._redact_region_for_feature(image_data, image_format, regions, feature)
                 else:
                     # No regions to redact — pass through
                     redacted = image_data

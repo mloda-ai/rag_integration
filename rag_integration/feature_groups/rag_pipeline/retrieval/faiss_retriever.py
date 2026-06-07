@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -24,7 +25,8 @@ class FaissRetriever(BaseRetriever):
     Config-based matching:
         retrieval_method="faiss"
 
-    Note: Caches the index at class level for performance. Not thread-safe.
+    Note: Caches the index at class level for performance. Loading is guarded by
+    a lock so concurrent callers do not read the same index/metadata twice.
     """
 
     RETRIEVAL_METHODS = {
@@ -61,33 +63,39 @@ class FaissRetriever(BaseRetriever):
     _cached_index_path: Optional[str] = None
     _cached_metadata: Optional[Dict[str, Any]] = None
     _cached_metadata_path: Optional[str] = None
+    _cache_lock = threading.Lock()
 
     @classmethod
     def _load_index(cls, index_path: str) -> Any:
-        """Load a FAISS index from file, with caching."""
+        """Load a FAISS index from file, with caching (thread-safe)."""
         import faiss
 
+        # Fast path: index already cached for this path.
         if cls._cached_index is not None and cls._cached_index_path == index_path:
             return cls._cached_index
 
-        index = faiss.read_index(index_path)
-        cls._cached_index = index
-        cls._cached_index_path = index_path
-        return index
+        with cls._cache_lock:
+            # Re-check inside the lock: another thread may have loaded it.
+            if cls._cached_index is None or cls._cached_index_path != index_path:
+                cls._cached_index = faiss.read_index(index_path)
+                cls._cached_index_path = index_path
+            return cls._cached_index
 
     @classmethod
     def _load_metadata(cls, metadata_path: str) -> Dict[str, Any]:
-        """Load metadata from JSON sidecar, with caching."""
+        """Load metadata from JSON sidecar, with caching (thread-safe)."""
+        # Fast path: metadata already cached for this path.
         if cls._cached_metadata is not None and cls._cached_metadata_path == metadata_path:
             return cls._cached_metadata
 
-        with open(metadata_path, encoding="utf-8") as f:
-            raw = json.load(f)
-
-        metadata: Dict[str, Any] = raw
-        cls._cached_metadata = metadata
-        cls._cached_metadata_path = metadata_path
-        return metadata
+        with cls._cache_lock:
+            # Re-check inside the lock: another thread may have loaded it.
+            if cls._cached_metadata is None or cls._cached_metadata_path != metadata_path:
+                with open(metadata_path, encoding="utf-8") as f:
+                    metadata: Dict[str, Any] = json.load(f)
+                cls._cached_metadata = metadata
+                cls._cached_metadata_path = metadata_path
+            return cls._cached_metadata
 
     @classmethod
     def _search(

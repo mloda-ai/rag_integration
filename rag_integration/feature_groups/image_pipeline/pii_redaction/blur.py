@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.pii_redaction.base import BaseImagePIIRedactor
+
+if TYPE_CHECKING:
+    from mloda.user import Feature
 
 
 class BlurPIIRedactor(BaseImagePIIRedactor):
@@ -26,6 +29,9 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
 
     BLUR_RADIUS = "blur_radius"
 
+    # Default Gaussian blur radius (kept in sync with PROPERTY_MAPPING).
+    DEFAULT_BLUR_RADIUS = 20
+
     PROPERTY_MAPPING = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
             "blur": "Gaussian blur over PII regions",
@@ -35,7 +41,7 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
         BLUR_RADIUS: {
             "explanation": "Radius of the Gaussian blur effect",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 20,
+            DefaultOptionKeys.default: DEFAULT_BLUR_RADIUS,
         },
         BaseImagePIIRedactor.PII_REGIONS: {
             "explanation": "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'",
@@ -49,11 +55,29 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
     }
 
     @classmethod
+    def _get_blur_radius(cls, feature: "Feature") -> int:
+        """Get the blur radius from feature options."""
+        value = feature.options.get(cls.BLUR_RADIUS)
+        return int(value) if value is not None else cls.DEFAULT_BLUR_RADIUS
+
+    @classmethod
+    def _redact_region_for_feature(
+        cls,
+        image_data: bytes,
+        image_format: str,
+        regions: List[Dict[str, Any]],
+        feature: "Feature",
+    ) -> bytes:
+        """Apply Gaussian blur using the per-feature blur radius."""
+        return cls._redact_region(image_data, image_format, regions, blur_radius=cls._get_blur_radius(feature))
+
+    @classmethod
     def _redact_region(
         cls,
         image_data: bytes,
         image_format: str,
         regions: List[Dict[str, Any]],
+        blur_radius: int = DEFAULT_BLUR_RADIUS,
     ) -> bytes:
         """
         Apply Gaussian blur to PII regions.
@@ -62,6 +86,7 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
             image_data: Raw image bytes
             image_format: Image format (png, jpeg, etc.)
             regions: List of region dicts with 'bbox' [x1, y1, x2, y2]
+            blur_radius: Radius of the Gaussian blur effect (default: 20)
 
         Returns:
             Image bytes with blurred regions
@@ -92,7 +117,7 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
 
             # Crop, blur, paste back
             region_img = img.crop((x1, y1, x2, y2))
-            blurred = region_img.filter(ImageFilter.GaussianBlur(radius=20))
+            blurred = region_img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
             img.paste(blurred, (x1, y1))
 
         # Save back to bytes

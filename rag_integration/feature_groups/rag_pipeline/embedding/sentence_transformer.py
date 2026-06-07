@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING, List, Optional, Type
 
 if TYPE_CHECKING:
@@ -35,7 +36,8 @@ class SentenceTransformerEmbedder(BaseEmbedder):
     Config-based matching:
         embedding_method="sentence_transformer"
 
-    Note: Caches the model at class level for performance. Not thread-safe.
+    Note: Caches the model at class level for performance. Initialization is
+    guarded by a lock so concurrent callers do not build the model twice.
     """
 
     PROPERTY_MAPPING = {
@@ -65,6 +67,7 @@ class SentenceTransformerEmbedder(BaseEmbedder):
 
     _model: Optional[object] = None
     _model_name: Optional[str] = None
+    _model_lock = threading.Lock()
 
     @staticmethod
     def artifact() -> Optional[Type[BaseArtifact]]:
@@ -79,19 +82,25 @@ class SentenceTransformerEmbedder(BaseEmbedder):
 
     @classmethod
     def _get_model(cls, model_name: str) -> object:
-        """Get or create the sentence transformer model."""
-        if cls._model is None or cls._model_name != model_name:
-            try:
-                from sentence_transformers import SentenceTransformer
-            except ImportError as e:
-                raise ImportError(
-                    "sentence-transformers is required for SentenceTransformerEmbedder. "
-                    "Install with: pip install sentence-transformers"
-                ) from e
+        """Get or create the sentence transformer model (thread-safe)."""
+        # Fast path: model already cached for this name.
+        if cls._model is not None and cls._model_name == model_name:
+            return cls._model
 
-            cls._model = SentenceTransformer(model_name)
-            cls._model_name = model_name
-        return cls._model
+        with cls._model_lock:
+            # Re-check inside the lock: another thread may have built it.
+            if cls._model is None or cls._model_name != model_name:
+                try:
+                    from sentence_transformers import SentenceTransformer
+                except ImportError as e:
+                    raise ImportError(
+                        "sentence-transformers is required for SentenceTransformerEmbedder. "
+                        "Install with: pip install sentence-transformers"
+                    ) from e
+
+                cls._model = SentenceTransformer(model_name)
+                cls._model_name = model_name
+            return cls._model
 
     @classmethod
     def _embed_texts(

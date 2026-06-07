@@ -168,12 +168,25 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
+    def _redact_texts_for_feature(cls, texts: List[str], feature: Feature) -> List[str]:
+        """
+        Redact a batch of texts using the options of the given feature.
+
+        Default implementation reads pii_types/replacement_strategy. Subclasses
+        that expose additional options (e.g. Presidio language) override this
+        hook to thread those options through.
+        """
+        return cls._redact_pii(
+            texts,
+            cls._get_pii_types(feature),
+            cls._get_replacement_strategy(feature),
+        )
+
+    @classmethod
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform PII redaction on the source feature."""
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
-            pii_types = cls._get_pii_types(feature)
-            replacement_strategy = cls._get_replacement_strategy(feature)
 
             # Extract texts from source feature (use 'text' field if source is root)
             texts = []
@@ -186,7 +199,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
                     texts.append("")
 
             # Redact PII
-            redacted_texts = cls._redact_pii(texts, pii_types, replacement_strategy)
+            redacted_texts = cls._redact_texts_for_feature(texts, feature)
 
             # Add results to data
             for i, row in enumerate(data):
