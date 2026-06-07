@@ -13,6 +13,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock
 
+import pytest
+
 from mloda.user import Feature
 
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
@@ -57,6 +59,23 @@ def _features(keep_strategy: str) -> Any:
     return features
 
 
+def _features_named(*names: str) -> Any:
+    """Build a FeatureSet stand-in holding one "first"-strategy feature per given name.
+
+    Repeating a name models the framework placing the same feature in the set more than once
+    (e.g. requested directly and again as a downstream input).
+    """
+    feature_objs = []
+    for name in names:
+        feature = MagicMock()
+        feature.name = name
+        feature.options.get.side_effect = lambda key: "first" if key == BaseRowDeduplicator.KEEP_STRATEGY else None
+        feature_objs.append(feature)
+    features = MagicMock()
+    features.features = feature_objs
+    return features
+
+
 class TestBaseRowDeduplicatorKeepStrategies:
     """Cover keep-strategy filtering and representative selection on the shared base."""
 
@@ -89,3 +108,22 @@ class TestBaseRowDeduplicatorKeepStrategies:
             (False, None),
             (True, 2),
         ]
+
+    def test_empty_feature_set_returns_data_unchanged(self) -> None:
+        """An empty FeatureSet is a no-op: the input rows are returned as-is."""
+        data = [{"item": "aa"}, {"item": "bb"}]
+        result = _LenDeduplicator.calculate_feature(data, _features_named())
+        assert result is data
+
+    def test_repeated_same_feature_is_processed_once(self) -> None:
+        """The same feature appearing multiple times (a framework duplicate) collapses by name."""
+        data = [{"item": "aa"}, {"item": "aaaa"}, {"item": "bb"}]
+        result = _LenDeduplicator.calculate_feature(data, _features_named("items__deduped", "items__deduped"))
+        # "first" strategy: one row survives per duplicate group, under the single feature name.
+        assert [row["items__deduped"] for row in result] == ["aa", "bb"]
+
+    def test_distinct_features_raise_instead_of_silently_dropping(self) -> None:
+        """Deduplication is undefined for >1 distinct feature (row-filtering + shared metadata)."""
+        data = [{"item": "aa"}, {"item": "aaaa"}]
+        with pytest.raises(ValueError, match="distinct features"):
+            _LenDeduplicator.calculate_feature(data, _features_named("a__deduped", "b__deduped"))

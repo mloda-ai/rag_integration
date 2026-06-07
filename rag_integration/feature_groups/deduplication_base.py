@@ -83,35 +83,53 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
 
     @classmethod
     def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
-        """Deduplicate rows: attach duplicate metadata and filter by keep strategy."""
-        for feature in features.features:
-            threshold = cls._get_similarity_threshold(feature)
-            keep_strategy = cls._get_keep_strategy(feature)
-            feature_name = feature.name
+        """Deduplicate rows: attach duplicate metadata and filter by keep strategy.
 
-            items = cls._extract_items(data, feature)
-            duplicate_of = cls._find_duplicates(items, threshold)
+        Exactly one distinct feature is processed per call. Unlike column-adding feature
+        groups (e.g. pii redaction, embedding), deduplication filters the row set and writes
+        shared ``is_duplicate`` / ``duplicate_of`` metadata, so two *different* features in one
+        ``FeatureSet`` would each demand a different surviving row set: the operation is
+        undefined for more than one. The framework may legitimately place the same feature in
+        the set more than once (e.g. requested directly and again as a downstream input); those
+        identical entries collapse by name. ``features.features`` is a set, so silently picking
+        "the first" of genuinely distinct features would also be non-deterministic; raise instead.
+        """
+        features_by_name = {feature.name: feature for feature in features.features}
+        if not features_by_name:
+            return data
+        if len(features_by_name) > 1:
+            names = sorted(str(name) for name in features_by_name)
+            raise ValueError(
+                f"{cls.__name__} deduplicates one feature per FeatureSet because it filters rows "
+                f"and writes shared duplicate metadata; got {len(names)} distinct features: {names}."
+            )
 
-            result = []
-            for i, row in enumerate(data):
-                new_row = row.copy()
-                new_row["is_duplicate"] = duplicate_of[i] is not None
-                new_row["duplicate_of"] = duplicate_of[i]
-                new_row[feature_name] = items[i]
+        feature = next(iter(features_by_name.values()))
+        threshold = cls._get_similarity_threshold(feature)
+        keep_strategy = cls._get_keep_strategy(feature)
+        feature_name = feature.name
 
-                if keep_strategy == "all_unique":
-                    result.append(new_row)
-                elif keep_strategy == "first" and duplicate_of[i] is None:
-                    result.append(new_row)
-                elif keep_strategy == cls.KEEP_LARGEST_STRATEGY:
-                    result.append(new_row)
+        items = cls._extract_items(data, feature)
+        duplicate_of = cls._find_duplicates(items, threshold)
 
-            if keep_strategy == cls.KEEP_LARGEST_STRATEGY:
-                result = cls._keep_largest_per_group(result, items)
+        result = []
+        for i, row in enumerate(data):
+            new_row = row.copy()
+            new_row["is_duplicate"] = duplicate_of[i] is not None
+            new_row["duplicate_of"] = duplicate_of[i]
+            new_row[feature_name] = items[i]
 
-            return result
+            if keep_strategy == "all_unique":
+                result.append(new_row)
+            elif keep_strategy == "first" and duplicate_of[i] is None:
+                result.append(new_row)
+            elif keep_strategy == cls.KEEP_LARGEST_STRATEGY:
+                result.append(new_row)
 
-        return data
+        if keep_strategy == cls.KEEP_LARGEST_STRATEGY:
+            result = cls._keep_largest_per_group(result, items)
+
+        return result
 
     @classmethod
     def _keep_largest_per_group(cls, data: List[Dict[str, Any]], items: List[Any]) -> List[Dict[str, Any]]:
