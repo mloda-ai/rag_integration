@@ -94,7 +94,7 @@ feature = Feature(
         "redaction_method": "regex",        # or "simple", "pattern", "presidio"
         "chunking_method": "sentence",      # or "fixed_size", "paragraph", "semantic"
         "deduplication_method": "exact_hash",  # or "normalized", "ngram"
-        "embedding_method": "sentence-transformer",  # or "hash", "tfidf", "mock"
+        "embedding_method": "sentence_transformer",  # or "hash", "tfidf", "mock"
         "chunk_size": 512,
         "chunk_overlap": 50,
     }),
