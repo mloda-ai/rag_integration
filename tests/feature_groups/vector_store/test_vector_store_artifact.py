@@ -89,6 +89,33 @@ class TestVectorStoreArtifact:
         assert metadata["doc_ids"] == ["doc_42"]
         assert metadata["num_vectors"] == 1
 
+    def test_metadata_sidecar_preserves_non_ascii(self, tmp_path: Path) -> None:
+        """Non-ASCII metadata is stored as raw UTF-8 and round-trips intact."""
+        mock_features = self._make_mock_features(tmp_path)
+
+        dimension = 3
+        index = faiss.IndexFlatL2(dimension)
+        index.add(np.array([[1.0, 2.0, 3.0]], dtype=np.float32))
+
+        text = "Café déjà vu 日本語"
+        VectorStoreArtifact.save_vector_store_artifact(mock_features, "unicode_test", index, [text], ["doc_ü"])
+        VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
+
+        json_files = list(tmp_path.glob("vector_store_*_metadata.json"))
+        assert len(json_files) == 1
+
+        # Stored as real UTF-8, not \uXXXX escapes (ensure_ascii=False).
+        raw = json_files[0].read_text(encoding="utf-8")
+        assert text in raw
+        assert "\\u" not in raw
+
+        # Round-trips through the loader.
+        mock_features.artifact_to_load = True
+        loaded = VectorStoreArtifact.load_vector_store_artifact(mock_features, "unicode_test")
+        assert loaded is not None
+        assert loaded["metadata"]["texts"] == [text]
+        assert loaded["metadata"]["doc_ids"] == ["doc_ü"]
+
     def test_missing_artifact_raises_error(self, tmp_path: Path) -> None:
         """Test that loading a non-existent artifact raises ValueError."""
         mock_features = self._make_mock_features(tmp_path)

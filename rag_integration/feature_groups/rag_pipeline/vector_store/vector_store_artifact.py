@@ -82,7 +82,7 @@ class VectorStoreArtifact(BaseArtifact):
             # Save metadata sidecar as JSON
             metadata = artifact_data.get("metadata", {})
             with open(metadata_path, "w", encoding="utf-8") as f:
-                json.dump(metadata, f)
+                json.dump(metadata, f, ensure_ascii=False)
 
             saved_paths[artifact_key] = {
                 "index_path": str(index_path),
