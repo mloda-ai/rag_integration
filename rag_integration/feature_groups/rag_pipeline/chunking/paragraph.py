@@ -107,18 +107,12 @@ class ParagraphChunker(BaseChunker):
                 # Save current chunk
                 chunks.append("\n\n".join(current_chunk))
 
-                # Start new chunk with overlap (keep last paragraph)
-                if chunk_overlap > 0 and current_chunk:
-                    last_para = current_chunk[-1]
-                    if len(last_para) <= chunk_overlap:
-                        current_chunk = [last_para]
-                        current_length = len(last_para)
-                    else:
-                        current_chunk = []
-                        current_length = 0
-                else:
-                    current_chunk = []
-                    current_length = 0
+                # Start new chunk with overlap: repeat trailing paragraphs up to
+                # chunk_overlap characters.
+                current_chunk = cls._overlap_paragraphs(current_chunk, chunk_overlap)
+                current_length = (
+                    (sum(len(p) for p in current_chunk) + 2 * (len(current_chunk) - 1)) if current_chunk else 0
+                )
 
             current_chunk.append(para)
             current_length = sum(len(p) for p in current_chunk) + 2 * (len(current_chunk) - 1)
@@ -128,6 +122,28 @@ class ParagraphChunker(BaseChunker):
             chunks.append("\n\n".join(current_chunk))
 
         return chunks if chunks else [""]
+
+    @classmethod
+    def _overlap_paragraphs(cls, paragraphs: List[str], chunk_overlap: int) -> List[str]:
+        """
+        Return the trailing paragraphs whose joined length stays within chunk_overlap characters.
+
+        chunk_overlap is measured in characters, matching FixedSizeChunker and
+        SentenceChunker. Paragraphs are taken from the end until adding the next one
+        would exceed the budget; the two-character "\\n\\n" separator counts toward the
+        length. Returns an empty list when no whole paragraph fits (or overlap is 0).
+        """
+        if chunk_overlap <= 0:
+            return []
+        overlap: List[str] = []
+        length = 0
+        for paragraph in reversed(paragraphs):
+            added = len(paragraph) + (2 if overlap else 0)
+            if length + added > chunk_overlap:
+                break
+            overlap.insert(0, paragraph)
+            length += added
+        return overlap
 
     @classmethod
     def _split_long_paragraph(cls, text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
