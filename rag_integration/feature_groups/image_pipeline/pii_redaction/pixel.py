@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.pii_redaction.base import BaseImagePIIRedactor
+
+if TYPE_CHECKING:
+    from mloda.user import Feature
 
 
 class PixelPIIRedactor(BaseImagePIIRedactor):
@@ -26,6 +29,9 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
 
     PIXEL_SIZE = "pixel_size"
 
+    # Default pixel block size (kept in sync with PROPERTY_MAPPING).
+    DEFAULT_PIXEL_SIZE = 10
+
     PROPERTY_MAPPING = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
             "pixel": "Pixelate PII regions",
@@ -35,7 +41,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
         PIXEL_SIZE: {
             "explanation": "Size of each pixel block in the mosaic effect",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 10,
+            DefaultOptionKeys.default: DEFAULT_PIXEL_SIZE,
         },
         BaseImagePIIRedactor.PII_REGIONS: {
             "explanation": "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'",
@@ -49,11 +55,29 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
     }
 
     @classmethod
+    def _get_pixel_size(cls, feature: "Feature") -> int:
+        """Get the pixel block size from feature options."""
+        value = feature.options.get(cls.PIXEL_SIZE)
+        return int(value) if value is not None else cls.DEFAULT_PIXEL_SIZE
+
+    @classmethod
+    def _redact_region_for_feature(
+        cls,
+        image_data: bytes,
+        image_format: str,
+        regions: List[Dict[str, Any]],
+        feature: "Feature",
+    ) -> bytes:
+        """Apply pixelation using the per-feature pixel size."""
+        return cls._redact_region(image_data, image_format, regions, pixel_size=cls._get_pixel_size(feature))
+
+    @classmethod
     def _redact_region(
         cls,
         image_data: bytes,
         image_format: str,
         regions: List[Dict[str, Any]],
+        pixel_size: int = DEFAULT_PIXEL_SIZE,
     ) -> bytes:
         """
         Apply pixelation to PII regions.
@@ -62,6 +86,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
             image_data: Raw image bytes
             image_format: Image format (png, jpeg, etc.)
             regions: List of region dicts with 'bbox' [x1, y1, x2, y2]
+            pixel_size: Size of each pixel block in the mosaic effect (default: 10)
 
         Returns:
             Image bytes with pixelated regions
@@ -74,7 +99,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
         import io
 
         img: Image.Image = Image.open(io.BytesIO(image_data))
-        pixel_size = 10
+        pixel_size = max(1, pixel_size)  # guard against division by zero
 
         for region in regions:
             bbox = region.get("bbox", [])

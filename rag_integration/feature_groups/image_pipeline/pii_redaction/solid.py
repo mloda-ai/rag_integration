@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.pii_redaction.base import BaseImagePIIRedactor
+
+if TYPE_CHECKING:
+    from mloda.user import Feature
 
 
 class SolidFillPIIRedactor(BaseImagePIIRedactor):
@@ -26,6 +29,9 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
 
     FILL_COLOR = "fill_color"
 
+    # Default solid fill color (black), kept in sync with PROPERTY_MAPPING.
+    DEFAULT_FILL_COLOR = (0, 0, 0)
+
     PROPERTY_MAPPING = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
             "solid": "Solid color fill over PII regions",
@@ -35,7 +41,7 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
         FILL_COLOR: {
             "explanation": "RGB color tuple for solid fill (e.g., [0, 0, 0] for black)",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: [0, 0, 0],
+            DefaultOptionKeys.default: list(DEFAULT_FILL_COLOR),
         },
         BaseImagePIIRedactor.PII_REGIONS: {
             "explanation": "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'",
@@ -49,11 +55,35 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
     }
 
     @classmethod
+    def _get_fill_color(cls, feature: "Feature") -> Tuple[int, int, int]:
+        """Get the RGB fill color from feature options."""
+        value = feature.options.get(cls.FILL_COLOR)
+        if value is None:
+            return cls.DEFAULT_FILL_COLOR
+        channels = [int(c) for c in value]
+        if len(channels) != 3:
+            raise ValueError(f"{cls.FILL_COLOR} must be an RGB triple, got {len(channels)} value(s): {value!r}")
+        r, g, b = channels
+        return (r, g, b)
+
+    @classmethod
+    def _redact_region_for_feature(
+        cls,
+        image_data: bytes,
+        image_format: str,
+        regions: List[Dict[str, Any]],
+        feature: "Feature",
+    ) -> bytes:
+        """Apply solid fill using the per-feature fill color."""
+        return cls._redact_region(image_data, image_format, regions, fill_color=cls._get_fill_color(feature))
+
+    @classmethod
     def _redact_region(
         cls,
         image_data: bytes,
         image_format: str,
         regions: List[Dict[str, Any]],
+        fill_color: Tuple[int, int, int] = DEFAULT_FILL_COLOR,
     ) -> bytes:
         """
         Apply solid fill to PII regions.
@@ -62,6 +92,7 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
             image_data: Raw image bytes
             image_format: Image format (png, jpeg, etc.)
             regions: List of region dicts with 'bbox' [x1, y1, x2, y2]
+            fill_color: RGB color tuple for the solid fill (default: black)
 
         Returns:
             Image bytes with solid-filled regions
@@ -75,8 +106,6 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
 
         img = Image.open(io.BytesIO(image_data))
         draw = ImageDraw.Draw(img)
-
-        fill_color = (0, 0, 0)  # Default black
 
         for region in regions:
             bbox = region.get("bbox", [])

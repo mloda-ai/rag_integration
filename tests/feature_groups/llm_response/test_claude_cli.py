@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from typing import Any
 from unittest.mock import patch
 
@@ -121,3 +122,65 @@ class TestCallClaudeCli:
             mock_run.return_value = mock_completed
             with pytest.raises(ValueError, match="claude -p failed"):
                 ClaudeCliResponse._call_claude_cli("test prompt", "", 1)
+
+    def test_timeout_propagates(self) -> None:
+        """Should propagate subprocess.TimeoutExpired when the CLI times out."""
+        with patch("rag_integration.feature_groups.rag_pipeline.llm_response.claude_cli.subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.TimeoutExpired(cmd="claude", timeout=1)
+            with pytest.raises(subprocess.TimeoutExpired):
+                ClaudeCliResponse._call_claude_cli("test prompt", "", 1, timeout=1)
+
+    def test_timeout_passed_to_subprocess(self) -> None:
+        """Should forward the timeout value to subprocess.run."""
+        mock_output = json.dumps({"result": "ok"})
+        mock_completed: Any = type("CompletedProcess", (), {"returncode": 0, "stdout": mock_output, "stderr": ""})()
+
+        with patch("rag_integration.feature_groups.rag_pipeline.llm_response.claude_cli.subprocess.run") as mock_run:
+            mock_run.return_value = mock_completed
+            ClaudeCliResponse._call_claude_cli("prompt", "", 1, timeout=42)
+
+        assert mock_run.call_args[1]["timeout"] == 42
+
+    def test_malformed_output_raises(self) -> None:
+        """Should raise JSONDecodeError when stdout is not valid JSON."""
+        mock_completed: Any = type(
+            "CompletedProcess", (), {"returncode": 0, "stdout": "not json at all", "stderr": ""}
+        )()
+
+        with patch("rag_integration.feature_groups.rag_pipeline.llm_response.claude_cli.subprocess.run") as mock_run:
+            mock_run.return_value = mock_completed
+            with pytest.raises(json.JSONDecodeError):
+                ClaudeCliResponse._call_claude_cli("test prompt", "", 1)
+
+    def test_result_key_missing_falls_back_to_stdout(self) -> None:
+        """Should fall back to raw stdout when the 'result' key is absent."""
+        mock_output = json.dumps({"other": "value"})
+        mock_completed: Any = type("CompletedProcess", (), {"returncode": 0, "stdout": mock_output, "stderr": ""})()
+
+        with patch("rag_integration.feature_groups.rag_pipeline.llm_response.claude_cli.subprocess.run") as mock_run:
+            mock_run.return_value = mock_completed
+            result = ClaudeCliResponse._call_claude_cli("test prompt", "", 1)
+
+        assert result == mock_output
+
+
+class TestOptionGetters:
+    """Tests for option extraction helpers."""
+
+    def test_allowed_tools_default(self) -> None:
+        assert ClaudeCliResponse._get_allowed_tools(Options()) == ""
+
+    def test_allowed_tools_from_options(self) -> None:
+        assert ClaudeCliResponse._get_allowed_tools(Options({"allowed_tools": "Bash"})) == "Bash"
+
+    def test_max_turns_default(self) -> None:
+        assert ClaudeCliResponse._get_max_turns(Options()) == 1
+
+    def test_max_turns_from_options(self) -> None:
+        assert ClaudeCliResponse._get_max_turns(Options({"max_turns": 5})) == 5
+
+    def test_timeout_default(self) -> None:
+        assert ClaudeCliResponse._get_timeout(Options()) == 300
+
+    def test_timeout_from_options(self) -> None:
+        assert ClaudeCliResponse._get_timeout(Options({"timeout": 30})) == 30

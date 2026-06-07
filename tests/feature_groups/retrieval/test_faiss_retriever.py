@@ -34,10 +34,8 @@ class TestFaissRetriever:
             json.dump(metadata, f)
 
         # Reset cache for clean test
-        FaissRetriever._cached_index = None
-        FaissRetriever._cached_index_path = None
-        FaissRetriever._cached_metadata = None
-        FaissRetriever._cached_metadata_path = None
+        FaissRetriever._index_cache = None
+        FaissRetriever._metadata_cache = None
 
         return index_path, metadata_path
 
@@ -79,8 +77,7 @@ class TestFaissRetriever:
         index_path = str(tmp_path / "no_meta_index.faiss")
         faiss.write_index(index, index_path)
 
-        FaissRetriever._cached_index = None
-        FaissRetriever._cached_index_path = None
+        FaissRetriever._index_cache = None
 
         options = Options({"index_path": index_path, "top_k": 2})
         result = FaissRetriever._search([1.0, 0.0, 0.0, 0.0], 2, options)

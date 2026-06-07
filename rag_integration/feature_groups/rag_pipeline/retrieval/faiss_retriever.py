@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+import threading
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from mloda.user import Options
@@ -24,7 +25,8 @@ class FaissRetriever(BaseRetriever):
     Config-based matching:
         retrieval_method="faiss"
 
-    Note: Caches the index at class level for performance. Not thread-safe.
+    Note: Caches the index at class level for performance. Loading is guarded by
+    a lock so concurrent callers do not read the same index/metadata twice.
     """
 
     RETRIEVAL_METHODS = {
@@ -56,38 +58,51 @@ class FaissRetriever(BaseRetriever):
         },
     }
 
-    # Class-level cache for loaded index
-    _cached_index: Optional[Any] = None
-    _cached_index_path: Optional[str] = None
-    _cached_metadata: Optional[Dict[str, Any]] = None
-    _cached_metadata_path: Optional[str] = None
+    # Class-level caches, each stored as a single (path, value) tuple so the
+    # lock-free fast path reads it atomically (one attribute load) instead of two
+    # fields that could be observed mid-update.
+    _index_cache: Optional[Tuple[str, Any]] = None
+    _metadata_cache: Optional[Tuple[str, Dict[str, Any]]] = None
+    _cache_lock = threading.Lock()
 
     @classmethod
     def _load_index(cls, index_path: str) -> Any:
-        """Load a FAISS index from file, with caching."""
+        """Load a FAISS index from file, with caching (thread-safe)."""
         import faiss
 
-        if cls._cached_index is not None and cls._cached_index_path == index_path:
-            return cls._cached_index
+        # Fast path: single atomic read of the (path, index) cache.
+        cache = cls._index_cache
+        if cache is not None and cache[0] == index_path:
+            return cache[1]
 
-        index = faiss.read_index(index_path)
-        cls._cached_index = index
-        cls._cached_index_path = index_path
-        return index
+        with cls._cache_lock:
+            # Re-check inside the lock: another thread may have loaded it.
+            cache = cls._index_cache
+            if cache is not None and cache[0] == index_path:
+                return cache[1]
+
+            index = faiss.read_index(index_path)
+            cls._index_cache = (index_path, index)
+            return index
 
     @classmethod
     def _load_metadata(cls, metadata_path: str) -> Dict[str, Any]:
-        """Load metadata from JSON sidecar, with caching."""
-        if cls._cached_metadata is not None and cls._cached_metadata_path == metadata_path:
-            return cls._cached_metadata
+        """Load metadata from JSON sidecar, with caching (thread-safe)."""
+        # Fast path: single atomic read of the (path, metadata) cache.
+        cache = cls._metadata_cache
+        if cache is not None and cache[0] == metadata_path:
+            return cache[1]
 
-        with open(metadata_path, encoding="utf-8") as f:
-            raw = json.load(f)
+        with cls._cache_lock:
+            # Re-check inside the lock: another thread may have loaded it.
+            cache = cls._metadata_cache
+            if cache is not None and cache[0] == metadata_path:
+                return cache[1]
 
-        metadata: Dict[str, Any] = raw
-        cls._cached_metadata = metadata
-        cls._cached_metadata_path = metadata_path
-        return metadata
+            with open(metadata_path, encoding="utf-8") as f:
+                metadata: Dict[str, Any] = json.load(f)
+            cls._metadata_cache = (metadata_path, metadata)
+            return metadata
 
     @classmethod
     def _search(
