@@ -80,7 +80,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         CHUNK_OVERLAP: {
             "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 50,
+            DefaultOptionKeys.default: 128,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing text to chunk",
@@ -108,7 +108,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     def _get_chunk_overlap(cls, feature: Feature) -> int:
         """Get chunk overlap from feature options."""
         overlap = feature.options.get(cls.CHUNK_OVERLAP)
-        return int(overlap) if overlap is not None else 50
+        return int(overlap) if overlap is not None else 128
 
     @classmethod
     @abstractmethod

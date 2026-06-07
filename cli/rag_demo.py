@@ -382,7 +382,9 @@ Examples:
     # Parameter options
     param_group = run_parser.add_argument_group("Parameters")
     param_group.add_argument("--chunk-size", type=int, default=512, help="Chunk size in characters (default: 512)")
-    param_group.add_argument("--chunk-overlap", type=int, default=50, help="Overlap between chunks (default: 50)")
+    param_group.add_argument(
+        "--chunk-overlap", type=int, default=128, help="Overlap between chunks, in characters (default: 128)"
+    )
     param_group.add_argument("--embedding-dim", type=int, default=384, help="Embedding dimension (default: 384)")
 
     # Output options

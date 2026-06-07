@@ -53,10 +53,16 @@ class TestSentenceChunker(TextChunkingTestBase):
         # chunk_size forces multiple chunks; overlap large enough to fit a trailing sentence.
         chunks = SentenceChunker._chunk_text(text, 22, 12)
         assert len(chunks) >= 2
-        # Consecutive chunks should share at least one repeated sentence.
-        first_sentences = set(chunks[0].split(". "))
-        second_start = chunks[1].split(". ")[0]
-        assert any(second_start in s or s in second_start for s in first_sentences)
+        # Each chunk must start by repeating the last sentence of the previous chunk.
+        for prev, nxt in zip(chunks, chunks[1:]):
+            assert nxt.split(". ")[0].rstrip(".") == prev.split(". ")[-1].rstrip(".")
+
+    def test_overlap_clamped_to_chunk_size(self) -> None:
+        """overlap >= chunk_size is clamped so it cannot stall progress or duplicate unboundedly."""
+        text = "Alpha one. Beta two. Gamma three. Delta four."
+        # An overlap at/above chunk_size collapses to the same output as chunk_size - 1.
+        clamped = SentenceChunker._chunk_text(text, 22, 21)
+        assert SentenceChunker._chunk_text(text, 22, 1000) == clamped
 
     def test_zero_overlap_no_repeat(self) -> None:
         """With chunk_overlap=0 no sentence should be repeated between consecutive chunks."""

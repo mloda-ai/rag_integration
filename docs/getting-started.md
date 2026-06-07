@@ -96,7 +96,7 @@ feature = Feature(
         "deduplication_method": "exact_hash",  # or "normalized", "ngram"
         "embedding_method": "sentence-transformer",  # or "hash", "tfidf", "mock"
         "chunk_size": 512,
-        "chunk_overlap": 50,
+        "chunk_overlap": 128,
     }),
 )
 ```

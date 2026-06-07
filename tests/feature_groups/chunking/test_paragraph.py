@@ -58,9 +58,16 @@ class TestParagraphChunker(TextChunkingTestBase):
         # chunk_size forces multiple chunks; overlap large enough to fit a trailing paragraph.
         chunks = ParagraphChunker._chunk_text(text, 90, 40)
         assert len(chunks) >= 2
-        # Consecutive chunks should share a repeated trailing paragraph.
-        first_paras = set(chunks[0].split("\n\n"))
-        assert chunks[1].split("\n\n")[0] in first_paras
+        # Each chunk must start by repeating the last paragraph of the previous chunk.
+        for prev, nxt in zip(chunks, chunks[1:]):
+            assert nxt.split("\n\n")[0] == prev.split("\n\n")[-1]
+
+    def test_overlap_clamped_to_chunk_size(self) -> None:
+        """overlap >= chunk_size is clamped so it cannot stall progress or duplicate unboundedly."""
+        text = "\n\n".join(f"Paragraph number {i} here ok." for i in range(8))
+        # An overlap at/above chunk_size collapses to the same output as chunk_size - 1.
+        clamped = ParagraphChunker._chunk_text(text, 90, 89)
+        assert ParagraphChunker._chunk_text(text, 90, 100000) == clamped
 
     def test_zero_overlap_no_repeat(self) -> None:
         """With chunk_overlap=0 no paragraph should be repeated between consecutive chunks."""

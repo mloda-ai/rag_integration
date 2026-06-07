@@ -109,7 +109,7 @@ python3 -m cli.rag_demo run --input ./path/to/docs/ --chunking sentence -v
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--chunk-size` | 512 | Chunk size in characters |
-| `--chunk-overlap` | 50 | Overlap between chunks |
+| `--chunk-overlap` | 128 | Overlap between chunks, in characters |
 | `--embedding-dim` | 384 | Embedding dimension |
 
 ### Output Options

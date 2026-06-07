@@ -37,7 +37,7 @@ class ParagraphChunker(BaseChunker):
         BaseChunker.CHUNK_OVERLAP: {
             "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 50,
+            DefaultOptionKeys.default: 128,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing text to chunk",
@@ -79,6 +79,9 @@ class ParagraphChunker(BaseChunker):
         if not paragraphs:
             return [text]
 
+        # Clamp overlap below chunk_size so it cannot stall progress (matching FixedSizeChunker).
+        chunk_overlap = max(0, min(chunk_overlap, chunk_size - 1))
+
         # If only one paragraph, use fixed-size fallback
         if len(paragraphs) == 1:
             if len(paragraphs[0]) <= chunk_size:
@@ -107,12 +110,8 @@ class ParagraphChunker(BaseChunker):
                 # Save current chunk
                 chunks.append("\n\n".join(current_chunk))
 
-                # Start new chunk with overlap: repeat trailing paragraphs up to
-                # chunk_overlap characters.
+                # Start new chunk with overlapping trailing paragraphs (current_length recomputed below).
                 current_chunk = cls._overlap_paragraphs(current_chunk, chunk_overlap)
-                current_length = (
-                    (sum(len(p) for p in current_chunk) + 2 * (len(current_chunk) - 1)) if current_chunk else 0
-                )
 
             current_chunk.append(para)
             current_length = sum(len(p) for p in current_chunk) + 2 * (len(current_chunk) - 1)

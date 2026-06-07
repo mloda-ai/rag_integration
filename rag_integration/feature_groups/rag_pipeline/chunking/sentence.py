@@ -37,7 +37,7 @@ class SentenceChunker(BaseChunker):
         BaseChunker.CHUNK_OVERLAP: {
             "explanation": "Overlap between consecutive chunks, in characters",
             DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 50,
+            DefaultOptionKeys.default: 128,
         },
         DefaultOptionKeys.in_features: {
             "explanation": "Source feature containing text to chunk",
@@ -82,6 +82,9 @@ class SentenceChunker(BaseChunker):
         if not sentences:
             return [text]
 
+        # Clamp overlap below chunk_size so it cannot stall progress (matching FixedSizeChunker).
+        chunk_overlap = max(0, min(chunk_overlap, chunk_size - 1))
+
         chunks = []
         current_chunk: List[str] = []
         current_length = 0
@@ -101,10 +104,8 @@ class SentenceChunker(BaseChunker):
                 # Save current chunk
                 chunks.append(" ".join(current_chunk))
 
-                # Start new chunk with overlap: repeat trailing sentences up to
-                # chunk_overlap characters.
+                # Start new chunk with overlapping trailing sentences (current_length recomputed below).
                 current_chunk = cls._overlap_sentences(current_chunk, chunk_overlap)
-                current_length = (sum(len(s) for s in current_chunk) + len(current_chunk) - 1) if current_chunk else 0
 
             current_chunk.append(sentence)
             current_length = sum(len(s) for s in current_chunk) + len(current_chunk) - 1
