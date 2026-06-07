@@ -81,7 +81,7 @@ class FaissRetriever(BaseRetriever):
         if cls._cached_metadata is not None and cls._cached_metadata_path == metadata_path:
             return cls._cached_metadata
 
-        with open(metadata_path) as f:
+        with open(metadata_path, encoding="utf-8") as f:
             raw = json.load(f)
 
         metadata: Dict[str, Any] = raw
