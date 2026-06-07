@@ -57,3 +57,33 @@ class TestFixedSizeChunker(TextChunkingTestBase):
 
         overlaps = [self._leading_overlap(a, b) for a, b in zip(chunks, chunks[1:])]
         assert all(overlap >= chunk_overlap - 1 for overlap in overlaps), overlaps
+
+    def test_no_source_text_dropped_after_word_boundary_trim(self) -> None:
+        """Word-boundary trims must not drop source text (issue #6).
+
+        The same root cause behind the overlap drift also lost text: when a trim
+        pulled ``end`` back by more than ``chunk_overlap``, the old fixed-step
+        ``start`` jumped past ``end``, so the characters in between landed in no
+        chunk at all. The effect is worst at low overlap. Advancing relative to
+        the trimmed ``end`` keeps coverage continuous: every source character is
+        covered by at least one chunk.
+
+        Note this is about *coverage*, not whole-word presence: a chunk may start
+        mid-word, so a word can legitimately be split across two chunks while all
+        of its characters remain present. Fixed-width unique tokens make every
+        chunk a unique substring, so each chunk's source span is unambiguous and
+        we can check coverage directly.
+        """
+        text = " ".join(f"t{i:04d}" for i in range(120))
+
+        # Low-overlap combinations are where the old step skipped trimmed text.
+        for chunk_size, chunk_overlap in [(100, 0), (40, 3), (30, 2)]:
+            chunks = FixedSizeChunker._chunk_text(text, chunk_size, chunk_overlap)
+            covered = [False] * len(text)
+            for chunk in chunks:
+                assert text.count(chunk) == 1, (chunk_size, chunk_overlap, chunk)
+                start = text.index(chunk)
+                for index in range(start, start + len(chunk)):
+                    covered[index] = True
+            dropped = [i for i, char in enumerate(text) if not covered[i] and not char.isspace()]
+            assert not dropped, (chunk_size, chunk_overlap, dropped)
