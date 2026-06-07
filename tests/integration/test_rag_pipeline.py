@@ -31,7 +31,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     TfidfEmbedder,
     SentenceTransformerEmbedder,
 )
-from tests.conftest import requires_spacy_model
+from tests.conftest import requires_sentence_transformer_model, requires_spacy_model
 from tests.integration.helpers import flatten_result, get_results_by_feature
 
 SAMPLE_DOCUMENTS = [
@@ -186,6 +186,7 @@ class TestAlternativeProviders:
     """Test alternative provider implementations work correctly."""
 
     @requires_spacy_model
+    @requires_sentence_transformer_model
     def test_all_provider_combinations(self) -> None:
         """
         Test 4 different provider combinations using string-based features with domains.
@@ -239,6 +240,7 @@ class TestAlternativeProviders:
 class TestEmbeddingArtifactIntegration:
     """Test embedding artifact save and load in a full pipeline."""
 
+    @requires_sentence_transformer_model
     def test_embedding_artifact_save_and_load(self) -> None:
         """
         Test that embeddings are saved on first run and loaded on second run.
