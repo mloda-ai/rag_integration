@@ -42,14 +42,7 @@ class TestFixedSizeChunker(TextChunkingTestBase):
         return 0
 
     def test_overlap_stays_consistent_after_word_boundary_trim(self) -> None:
-        """Word-boundary trims must not erode the requested overlap (issue #6).
-
-        Varied word lengths force trims at different offsets within each chunk.
-        Before the fix, ``start`` advanced by the full fixed step regardless of
-        how far the trim pulled ``end`` back, so the real overlap drifted well
-        below ``chunk_overlap``. The overlap should now stay at ``chunk_overlap``
-        (give or take one character lost to whitespace stripping).
-        """
+        """Word-boundary trims must not erode the requested overlap (issue #6)."""
         text = "alpha bravo charlie delta echo foxtrot golf hotel india juliet " * 10
         chunk_size, chunk_overlap = 80, 20
         chunks = FixedSizeChunker._chunk_text(text, chunk_size, chunk_overlap)
@@ -59,24 +52,13 @@ class TestFixedSizeChunker(TextChunkingTestBase):
         assert all(overlap >= chunk_overlap - 1 for overlap in overlaps), overlaps
 
     def test_no_source_text_dropped_after_word_boundary_trim(self) -> None:
-        """Word-boundary trims must not drop source text (issue #6).
+        """Low-overlap trims must not drop source text (issue #6).
 
-        The same root cause behind the overlap drift also lost text: when a trim
-        pulled ``end`` back by more than ``chunk_overlap``, the old fixed-step
-        ``start`` jumped past ``end``, so the characters in between landed in no
-        chunk at all. The effect is worst at low overlap. Advancing relative to
-        the trimmed ``end`` keeps coverage continuous: every source character is
-        covered by at least one chunk.
-
-        Note this is about *coverage*, not whole-word presence: a chunk may start
-        mid-word, so a word can legitimately be split across two chunks while all
-        of its characters remain present. Fixed-width unique tokens make every
-        chunk a unique substring, so each chunk's source span is unambiguous and
-        we can check coverage directly.
+        Fixed-width unique tokens make every chunk a unique substring, so each
+        chunk's source span is unambiguous and we can assert full coverage.
         """
         text = " ".join(f"t{i:04d}" for i in range(120))
 
-        # Low-overlap combinations are where the old step skipped trimmed text.
         for chunk_size, chunk_overlap in [(100, 0), (40, 3), (30, 2)]:
             chunks = FixedSizeChunker._chunk_text(text, chunk_size, chunk_overlap)
             covered = [False] * len(text)
