@@ -218,22 +218,42 @@ family's `base.py`. The shared axis:
 - **Embedding-model selection** (retrieve dense backend, graph_rag)
 - **Citation / provenance** (generate, orchestrator)
 
-## Relationship to the stage pipeline
+## Relationship to the stage pipeline (the migration seam)
 
 The stage pipeline (`feature_groups/rag_pipeline/`) has a FAISS-backed
-`retrieval` stage and an `llm_response` stage, which cover the same ground as the
-`retrieve` and `generate` connectors:
+`retrieval` stage and an `llm_response` stage, which cover the same ground as
+the `retrieve` and `generate` connectors. The division of labor: **stages =
+build-your-own** (assemble source -> chunk -> embed -> index -> retrieve step
+by step), **connectors = bring an existing tool** (drop in one external tool
+that subsumes several steps). They are one world, not two parallel ones, and
+the seam between them is pinned down in three ways (issue #36):
 
-- A connector and the corresponding stage emit the same passage / answer row
-  shape, so a downstream feature is agnostic to which produced it.
-- Stages assemble a pipeline step by step; a connector drops in one external tool
-  that subsumes embed + index + retrieve.
-- Switching between them is a change of connector id / options, same
-  `Feature -> run_all` shape, no pipeline rewrite.
-
-The `retrieve` family currently has lexical backends (`bm25s`, `tfidf`) only;
-there is no dense / FAISS backend yet, and the FAISS retrieval stage is not yet
-wired in as one.
+- **The FAISS stage is the native dense path of `retrieve`, not a separate
+  concept.** `FaissDenseRetriever` (`retrieve_backend="faiss"`) runs the same
+  FAISS nearest-neighbor search over the same stage-pipeline embeddings
+  (`HashEmbedder`), serving the family's inline-corpus contract; the
+  `retrieval` stage serves the same search over a pre-built on-disk index. The
+  `retrieve` family thus has lexical (`bm25s`, `tfidf`) and dense (`faiss`)
+  backends under one contract.
+- **Same row shape, same feature name, same rules.** A connector and the
+  corresponding stage emit the same passage / answer row shape under the same
+  canonical feature name: the `retrieval` stage also serves
+  `retrieved_passages` (`[{doc_id, text, score, rank}]`) when its `index_path`
+  option is present, and the `llm_response` stage also serves
+  `generated_answer` (`{answer, citations}`) when its `query` option is
+  present. The stage's passage `score` is the cosine similarity (the repo's
+  embedders are unit-normalized, so FAISS's squared L2 converts exactly), the
+  same scale the dense connector emits, and the family's only-positive-scores
+  rule applies on both paths, so a no-match query yields no passages either
+  way. If a request carries an explicit connector selector
+  (`retrieve_backend` / `generate_backend`), the stage yields and the
+  connector serves it. A downstream feature is agnostic to which produced it.
+  Verified by
+  [`tests/integration/test_stage_connector_parity.py`](../tests/integration/test_stage_connector_parity.py).
+- **Migration is an option swap, not a pipeline rewrite.** Moving between a
+  stage and a connector (either direction) keeps the requested feature name
+  and the `Feature -> run_all` shape; only the options change (inline `corpus`
+  + `retrieve_backend` vs `index_path` + `embedding_method`).
 
 ## Package layout
 

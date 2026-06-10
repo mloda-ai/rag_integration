@@ -28,8 +28,14 @@ class BaseLLMResponse(FeatureGroup):
         - system_prompt: System prompt for the LLM (optional, has default)
         - llm_method: Which LLM implementation to use (discriminator)
 
-    Output rows contain: llm_response (the generated text)
+    Output rows contain: llm_response (the generated text) and the canonical
+    answer object under ANSWER_KEY (same shape as the generate connector
+    family).
     """
+
+    # Mirrors BaseGenerateConnector.ROOT_FEATURE_NAME as a literal so the stage
+    # layer does not import the connectors layer; pinned by the parity test.
+    ANSWER_KEY = "generated_answer"
 
     QUERY = "query"
     CONTEXT = "context"
@@ -64,7 +70,7 @@ class BaseLLMResponse(FeatureGroup):
 
     @classmethod
     def input_data(cls) -> DataCreator:
-        return DataCreator({"llm_response"})
+        return DataCreator({"llm_response", cls.ANSWER_KEY})
 
     @classmethod
     def match_feature_group_criteria(
@@ -73,8 +79,21 @@ class BaseLLMResponse(FeatureGroup):
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
-        """Match features named 'llm_response' exactly."""
-        return feature_name == "llm_response"
+        """Match 'llm_response', or ANSWER_KEY for stage options.
+
+        Serving ANSWER_KEY makes migration a pure option swap. The gate on
+        query, plus yielding when an explicit generate-connector selector is
+        present, keeps the stage and the connector family from both claiming
+        one request.
+        """
+        name = str(feature_name)
+        if name == "llm_response":
+            return True
+        if name != cls.ANSWER_KEY:
+            return False
+        if options.get("generate_backend") is not None:
+            return False
+        return options.get(cls.QUERY) is not None
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features."""
@@ -134,6 +153,9 @@ class BaseLLMResponse(FeatureGroup):
             system_prompt = cls._get_system_prompt(options)
 
             response = cls._generate(query, context, system_prompt, options)
-            return [{"llm_response": response}]
+            # Connector-family shape; no doc_id-tracked passages, so citations
+            # stay honestly empty.
+            answer = {"answer": response, "citations": []}
+            return [{"llm_response": response, cls.ANSWER_KEY: answer}]
 
         return []
