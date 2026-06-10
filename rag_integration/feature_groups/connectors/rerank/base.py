@@ -35,8 +35,15 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.connectors.mixins import (
+    DocCollectionMixin,
+    OptionsMixin,
+    RankingValidationMixin,
+    TopKMixin,
+)
 
-class BaseRerankConnector(FeatureGroup):
+
+class BaseRerankConnector(OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup):
     """Root FeatureGroup for rerank-connector backends.
 
     A concrete backend declares its selector value in ``RERANK_BACKENDS`` and
@@ -51,13 +58,10 @@ class BaseRerankConnector(FeatureGroup):
 
     ROOT_FEATURE_NAME = "reranked_passages"
 
-    # Option keys.
+    # Option keys. ``TOP_K`` / ``DEFAULT_TOP_K`` come from ``TopKMixin``.
     RERANK_BACKEND = "rerank_backend"
     QUERY_TEXT = "query_text"
-    TOP_K = "top_k"
     CANDIDATES = "candidates"
-
-    DEFAULT_TOP_K = 5
 
     # Filled per concrete: {backend_value: human-readable description}. Disjoint
     # across backends; empty on the base so it never matches.
@@ -68,7 +72,9 @@ class BaseRerankConnector(FeatureGroup):
     PROPERTY_MAPPING = {
         RERANK_BACKEND: {"explanation": "Which rerank-connector backend to use"},
         QUERY_TEXT: {"explanation": "Query the candidates are reranked against"},
-        TOP_K: {"explanation": f"Number of passages to return after reranking (default {DEFAULT_TOP_K})"},
+        TopKMixin.TOP_K: {
+            "explanation": f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})"
+        },
         CANDIDATES: {"explanation": "Candidate passages to rerank: a list of {doc_id, text} dicts"},
     }
 
@@ -102,20 +108,6 @@ class BaseRerankConnector(FeatureGroup):
         return None
 
     @classmethod
-    def _get_top_k(cls, options: Options) -> int:
-        val = options.get(cls.TOP_K)
-        return int(val) if val is not None else cls.DEFAULT_TOP_K
-
-    @classmethod
-    def _get_candidates(cls, options: Options) -> List[Dict[str, Any]]:
-        candidates = options.get(cls.CANDIDATES)
-        if candidates is None:
-            raise ValueError(
-                f"{cls.__name__} requires '{cls.CANDIDATES}' in options: a list of {{doc_id, text}} dicts."
-            )
-        return list(candidates)
-
-    @classmethod
     @abstractmethod
     def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
         """Reorder ``texts`` by relevance to ``query``.
@@ -131,15 +123,7 @@ class BaseRerankConnector(FeatureGroup):
     @classmethod
     def _validate_ranking(cls, ranked: List[Tuple[int, float]], n_candidates: int) -> None:
         """Reject out-of-range or duplicate indices from a backend's ``_rank``."""
-        seen: Set[int] = set()
-        for idx, _score in ranked:
-            if not 0 <= idx < n_candidates:
-                raise ValueError(
-                    f"{cls.__name__}._rank returned out-of-range index {idx} for {n_candidates} candidates."
-                )
-            if idx in seen:
-                raise ValueError(f"{cls.__name__}._rank returned duplicate index {idx}.")
-            seen.add(idx)
+        cls._validate_rank_indices(ranked, n_candidates, f"{n_candidates} candidates")
 
     @classmethod
     def _rerank(
@@ -156,7 +140,7 @@ class BaseRerankConnector(FeatureGroup):
             return []
 
         texts = [str(doc.get("text", "")) for doc in candidates]
-        doc_ids = [str(doc.get("doc_id", str(i))) for i, doc in enumerate(candidates)]
+        doc_ids = cls._effective_doc_ids(candidates)
 
         ranked = cls._rank(query, texts, effective_k)
         cls._validate_ranking(ranked, len(candidates))
@@ -171,10 +155,8 @@ class BaseRerankConnector(FeatureGroup):
         """Rerank the candidates against the query, return reordered passages."""
         for feature in features.features:
             options = feature.options
-            query = options.get(cls.QUERY_TEXT)
-            if query is None:
-                raise ValueError(f"{cls.__name__} requires '{cls.QUERY_TEXT}' in options.")
-            candidates = cls._get_candidates(options)
+            query = cls._require_option(options, cls.QUERY_TEXT)
+            candidates = cls._require_doc_list(options, cls.CANDIDATES)
             top_k = cls._get_top_k(options)
             passages = cls._rerank(str(query), candidates, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]

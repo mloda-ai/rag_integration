@@ -32,8 +32,11 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, GroundingError
+from rag_integration.feature_groups.connectors.mixins import DocCollectionMixin, OptionsMixin
 
-class BaseGenerateConnector(FeatureGroup):
+
+class BaseGenerateConnector(OptionsMixin, DocCollectionMixin, FeatureGroup):
     """Root FeatureGroup for generate-connector backends.
 
     A concrete backend declares its selector value in ``GENERATE_BACKENDS`` and
@@ -89,18 +92,12 @@ class BaseGenerateConnector(FeatureGroup):
 
     @classmethod
     def _get_passages(cls, options: Options) -> List[Dict[str, Any]]:
-        passages = options.get(cls.PASSAGES)
-        if passages is None:
-            raise ValueError(f"{cls.__name__} requires '{cls.PASSAGES}' in options: a list of {{doc_id, text}} dicts.")
-        passages = list(passages)
-        seen: Set[str] = set()
-        for i, passage in enumerate(passages):
-            doc_id = str(passage.get("doc_id", str(i)))
-            if doc_id in seen:
-                raise ValueError(
-                    f"{cls.__name__} received duplicate passage doc_id '{doc_id}'; doc_ids must be unique."
-                )
-            seen.add(doc_id)
+        passages = cls._require_doc_list(options, cls.PASSAGES)
+        duplicate = cls._find_duplicate_doc_id(passages)
+        if duplicate is not None:
+            raise DuplicateDocIdError(
+                f"{cls.__name__} received duplicate passage doc_id '{duplicate}'; doc_ids must be unique."
+            )
         return passages
 
     @classmethod
@@ -119,14 +116,16 @@ class BaseGenerateConnector(FeatureGroup):
     @classmethod
     def _validate_citations(cls, citations: List[str], passages: List[Dict[str, Any]]) -> None:
         """Reject any citation that is not one of the supplied passage doc_ids, or cited twice."""
-        known = {str(p.get("doc_id", str(i))) for i, p in enumerate(passages)}
+        known = cls._known_doc_ids(passages)
         for citation in citations:
             if citation not in known:
-                raise ValueError(
+                raise GroundingError(
                     f"{cls.__name__}._generate cited '{citation}', which is not among the supplied passages."
                 )
         if len(citations) != len(set(citations)):
-            raise ValueError(f"{cls.__name__}._generate returned duplicate citations; each doc_id may be cited once.")
+            raise GroundingError(
+                f"{cls.__name__}._generate returned duplicate citations; each doc_id may be cited once."
+            )
 
     @classmethod
     def _answer(cls, query: str, passages: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -138,12 +137,12 @@ class BaseGenerateConnector(FeatureGroup):
         # Grounded by construction, in both directions: a non-empty answer must
         # cite its source(s), and citations without an answer are meaningless.
         if answer.strip() and not citations:
-            raise ValueError(
+            raise GroundingError(
                 f"{cls.__name__}._generate returned a non-empty answer with no citations; "
                 f"a grounded answer must cite at least one supplied passage."
             )
         if not answer.strip() and citations:
-            raise ValueError(
+            raise GroundingError(
                 f"{cls.__name__}._generate returned citations with an empty answer; "
                 f"citations are only valid for a non-empty answer."
             )
@@ -158,9 +157,7 @@ class BaseGenerateConnector(FeatureGroup):
         """Generate an answer from the passages, return the answer object."""
         for feature in features.features:
             options = feature.options
-            query = options.get(cls.QUERY_TEXT)
-            if query is None:
-                raise ValueError(f"{cls.__name__} requires '{cls.QUERY_TEXT}' in options.")
+            query = cls._require_option(options, cls.QUERY_TEXT)
             passages = cls._get_passages(options)
             return [{cls.ROOT_FEATURE_NAME: cls._answer(str(query), passages)}]
         return []

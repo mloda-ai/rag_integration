@@ -33,10 +33,13 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.connectors.errors import InvalidOptionError, SqlSafetyError
+from rag_integration.feature_groups.connectors.mixins import OptionsMixin
+
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
-class BaseStructuredConnector(FeatureGroup):
+class BaseStructuredConnector(OptionsMixin, FeatureGroup):
     """Root FeatureGroup for structured (text-to-SQL) connector backends.
 
     A concrete backend declares its selector value in ``STRUCTURED_BACKENDS`` and
@@ -90,20 +93,15 @@ class BaseStructuredConnector(FeatureGroup):
         return None
 
     @classmethod
-    def _require(cls, options: Options, key: str) -> Any:
-        value = options.get(key)
-        if value is None:
-            raise ValueError(f"{cls.__name__} requires '{key}' in options.")
-        return value
-
-    @classmethod
     def _validate_identifier(cls, name: str, kind: str) -> str:
         """Reject any table/column name that is not a simple SQL identifier.
 
         Identifiers cannot be parameterised, so this whitelist is what keeps the
         generated SQL injection-safe (values, by contrast, are always bound)."""
         if not _IDENT_RE.fullmatch(name):
-            raise ValueError(f"{cls.__name__}: invalid {kind} identifier {name!r}; expected a simple SQL identifier.")
+            raise InvalidOptionError(
+                f"{cls.__name__}: invalid {kind} identifier {name!r}; expected a simple SQL identifier."
+            )
         return name
 
     @classmethod
@@ -131,9 +129,11 @@ class BaseStructuredConnector(FeatureGroup):
         try:
             statements = sqlglot.parse(sql, read="sqlite")
         except SqlglotError as error:
-            raise ValueError(f"{cls.__name__}._to_sql produced unparseable SQL: {sql!r}") from error
+            raise SqlSafetyError(f"{cls.__name__}._to_sql produced unparseable SQL: {sql!r}") from error
         if len(statements) != 1 or not isinstance(statements[0], exp.Select):
-            raise ValueError(f"{cls.__name__}._to_sql must produce a single top-level SELECT statement, got: {sql!r}")
+            raise SqlSafetyError(
+                f"{cls.__name__}._to_sql must produce a single top-level SELECT statement, got: {sql!r}"
+            )
 
     @classmethod
     def _query(
@@ -147,9 +147,9 @@ class BaseStructuredConnector(FeatureGroup):
         table = cls._validate_identifier(table, "table")
         columns = [cls._validate_identifier(c, "column") for c in columns]
         if not columns:
-            raise ValueError(f"{cls.__name__}: at least one column is required.")
+            raise InvalidOptionError(f"{cls.__name__}: at least one column is required.")
         if len({c.lower() for c in columns}) != len(columns):
-            raise ValueError(
+            raise InvalidOptionError(
                 f"{cls.__name__}: duplicate column names (SQLite is case-insensitive) are not allowed: {columns}."
             )
 
@@ -185,15 +185,15 @@ class BaseStructuredConnector(FeatureGroup):
         """Answer the question over the supplied table, return the SQL and rows."""
         for feature in features.features:
             options = feature.options
-            question = str(cls._require(options, cls.QUESTION))
-            table = str(cls._require(options, cls.TABLE))
-            raw_columns = cls._require(options, cls.COLUMNS)
+            question = str(cls._require_option(options, cls.QUESTION))
+            table = str(cls._require_option(options, cls.TABLE))
+            raw_columns = cls._require_option(options, cls.COLUMNS)
             if not isinstance(raw_columns, (list, tuple)):
-                raise ValueError(f"{cls.__name__}: '{cls.COLUMNS}' must be a list or tuple of column names.")
+                raise InvalidOptionError(f"{cls.__name__}: '{cls.COLUMNS}' must be a list or tuple of column names.")
             columns = [str(c) for c in raw_columns]
-            raw_rows = cls._require(options, cls.ROWS)
+            raw_rows = cls._require_option(options, cls.ROWS)
             if not isinstance(raw_rows, (list, tuple)) or not all(isinstance(row, dict) for row in raw_rows):
-                raise ValueError(f"{cls.__name__}: '{cls.ROWS}' must be a list or tuple of dicts.")
+                raise InvalidOptionError(f"{cls.__name__}: '{cls.ROWS}' must be a list or tuple of dicts.")
             rows = [dict(row) for row in raw_rows]
             return [{cls.ROOT_FEATURE_NAME: cls._query(question, table, columns, rows)}]
         return []

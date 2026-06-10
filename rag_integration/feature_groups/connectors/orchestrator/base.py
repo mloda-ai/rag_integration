@@ -33,8 +33,11 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, GroundingError
+from rag_integration.feature_groups.connectors.mixins import DocCollectionMixin, OptionsMixin, TopKMixin
 
-class BaseOrchestratorConnector(FeatureGroup):
+
+class BaseOrchestratorConnector(OptionsMixin, TopKMixin, DocCollectionMixin, FeatureGroup):
     """Root FeatureGroup for orchestrator connector backends.
 
     A concrete backend declares its selector value in ``ORCHESTRATOR_BACKENDS``
@@ -45,20 +48,19 @@ class BaseOrchestratorConnector(FeatureGroup):
 
     ROOT_FEATURE_NAME = "orchestrated_answer"
 
-    # Option keys.
+    # Option keys. ``TOP_K`` / ``DEFAULT_TOP_K`` come from ``TopKMixin``.
     ORCHESTRATOR_BACKEND = "orchestrator_backend"
     QUERY_TEXT = "query_text"
-    TOP_K = "top_k"
     CORPUS = "corpus"
-
-    DEFAULT_TOP_K = 5
 
     ORCHESTRATOR_BACKENDS: Dict[str, str] = {}
 
     PROPERTY_MAPPING = {
         ORCHESTRATOR_BACKEND: {"explanation": "Which orchestrator (external framework) backend to use"},
         QUERY_TEXT: {"explanation": "The query to run through the framework pipeline"},
-        TOP_K: {"explanation": f"Number of documents the pipeline should surface (default {DEFAULT_TOP_K})"},
+        TopKMixin.TOP_K: {
+            "explanation": f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})"
+        },
         CORPUS: {"explanation": "Inline corpus: a list of {doc_id, text} dicts"},
     }
 
@@ -88,18 +90,6 @@ class BaseOrchestratorConnector(FeatureGroup):
         return None
 
     @classmethod
-    def _get_top_k(cls, options: Options) -> int:
-        val = options.get(cls.TOP_K)
-        return int(val) if val is not None else cls.DEFAULT_TOP_K
-
-    @classmethod
-    def _get_corpus(cls, options: Options) -> List[Dict[str, Any]]:
-        corpus = options.get(cls.CORPUS)
-        if corpus is None:
-            raise ValueError(f"{cls.__name__} requires '{cls.CORPUS}' in options: a list of {{doc_id, text}} dicts.")
-        return list(corpus)
-
-    @classmethod
     @abstractmethod
     def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
         """Run the framework's pipeline for ``query`` over ``corpus``.
@@ -121,20 +111,17 @@ class BaseOrchestratorConnector(FeatureGroup):
         explicit ``doc_id`` ``"1"`` collides with a missing ``doc_id`` at
         index 1; the check runs on the effective ids.
         """
-        seen: Set[str] = set()
-        for i, doc in enumerate(corpus):
-            doc_id = str(doc.get("doc_id", str(i)))
-            if doc_id in seen:
-                raise ValueError(f"{cls.__name__}: duplicate doc_id {doc_id!r} in corpus; ids must be unique.")
-            seen.add(doc_id)
+        duplicate = cls._find_duplicate_doc_id(corpus)
+        if duplicate is not None:
+            raise DuplicateDocIdError(f"{cls.__name__}: duplicate doc_id {duplicate!r} in corpus; ids must be unique.")
 
     @classmethod
     def _validate_documents(cls, documents: List[Dict[str, Any]], corpus: List[Dict[str, Any]]) -> None:
         """Reject any surfaced document whose doc_id is not in the supplied corpus."""
-        known = {str(doc.get("doc_id", str(i))) for i, doc in enumerate(corpus)}
+        known = cls._known_doc_ids(corpus)
         for document in documents:
             if str(document.get("doc_id")) not in known:
-                raise ValueError(
+                raise GroundingError(
                     f"{cls.__name__}._run surfaced document {document.get('doc_id')!r}, "
                     f"which is not in the supplied corpus."
                 )
@@ -151,7 +138,7 @@ class BaseOrchestratorConnector(FeatureGroup):
         # with no documents is a valid retrieve-only / no-match result; an empty
         # answer alongside documents is fine too (retrieve-only pipeline).
         if answer.strip() and not documents:
-            raise ValueError(f"{cls.__name__}._run returned a non-empty answer with no supporting documents.")
+            raise GroundingError(f"{cls.__name__}._run returned a non-empty answer with no supporting documents.")
         return {"answer": answer, "documents": documents}
 
     @classmethod
@@ -159,10 +146,8 @@ class BaseOrchestratorConnector(FeatureGroup):
         """Run the framework pipeline, return the answer object."""
         for feature in features.features:
             options = feature.options
-            query = options.get(cls.QUERY_TEXT)
-            if query is None:
-                raise ValueError(f"{cls.__name__} requires '{cls.QUERY_TEXT}' in options.")
-            corpus = cls._get_corpus(options)
+            query = cls._require_option(options, cls.QUERY_TEXT)
+            corpus = cls._require_doc_list(options, cls.CORPUS)
             top_k = cls._get_top_k(options)
             return [{cls.ROOT_FEATURE_NAME: cls._answer(str(query), corpus, top_k)}]
         return []

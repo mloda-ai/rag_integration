@@ -35,8 +35,16 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, InvalidOptionError
+from rag_integration.feature_groups.connectors.mixins import (
+    DocCollectionMixin,
+    OptionsMixin,
+    RankingValidationMixin,
+    TopKMixin,
+)
 
-class BaseGraphRagConnector(FeatureGroup):
+
+class BaseGraphRagConnector(OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup):
     """Root FeatureGroup for graph-RAG connector backends.
 
     A concrete backend declares its selector value in ``GRAPH_BACKENDS`` and
@@ -47,14 +55,11 @@ class BaseGraphRagConnector(FeatureGroup):
 
     ROOT_FEATURE_NAME = "graph_passages"
 
-    # Option keys.
+    # Option keys. ``TOP_K`` / ``DEFAULT_TOP_K`` come from ``TopKMixin``.
     GRAPH_BACKEND = "graph_backend"
     QUERY_TEXT = "query_text"
-    TOP_K = "top_k"
     NODES = "nodes"
     EDGES = "edges"
-
-    DEFAULT_TOP_K = 5
 
     # Filled per concrete; empty on the base so it never matches.
     GRAPH_BACKENDS: Dict[str, str] = {}
@@ -64,7 +69,7 @@ class BaseGraphRagConnector(FeatureGroup):
     PROPERTY_MAPPING = {
         GRAPH_BACKEND: {"explanation": "Which graph-RAG backend to use"},
         QUERY_TEXT: {"explanation": "Raw text query to search the graph"},
-        TOP_K: {"explanation": f"Number of passages to return (default {DEFAULT_TOP_K})"},
+        TopKMixin.TOP_K: {"explanation": f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})"},
         NODES: {"explanation": "Graph nodes: a list of {doc_id, text} dicts"},
         EDGES: {
             "explanation": "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
@@ -98,18 +103,6 @@ class BaseGraphRagConnector(FeatureGroup):
         return None
 
     @classmethod
-    def _get_top_k(cls, options: Options) -> int:
-        val = options.get(cls.TOP_K)
-        return int(val) if val is not None else cls.DEFAULT_TOP_K
-
-    @classmethod
-    def _get_nodes(cls, options: Options) -> List[Dict[str, Any]]:
-        nodes = options.get(cls.NODES)
-        if nodes is None:
-            raise ValueError(f"{cls.__name__} requires '{cls.NODES}' in options: a list of {{doc_id, text}} dicts.")
-        return list(nodes)
-
-    @classmethod
     def _resolve_edges(cls, options: Options) -> List[Tuple[str, str]]:
         """Resolve the optional ``EDGES`` option into ``(doc_id_a, doc_id_b)`` pairs.
 
@@ -123,7 +116,7 @@ class BaseGraphRagConnector(FeatureGroup):
         if raw_edges is None:
             return []
         if not isinstance(raw_edges, (list, tuple)):
-            raise ValueError(
+            raise InvalidOptionError(
                 f"{cls.__name__} '{cls.EDGES}' must be a list of [doc_id_a, doc_id_b] pairs, "
                 f"got {type(raw_edges).__name__}."
             )
@@ -154,13 +147,7 @@ class BaseGraphRagConnector(FeatureGroup):
     @classmethod
     def _validate_ranking(cls, ranked: List[Tuple[int, float]], n_nodes: int) -> None:
         """Reject out-of-range or duplicate indices from a backend's ``_rank``."""
-        seen: Set[int] = set()
-        for idx, _score in ranked:
-            if not 0 <= idx < n_nodes:
-                raise ValueError(f"{cls.__name__}._rank returned out-of-range index {idx} for {n_nodes} nodes.")
-            if idx in seen:
-                raise ValueError(f"{cls.__name__}._rank returned duplicate index {idx}.")
-            seen.add(idx)
+        cls._validate_rank_indices(ranked, n_nodes, f"{n_nodes} nodes")
 
     @classmethod
     def _retrieve(
@@ -185,13 +172,13 @@ class BaseGraphRagConnector(FeatureGroup):
         if effective_k <= 0:
             return []
 
+        duplicate = cls._find_duplicate_doc_id(nodes)
+        if duplicate is not None:
+            raise DuplicateDocIdError(f"{cls.__name__}: duplicate doc_id '{duplicate}': edges would be ambiguous.")
+
         texts = [str(node.get("text", "")) for node in nodes]
-        doc_ids = [str(node.get("doc_id", str(i))) for i, node in enumerate(nodes)]
-        doc_id_to_index: Dict[str, int] = {}
-        for i, doc_id in enumerate(doc_ids):
-            if doc_id in doc_id_to_index:
-                raise ValueError(f"{cls.__name__}: duplicate doc_id '{doc_id}': edges would be ambiguous.")
-            doc_id_to_index[doc_id] = i
+        doc_ids = cls._effective_doc_ids(nodes)
+        doc_id_to_index: Dict[str, int] = {doc_id: i for i, doc_id in enumerate(doc_ids)}
         edge_indices = [
             (doc_id_to_index[a], doc_id_to_index[b]) for a, b in edges if a in doc_id_to_index and b in doc_id_to_index
         ]
@@ -209,10 +196,8 @@ class BaseGraphRagConnector(FeatureGroup):
         """Score nodes by query overlap plus a one-hop neighbour bonus, return ranked passages."""
         for feature in features.features:
             options = feature.options
-            query = options.get(cls.QUERY_TEXT)
-            if query is None:
-                raise ValueError(f"{cls.__name__} requires '{cls.QUERY_TEXT}' in options.")
-            nodes = cls._get_nodes(options)
+            query = cls._require_option(options, cls.QUERY_TEXT)
+            nodes = cls._require_doc_list(options, cls.NODES)
             edges = cls._resolve_edges(options)
             top_k = cls._get_top_k(options)
             passages = cls._retrieve(str(query), nodes, edges, top_k)

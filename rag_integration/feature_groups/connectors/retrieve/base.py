@@ -30,8 +30,16 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, RankingContractError
+from rag_integration.feature_groups.connectors.mixins import (
+    DocCollectionMixin,
+    OptionsMixin,
+    RankingValidationMixin,
+    TopKMixin,
+)
 
-class BaseRetrieveConnector(FeatureGroup):
+
+class BaseRetrieveConnector(OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup):
     """Root FeatureGroup for retrieve-connector backends.
 
     A concrete backend declares its selector value in ``RETRIEVE_BACKENDS`` and
@@ -57,13 +65,10 @@ class BaseRetrieveConnector(FeatureGroup):
 
     ROOT_FEATURE_NAME = "retrieved_passages"
 
-    # Option keys.
+    # Option keys. ``TOP_K`` / ``DEFAULT_TOP_K`` come from ``TopKMixin``.
     RETRIEVE_BACKEND = "retrieve_backend"
     QUERY_TEXT = "query_text"
-    TOP_K = "top_k"
     CORPUS = "corpus"
-
-    DEFAULT_TOP_K = 5
 
     # Filled per concrete: {backend_value: human-readable description}. The base
     # stays empty so it never matches a feature. Values must be disjoint across
@@ -78,7 +83,7 @@ class BaseRetrieveConnector(FeatureGroup):
     PROPERTY_MAPPING = {
         RETRIEVE_BACKEND: {"explanation": "Which retrieve-connector backend to use"},
         QUERY_TEXT: {"explanation": "Raw text query to search the corpus"},
-        TOP_K: {"explanation": f"Number of passages to return (default {DEFAULT_TOP_K})"},
+        TopKMixin.TOP_K: {"explanation": f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})"},
         CORPUS: {"explanation": "Inline corpus: a list of {doc_id, text} dicts"},
     }
 
@@ -114,23 +119,6 @@ class BaseRetrieveConnector(FeatureGroup):
         return None
 
     @classmethod
-    def _get_top_k(cls, options: Options) -> int:
-        val = options.get(cls.TOP_K)
-        if val is None:
-            return cls.DEFAULT_TOP_K
-        try:
-            return int(val)
-        except (ValueError, TypeError) as exc:
-            raise ValueError(f"{cls.__name__} option '{cls.TOP_K}' must be an integer, got {val!r}.") from exc
-
-    @classmethod
-    def _get_corpus(cls, options: Options) -> List[Dict[str, Any]]:
-        corpus = options.get(cls.CORPUS)
-        if corpus is None:
-            raise ValueError(f"{cls.__name__} requires '{cls.CORPUS}' in options: a list of {{doc_id, text}} dicts.")
-        return list(corpus)
-
-    @classmethod
     @abstractmethod
     def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
         """Rank ``texts`` against ``query``.
@@ -151,29 +139,10 @@ class BaseRetrieveConnector(FeatureGroup):
 
     @classmethod
     def _validate_ranking(cls, ranked: List[Tuple[int, float]], corpus_size: int, top_k: int) -> None:
-        """Reject a ``_rank`` result that breaks the contract.
-
-        Enforces all four :meth:`_rank` requirements: indices in range, indices
-        unique, at most ``top_k`` pairs, and scores non-increasing (best-first).
-        """
+        """Enforce the four :meth:`_rank` requirements (count is retrieve-specific; rest shared)."""
         if len(ranked) > top_k:
-            raise ValueError(f"{cls.__name__}._rank returned {len(ranked)} pairs for top_k={top_k}.")
-        seen: Set[int] = set()
-        previous_score: Optional[float] = None
-        for corpus_idx, score in ranked:
-            if not 0 <= corpus_idx < corpus_size:
-                raise ValueError(
-                    f"{cls.__name__}._rank returned out-of-range index {corpus_idx} for a corpus of size {corpus_size}."
-                )
-            if corpus_idx in seen:
-                raise ValueError(f"{cls.__name__}._rank returned duplicate index {corpus_idx}.")
-            seen.add(corpus_idx)
-            if previous_score is not None and score > previous_score:
-                raise ValueError(
-                    f"{cls.__name__}._rank returned scores out of order: {score} after {previous_score} "
-                    f"(scores must be non-increasing, best-first)."
-                )
-            previous_score = score
+            raise RankingContractError(f"{cls.__name__}._rank returned {len(ranked)} pairs for top_k={top_k}.")
+        cls._validate_rank_indices(ranked, corpus_size, f"a corpus of size {corpus_size}", non_increasing=True)
 
     @classmethod
     def _retrieve(
@@ -206,15 +175,13 @@ class BaseRetrieveConnector(FeatureGroup):
                     f"Each entry must be a {{doc_id, text}} dict."
                 )
 
-        doc_ids = [str(doc.get("doc_id", str(i))) for i, doc in enumerate(corpus)]
-        seen_doc_ids: Set[str] = set()
-        for doc_id in doc_ids:
-            if doc_id in seen_doc_ids:
-                raise ValueError(
-                    f"{cls.__name__} corpus contains duplicate doc_id {doc_id!r} "
-                    f"(after str() coercion and the positional-index fallback)."
-                )
-            seen_doc_ids.add(doc_id)
+        duplicate = cls._find_duplicate_doc_id(corpus)
+        if duplicate is not None:
+            raise DuplicateDocIdError(
+                f"{cls.__name__} corpus contains duplicate doc_id {duplicate!r} "
+                f"(after str() coercion and the positional-index fallback)."
+            )
+        doc_ids = cls._effective_doc_ids(corpus)
 
         effective_k = min(top_k, len(corpus))
         if effective_k <= 0:
@@ -252,10 +219,8 @@ class BaseRetrieveConnector(FeatureGroup):
             )
         for feature in feature_list:
             options = feature.options
-            query = options.get(cls.QUERY_TEXT)
-            if query is None:
-                raise ValueError(f"{cls.__name__} requires '{cls.QUERY_TEXT}' in options.")
-            corpus = cls._get_corpus(options)
+            query = cls._require_option(options, cls.QUERY_TEXT)
+            corpus = cls._require_doc_list(options, cls.CORPUS)
             top_k = cls._get_top_k(options)
             passages = cls._retrieve(str(query), corpus, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]
