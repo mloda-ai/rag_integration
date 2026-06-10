@@ -129,6 +129,13 @@ families by query-contract shape (retrieve, rerank, generate, graph_rag,
 structured, orchestrator). You swap backends by changing options, not by
 rewriting a pipeline.
 
+The two layers share one seam: the FAISS `retrieval` stage is the native dense
+path of the `retrieve` family (`retrieve_backend="faiss"`), and a stage and its
+connector counterpart emit the same passage / answer row shape under the same
+canonical feature name, so migrating between them is an option swap. See
+"Relationship to the stage pipeline" in
+[`docs/rag-connector-base-classes.md`](docs/rag-connector-base-classes.md).
+
 See [`feature_groups/connectors/README.md`](rag_integration/feature_groups/connectors/README.md)
 for the family map (per-family contract, backends, no-Docker concrete, and
 pedigree), runnable examples, and links to the contract suites. The design

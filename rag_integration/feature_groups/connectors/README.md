@@ -28,7 +28,7 @@ download or server). The full survey in the design doc also uses
 
 | Family | Reader contract (in -> out) | No-Docker concrete | Other backends | Pedigree of the anchor | Contract suite |
 |---|---|---|---|---|---|
-| [`retrieve`](retrieve/) | `query_text + corpus + top_k -> ranked passages` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical) | real-lib-inmem | [`retrieve_contract.py`](../../../tests/connectors/retrieve/retrieve_contract.py) |
+| [`retrieve`](retrieve/) | `query_text + corpus + top_k -> ranked passages` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra) | real-lib-inmem | [`retrieve_contract.py`](../../../tests/connectors/retrieve/retrieve_contract.py) |
 | [`rerank`](rerank/) | `query_text + candidates + top_k -> reordered passages` (`reranked_passages`) | `LexicalReranker` (token overlap, zero-download) | `FlashRankReranker` (ONNX cross-encoder, `rerank` extra, CI-skip on model download) | fixture-stub | [`rerank_contract.py`](../../../tests/connectors/rerank/rerank_contract.py) |
 | [`generate`](generate/) | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub | [`generate_contract.py`](../../../tests/connectors/generate/generate_contract.py) |
 | [`graph_rag`](graph_rag/) | `query_text + nodes + edges + top_k -> ranked passages` (`graph_passages`); query overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking | fixture-stub | [`graph_rag_contract.py`](../../../tests/connectors/graph_rag/graph_rag_contract.py) |
@@ -44,6 +44,17 @@ bm25s, ColBERT, ...). The anchor `Bm25sRetriever` (`retrieve_backend="bm25s"`) i
 BM25 lexical retrieval via `bm25s`: zero-download, deterministic, numpy/scipy.
 `TfidfRetriever` (`retrieve_backend="tfidf"`) ranks the same corpus by TF-IDF
 cosine similarity using the repo's deterministic embedder, also zero-download.
+`FaissDenseRetriever` (`retrieve_backend="faiss"`, `--extra faiss`) is the
+canonical **dense** backend: the same FAISS nearest-neighbor search the stage
+pipeline's `retrieval` stage runs, folded in behind this contract (cosine over
+the repo's deterministic hash embeddings, in-memory `IndexFlatIP`).
+
+The FAISS `retrieval` stage and this family are one world: the stage serves the
+same `retrieved_passages` shape from a pre-built on-disk index, so migrating
+between stage and connector is an option swap, not a pipeline rewrite. See
+"Relationship to the stage pipeline" in the
+[design doc](../../../docs/rag-connector-base-classes.md) and the parity test
+in [`tests/integration/test_stage_connector_parity.py`](../../../tests/integration/test_stage_connector_parity.py).
 
 ```python
 from mloda.user import mlodaAPI, Feature, Options, PluginCollector
@@ -131,4 +142,5 @@ a concrete backend implements only its one ranking / generation hook.
 
 ```bash
 uv sync --extra connectors   # or --extra rerank / graph / structured / orchestrator
+uv sync --extra faiss        # dense retrieve backend (FaissDenseRetriever)
 ```
