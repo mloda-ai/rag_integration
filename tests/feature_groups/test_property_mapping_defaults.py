@@ -1,12 +1,9 @@
 """Repo-wide invariant: every PROPERTY_MAPPING default must be an accepted value.
 
-Upstream mloda is adding ``FeatureChainParser.validate_property_mapping_defaults``,
-called from ``FeatureGroup.__init_subclass__``, which rejects at class-definition
-time any strict default that is not in the key's accepted values. Once that mloda
-release ships, a violating feature group fails on import. This test enforces the
-same invariant now so violations are caught here first. When the installed mloda
-already exposes the validator, the test delegates to it; otherwise it replicates
-the upstream logic on top of the ``FeatureChainParser`` helpers present in 0.8.x.
+Upstream mloda will enforce this at class-definition time via
+``FeatureChainParser.validate_property_mapping_defaults`` in ``FeatureGroup.__init_subclass__``.
+Enforce it here first: delegate to that validator when the installed mloda has it,
+otherwise replicate it on the ``FeatureChainParser`` helpers present in 0.8.x.
 """
 
 from __future__ import annotations
@@ -73,15 +70,22 @@ def _validate(owner_name: str, property_mapping: Optional[Dict[str, Any]]) -> Li
 
 
 def _all_feature_groups() -> List[Type[FeatureGroup]]:
-    """Import every feature_groups module and collect this package's FeatureGroup subclasses."""
+    """Import every feature_groups module and collect this package's FeatureGroup subclasses.
+
+    Any import failure fails the test: a module that cannot import is a module whose
+    PROPERTY_MAPPING this invariant silently skips.
+    """
+    import_failures: List[str] = []
     for module_info in pkgutil.walk_packages(
-        rag_integration.feature_groups.__path__, prefix="rag_integration.feature_groups."
+        rag_integration.feature_groups.__path__,
+        prefix="rag_integration.feature_groups.",
+        onerror=lambda name: import_failures.append(f"{name}: failed during package walk"),
     ):
         try:
             importlib.import_module(module_info.name)
-        except ImportError:
-            # Optional-dependency modules (e.g. model backends) are exercised by their own tests.
-            continue
+        except Exception as exc:
+            import_failures.append(f"{module_info.name}: {exc!r}")
+    assert not import_failures, "feature_groups modules failed to import:\n" + "\n".join(import_failures)
 
     collected: List[Type[FeatureGroup]] = []
     stack: List[Type[FeatureGroup]] = list(FeatureGroup.__subclasses__())
@@ -110,9 +114,22 @@ def test_validator_catches_bad_default() -> None:
     assert _validate("DummyOwner", bad_mapping)
 
 
+def test_validator_catches_default_rejected_by_validation_function() -> None:
+    bad_mapping: Dict[str, Any] = {
+        "size": {
+            "explanation": "positive size",
+            DefaultOptionKeys.default: -1,
+            DefaultOptionKeys.strict_validation: True,
+            DefaultOptionKeys.validation_function: lambda value: isinstance(value, int) and value > 0,
+        }
+    }
+    assert _validate("DummyOwner", bad_mapping)
+
+
 def test_all_property_mapping_defaults_are_accepted_values() -> None:
     feature_groups = _all_feature_groups()
-    assert len(feature_groups) >= 70, "feature group discovery looks broken"
+    # 74 feature groups exist today; lower this only when groups are deliberately removed.
+    assert len(feature_groups) >= 74, f"feature group discovery looks broken, found {len(feature_groups)}"
 
     violations: List[str] = []
     for feature_group in feature_groups:
