@@ -239,6 +239,8 @@ wired in as one.
 
 ```
 rag_integration/feature_groups/connectors/
+  mixins.py            shared cross-cutting option mixins
+  errors.py            shared error types
   <family>/
     base.py            Base<Family>Connector (contract, option keys, validation)
     <backend>.py       concrete backend (declares its <family>_backend selector)
@@ -247,3 +249,14 @@ tests/connectors/
     <family>_contract.py   inheritable contract-test suite
     test_<backend>.py      concrete adapter test
 ```
+
+### Canonical package path
+
+`rag_integration/feature_groups/connectors/` is the canonical package path
+(decided in #37). The strategy issue (#25) proposed `rag/`, but the
+implementation (#31) shipped under `feature_groups/`, matching both the repo's
+existing convention (`rag_pipeline/`, `image_pipeline/`, `datasets/`,
+`evaluation/`) and the open-kgo precedent, whose `kg/` package likewise lives at
+`open_kgo/feature_groups/kg/`. Any remaining `rag/...` path references in older
+issues or notes map to `rag_integration/feature_groups/connectors/...` (code)
+and `tests/connectors/...` (contract suites).
