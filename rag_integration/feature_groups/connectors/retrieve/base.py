@@ -35,11 +35,14 @@ from rag_integration.feature_groups.connectors.mixins import (
     DocCollectionMixin,
     OptionsMixin,
     RankingValidationMixin,
+    SingleQueryPerRunMixin,
     TopKMixin,
 )
 
 
-class BaseRetrieveConnector(OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup):
+class BaseRetrieveConnector(
+    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup
+):
     """Root FeatureGroup for retrieve-connector backends.
 
     A concrete backend declares its selector value in ``RETRIEVE_BACKENDS`` and
@@ -206,18 +209,9 @@ class BaseRetrieveConnector(OptionsMixin, TopKMixin, DocCollectionMixin, Ranking
 
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
-        """Rank the corpus against the query, return ranked passages.
-
-        The FeatureSet must contain exactly one feature: the family answers one
-        query per run, so a set with several features would silently drop all
-        but the first and instead raises ``ValueError``.
-        """
-        feature_list = list(features.features)
-        if len(feature_list) > 1:
-            raise ValueError(
-                f"{cls.__name__} answers one query per run, but the FeatureSet contains {len(feature_list)} features."
-            )
-        for feature in feature_list:
+        """Rank the corpus against the query, return ranked passages."""
+        cls._assert_single_feature(features)
+        for feature in features.features:
             options = feature.options
             query = cls._require_option(options, cls.QUERY_TEXT)
             corpus = cls._require_doc_list(options, cls.CORPUS)

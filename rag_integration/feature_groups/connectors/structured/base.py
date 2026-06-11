@@ -34,12 +34,12 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.errors import InvalidOptionError, SqlSafetyError
-from rag_integration.feature_groups.connectors.mixins import OptionsMixin
+from rag_integration.feature_groups.connectors.mixins import OptionsMixin, SingleQueryPerRunMixin
 
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
-class BaseStructuredConnector(OptionsMixin, FeatureGroup):
+class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup):
     """Root FeatureGroup for structured (text-to-SQL) connector backends.
 
     A concrete backend declares its selector value in ``STRUCTURED_BACKENDS`` and
@@ -183,6 +183,7 @@ class BaseStructuredConnector(OptionsMixin, FeatureGroup):
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Answer the question over the supplied table, return the SQL and rows."""
+        cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
             question = str(cls._require_option(options, cls.QUESTION))

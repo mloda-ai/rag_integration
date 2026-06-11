@@ -39,11 +39,14 @@ from rag_integration.feature_groups.connectors.mixins import (
     DocCollectionMixin,
     OptionsMixin,
     RankingValidationMixin,
+    SingleQueryPerRunMixin,
     TopKMixin,
 )
 
 
-class BaseRerankConnector(OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup):
+class BaseRerankConnector(
+    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup
+):
     """Root FeatureGroup for rerank-connector backends.
 
     A concrete backend declares its selector value in ``RERANK_BACKENDS`` and
@@ -153,6 +156,7 @@ class BaseRerankConnector(OptionsMixin, TopKMixin, DocCollectionMixin, RankingVa
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Rerank the candidates against the query, return reordered passages."""
+        cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
             query = cls._require_option(options, cls.QUERY_TEXT)

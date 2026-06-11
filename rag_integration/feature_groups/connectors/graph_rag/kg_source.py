@@ -21,10 +21,10 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.errors import InvalidOptionError
-from rag_integration.feature_groups.connectors.mixins import OptionsMixin
+from rag_integration.feature_groups.connectors.mixins import OptionsMixin, SingleQueryPerRunMixin
 
 
-class BaseKnowledgeGraphSource(OptionsMixin, FeatureGroup):
+class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup):
     """Root FeatureGroup for knowledge-graph source backends.
 
     Mirrors the family-base shape (selector dict, criteria gating, one hook):
@@ -81,6 +81,7 @@ class BaseKnowledgeGraphSource(OptionsMixin, FeatureGroup):
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Emit the graph payload as a single row under the root feature name."""
+        cls._assert_single_feature(features)
         for feature in features.features:
             graph = cls._build_graph(feature.options)
             return [{cls.ROOT_FEATURE_NAME: graph}]

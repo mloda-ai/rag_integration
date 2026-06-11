@@ -19,6 +19,23 @@ from rag_integration.feature_groups.connectors.errors import (
 )
 
 
+class SingleQueryPerRunMixin:
+    """Guard: each connector family answers exactly one query per run.
+
+    All family bases mix this in so that a FeatureSet carrying two features
+    with the same root feature name fails loudly instead of silently dropping
+    every feature after the first.
+    """
+
+    @classmethod
+    def _assert_single_feature(cls, features: Any) -> None:
+        feature_list = list(features.features)
+        if len(feature_list) > 1:
+            raise ValueError(
+                f"{cls.__name__} answers one query per run, but the FeatureSet contains {len(feature_list)} features."
+            )
+
+
 class OptionsMixin:
     """Read required values out of ``Options``."""
 

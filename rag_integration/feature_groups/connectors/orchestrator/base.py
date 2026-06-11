@@ -34,10 +34,15 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, GroundingError
-from rag_integration.feature_groups.connectors.mixins import DocCollectionMixin, OptionsMixin, TopKMixin
+from rag_integration.feature_groups.connectors.mixins import (
+    DocCollectionMixin,
+    OptionsMixin,
+    SingleQueryPerRunMixin,
+    TopKMixin,
+)
 
 
-class BaseOrchestratorConnector(OptionsMixin, TopKMixin, DocCollectionMixin, FeatureGroup):
+class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, FeatureGroup):
     """Root FeatureGroup for orchestrator connector backends.
 
     A concrete backend declares its selector value in ``ORCHESTRATOR_BACKENDS``
@@ -144,6 +149,7 @@ class BaseOrchestratorConnector(OptionsMixin, TopKMixin, DocCollectionMixin, Fea
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Run the framework pipeline, return the answer object."""
+        cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
             query = cls._require_option(options, cls.QUERY_TEXT)
