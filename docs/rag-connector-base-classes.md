@@ -183,10 +183,10 @@ contracts declared on the family base classes.
 
 | Family | Reader contract (in -> out) | No-Docker concrete | Other backends | Pedigree of the anchor |
 |---|---|---|---|---|
-| `retrieve` | `query_text + corpus + top_k -> ranked passages w/ scores` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical); no dense/FAISS backend yet | real-lib-inmem |
+| `retrieve` | `query_text + corpus + top_k -> ranked passages w/ scores` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra), `HybridRrfRetriever` (RRF-fused lexical + dense) | real-lib-inmem |
 | `rerank` | `query_text + candidates + top_k -> reordered passages w/ scores` (`reranked_passages`) | `LexicalReranker` (pure-Python token overlap, zero-download) | `FlashRankReranker` (ONNX cross-encoder, `rerank` extra, CI-skip on model download) | fixture-stub anchor + real-lib |
 | `generate` | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub anchor |
-| `graph_rag` | `query_text + nodes + edges + top_k -> ranked passages` (`graph_passages`); query-overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking | fixture-stub anchor + real-lib |
+| `graph_rag` | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query-overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub anchor + real-lib |
 | `structured` | `question + table -> SQL -> typed rows` (`structured_rows: {sql, rows}`); in-mem SQLite, single-SELECT sqlglot guard | `RuleBasedSql` (deterministic NL->SQL over in-mem SQLite) | `AggregateSql` (aggregation queries) | fixture-stub anchor |
 | `orchestrator` | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack 2.x BM25 pipeline, offline, telemetry off) | `R2RFixtureOrchestrator` (file-fixture REST stub with `SUPPORTED_VALUES` + stripped params) | real-lib-inmem + fixture-stub |
 
@@ -200,7 +200,14 @@ What each family is for:
 - **`generate`** returns prose plus citations, a different out-shape from a
   ranked list (extractive QA, Haystack readers, local LLMs).
 - **`graph_rag`** traverses a node/edge graph; the value is connected context
-  (GraphRAG, LightRAG, HippoRAG, networkx prototypes).
+  (GraphRAG, LightRAG, HippoRAG, networkx prototypes). The graph arrives inline
+  (`nodes` + `edges`) or, with `graph_source`, from an upstream knowledge-graph
+  source feature (issue #45): the connector declares that feature as its input
+  and consumes an existing graph source instead of duplicating one.
+  `TriplesKnowledgeGraph` (`kg_backend="triples"`) is the first source: it
+  builds the passage graph from subject-predicate-object triples. A KG source
+  is a corpus source inside the family, not a seventh family: it answers no
+  query and returns no ranking.
 - **`structured`** returns typed rows via generated SQL (Vanna,
   NLSQLTableQueryEngine).
 - **`orchestrator`** is the opaque end-to-end surface for whole frameworks and
@@ -217,6 +224,19 @@ family's `base.py`. The shared axis:
 - **Corpus / index handle** (the locator: which prebuilt index or fixture)
 - **Embedding-model selection** (retrieve dense backend, graph_rag)
 - **Citation / provenance** (generate, orchestrator)
+
+### Rank fusion (decided in #46)
+
+Hybrid / RRF fusion is split by role. The *mechanics* are cross-cutting and
+live in `connectors/fusion.py`: `rrf_fuse` fuses best-first rankings of
+hashable keys, so it is family-agnostic (corpus indices inside `retrieve`,
+`doc_id` strings when blending ranked passages across families, e.g.
+`retrieve` + `graph_rag`). The *exposure* inside a family is a thin backend:
+`HybridRrfRetriever` (`retrieve_backend="hybrid_rrf"`) fuses the `bm25s`
+lexical and `faiss` dense rankings under the unchanged `retrieve` contract.
+Cross-family blending is not built yet; when it is needed, it reuses
+`rrf_fuse` on `doc_id`-keyed rankings instead of growing a new backend,
+because its in/out shape would no longer be any single family's contract.
 
 ## Relationship to the stage pipeline (the migration seam)
 

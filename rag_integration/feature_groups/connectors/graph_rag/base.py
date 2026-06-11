@@ -9,11 +9,17 @@ distinguishing value over plain retrieval is *connected context*: a passage
 with no query-term overlap can still be surfaced because it neighbours a
 relevant one.
 
-It is a ROOT FeatureGroup: nodes and edges are passed inline through
+By default it is a ROOT FeatureGroup: nodes and edges are passed inline through
 ``Options`` so the family is self-contained and contract-testable without a
 graph database. ``nodes`` is a list of ``{doc_id, text}``; ``edges`` is a list
 of ``[doc_id_a, doc_id_b]`` pairs. ``edges`` is optional: omitting it degrades
 scoring to lexical-only (no neighbour bonus).
+
+Alternatively (issue #45), ``graph_source`` names an upstream feature (e.g.
+``knowledge_graph``, see ``kg_source.py``) whose single row carries the same
+``{nodes, edges}`` payload; the connector then declares that feature as its
+input and consumes an existing graph source instead of duplicating one.
+Scoring and output are identical on both paths.
 
 Output (single row, keyed by the root feature name)::
 
@@ -29,8 +35,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
-from mloda.user import Options, FeatureName
+from mloda.provider import DataCreator, DefaultOptionKeys, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.user import Feature, Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -60,6 +66,12 @@ class BaseGraphRagConnector(OptionsMixin, TopKMixin, DocCollectionMixin, Ranking
     QUERY_TEXT = "query_text"
     NODES = "nodes"
     EDGES = "edges"
+    GRAPH_SOURCE = "graph_source"
+
+    # The family's own option keys: kept off the graph-source feature in
+    # input_features (forwarding excludes them; the merge protection below
+    # stops the engine re-adding them from parent group options).
+    FAMILY_OPTION_KEYS = frozenset({GRAPH_BACKEND, GRAPH_SOURCE, QUERY_TEXT, TopKMixin.TOP_K, NODES, EDGES})
 
     # Filled per concrete; empty on the base so it never matches.
     GRAPH_BACKENDS: Dict[str, str] = {}
@@ -74,6 +86,10 @@ class BaseGraphRagConnector(OptionsMixin, TopKMixin, DocCollectionMixin, Ranking
         EDGES: {
             "explanation": "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
             " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)"
+        },
+        GRAPH_SOURCE: {
+            "explanation": "Name of an upstream feature whose row carries the {nodes, edges} graph payload."
+            " Optional: replaces inline nodes/edges with a consumed graph source"
         },
     }
 
@@ -98,21 +114,53 @@ class BaseGraphRagConnector(OptionsMixin, TopKMixin, DocCollectionMixin, Ranking
         backend = options.get(cls.GRAPH_BACKEND)
         return backend in cls.GRAPH_BACKENDS
 
-    def input_features(self, options: Options, feature_name: FeatureName) -> None:
-        """Root feature: no input features (graph arrives via Options)."""
-        return None
+    def input_features(self, options: Options, feature_name: FeatureName) -> Optional[Set[Feature]]:
+        """Declare the graph-source feature as input when ``GRAPH_SOURCE`` is set.
+
+        Without ``GRAPH_SOURCE`` this is a root feature (graph arrives via
+        Options); ``input_data`` stays declared for that mode, the engine uses
+        whichever applies. With ``GRAPH_SOURCE``, the named upstream feature is
+        the input. Its options are the parent's group and context options minus
+        ``FAMILY_OPTION_KEYS``: context keys do not propagate on their own, so
+        the source's selector options (e.g. ``kg_backend``) are forwarded
+        explicitly, and the family keys are declared merge-protected so the
+        engine's own group-option merge cannot re-add query-specific keys to
+        the source feature.
+        """
+        source = options.get(self.GRAPH_SOURCE)
+        if source is None:
+            return None
+        forwarded_group = {key: value for key, value in options.group.items() if key not in self.FAMILY_OPTION_KEYS}
+        forwarded_context = {key: value for key, value in options.context.items() if key not in self.FAMILY_OPTION_KEYS}
+        forwarded_context[DefaultOptionKeys.feature_chainer_parser_key] = self.FAMILY_OPTION_KEYS
+        return {Feature(str(source), options=Options(group=forwarded_group, context=forwarded_context))}
 
     @classmethod
-    def _resolve_edges(cls, options: Options) -> List[Tuple[str, str]]:
-        """Resolve the optional ``EDGES`` option into ``(doc_id_a, doc_id_b)`` pairs.
+    def _graph_from_source(cls, data: Any, source_name: str) -> Dict[str, Any]:
+        """Read the ``{nodes, edges}`` payload the graph-source feature produced."""
+        if isinstance(data, list):
+            for row in data:
+                if isinstance(row, dict) and source_name in row:
+                    payload = row[source_name]
+                    if not isinstance(payload, dict) or cls.NODES not in payload:
+                        raise InvalidOptionError(
+                            f"{cls.__name__} graph source '{source_name}' must produce a "
+                            f"{{nodes, edges}} dict, got {payload!r}."
+                        )
+                    return payload
+        raise InvalidOptionError(f"{cls.__name__} graph source '{source_name}' produced no row.")
 
-        ``EDGES`` is optional: omitting it degrades scoring to lexical-only (no
-        neighbour bonus). When present it must be a list/tuple of
-        ``[doc_id_a, doc_id_b]`` pairs; any other container raises ``ValueError``
-        (a string would otherwise silently drop every edge). Malformed elements
-        and self-loops are skipped (they carry no usable context).
+    @classmethod
+    def _resolve_edges(cls, raw_edges: Any) -> List[Tuple[str, str]]:
+        """Resolve a raw edges value into ``(doc_id_a, doc_id_b)`` pairs.
+
+        ``raw_edges`` is optional (``None`` is fine): omitting it degrades
+        scoring to lexical-only (no neighbour bonus). When present it must be a
+        list/tuple of ``[doc_id_a, doc_id_b]`` pairs; any other container raises
+        ``ValueError`` (a string would otherwise silently drop every edge).
+        Malformed elements and self-loops are skipped (they carry no usable
+        context).
         """
-        raw_edges = options.get(cls.EDGES)
         if raw_edges is None:
             return []
         if not isinstance(raw_edges, (list, tuple)):
@@ -197,8 +245,20 @@ class BaseGraphRagConnector(OptionsMixin, TopKMixin, DocCollectionMixin, Ranking
         for feature in features.features:
             options = feature.options
             query = cls._require_option(options, cls.QUERY_TEXT)
-            nodes = cls._require_doc_list(options, cls.NODES)
-            edges = cls._resolve_edges(options)
+            source = options.get(cls.GRAPH_SOURCE)
+            if source is not None:
+                for inline_key in (cls.NODES, cls.EDGES):
+                    if options.get(inline_key) is not None:
+                        raise InvalidOptionError(
+                            f"{cls.__name__} got both '{cls.GRAPH_SOURCE}' and inline '{inline_key}'; "
+                            f"pass one graph only."
+                        )
+                payload = cls._graph_from_source(data, str(source))
+                nodes = list(payload[cls.NODES])
+                edges = cls._resolve_edges(payload.get(cls.EDGES))
+            else:
+                nodes = cls._require_doc_list(options, cls.NODES)
+                edges = cls._resolve_edges(options.get(cls.EDGES))
             top_k = cls._get_top_k(options)
             passages = cls._retrieve(str(query), nodes, edges, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]

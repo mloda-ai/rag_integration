@@ -13,8 +13,6 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 
-from mloda.user import Options
-
 from rag_integration.feature_groups.connectors.graph_rag.adjacency_graph_rag import AdjacencyGraphRag
 
 _NODES: List[Dict[str, Any]] = [
@@ -27,8 +25,7 @@ _QUERY = "photosynthesis plants"
 
 
 def _resolve(raw_edges: Any) -> List[Tuple[str, str]]:
-    options = Options(context={AdjacencyGraphRag.EDGES: raw_edges})
-    return AdjacencyGraphRag._resolve_edges(options)
+    return AdjacencyGraphRag._resolve_edges(raw_edges)
 
 
 def _passages(edges: List[Tuple[str, str]], query: str = _QUERY) -> List[Dict[str, Any]]:
@@ -39,7 +36,7 @@ def _passages(edges: List[Tuple[str, str]], query: str = _QUERY) -> List[Dict[st
 
 
 def test_edges_omitted_resolve_to_empty() -> None:
-    assert AdjacencyGraphRag._resolve_edges(Options(context={})) == []
+    assert AdjacencyGraphRag._resolve_edges(None) == []
 
 
 def test_non_sequence_edges_container_rejected() -> None:

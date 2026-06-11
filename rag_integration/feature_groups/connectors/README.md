@@ -28,10 +28,10 @@ download or server). The full survey in the design doc also uses
 
 | Family | Reader contract (in -> out) | No-Docker concrete | Other backends | Pedigree of the anchor | Contract suite |
 |---|---|---|---|---|---|
-| [`retrieve`](retrieve/) | `query_text + corpus + top_k -> ranked passages` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra) | real-lib-inmem | [`retrieve_contract.py`](../../../tests/connectors/retrieve/retrieve_contract.py) |
+| [`retrieve`](retrieve/) | `query_text + corpus + top_k -> ranked passages` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra), `HybridRrfRetriever` (RRF-fused lexical + dense, `faiss` extra) | real-lib-inmem | [`retrieve_contract.py`](../../../tests/connectors/retrieve/retrieve_contract.py) |
 | [`rerank`](rerank/) | `query_text + candidates + top_k -> reordered passages` (`reranked_passages`) | `LexicalReranker` (token overlap, zero-download) | `FlashRankReranker` (ONNX cross-encoder, `rerank` extra, CI-skip on model download) | fixture-stub | [`rerank_contract.py`](../../../tests/connectors/rerank/rerank_contract.py) |
 | [`generate`](generate/) | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub | [`generate_contract.py`](../../../tests/connectors/generate/generate_contract.py) |
-| [`graph_rag`](graph_rag/) | `query_text + nodes + edges + top_k -> ranked passages` (`graph_passages`); query overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking | fixture-stub | [`graph_rag_contract.py`](../../../tests/connectors/graph_rag/graph_rag_contract.py) |
+| [`graph_rag`](graph_rag/) | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub | [`graph_rag_contract.py`](../../../tests/connectors/graph_rag/graph_rag_contract.py) |
 | [`structured`](structured/) | `question + table -> SQL -> typed rows` (`structured_rows: {sql, rows}`); in-mem SQLite, single-SELECT `sqlglot` guard | `RuleBasedSql` (rule-based NL->SQL, `structured` extra) | `AggregateSql` (adds avg/min/max/sum intents) | fixture-stub | [`structured_contract.py`](../../../tests/connectors/structured/structured_contract.py) |
 | [`orchestrator`](orchestrator/) | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack 2.x BM25, offline, `orchestrator` extra) | `R2RFixtureOrchestrator` (file-fixture REST stub) | real-lib-inmem | [`orchestrator_contract.py`](../../../tests/connectors/orchestrator/orchestrator_contract.py) |
 
@@ -48,6 +48,11 @@ cosine similarity using the repo's deterministic embedder, also zero-download.
 canonical **dense** backend: the same FAISS nearest-neighbor search the stage
 pipeline's `retrieval` stage runs, folded in behind this contract (cosine over
 the repo's deterministic hash embeddings, in-memory `IndexFlatIP`).
+`HybridRrfRetriever` (`retrieve_backend="hybrid_rrf"`, `--extra faiss`) fuses
+the lexical and dense rankings with reciprocal-rank fusion; the fusion
+mechanics live in the cross-cutting [`fusion.py`](fusion.py), so future
+blending of rankings across families (e.g. `retrieve` + `graph_rag`, by
+`doc_id`) reuses `rrf_fuse` instead of growing a new backend.
 
 The FAISS `retrieval` stage and this family are one world: the stage serves the
 same `retrieved_passages` shape from a pre-built on-disk index, so migrating
@@ -108,6 +113,14 @@ hand-built adjacency map with stdlib only. `NetworkxGraphRag`
 (`graph_backend="networkx"`, `--extra graph`) does the same over `networkx`; a
 parity test pins identical ranking, showing the contract is not tied to one
 graph library.
+
+The graph arrives inline (`nodes` + `edges`) or from an upstream
+knowledge-graph source: setting `graph_source` to the source's feature name
+(e.g. `"knowledge_graph"`) makes the connector declare that feature as its
+input and consume an existing graph source instead of duplicating one.
+`TriplesKnowledgeGraph` (`kg_backend="triples"`, [`kg_source.py`](graph_rag/kg_source.py))
+is the first source: it builds the `{nodes, edges}` payload from
+subject-predicate-object triples, pure Python.
 
 ### `structured` -- `question + table -> SQL -> typed rows`
 
