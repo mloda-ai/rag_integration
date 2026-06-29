@@ -188,7 +188,7 @@ contracts declared on the family base classes.
 | `generate` | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub anchor |
 | `graph_rag` | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query-overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub anchor + real-lib |
 | `structured` | `question + table -> SQL -> typed rows` (`structured_rows: {sql, rows}`); in-mem SQLite, single-SELECT sqlglot guard | `RuleBasedSql` (deterministic NL->SQL over in-mem SQLite) | `AggregateSql` (aggregation queries) | fixture-stub anchor |
-| `orchestrator` | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack 2.x BM25 pipeline, offline, telemetry off) | `R2RFixtureOrchestrator` (file-fixture REST stub with `SUPPORTED_VALUES` + stripped params) | real-lib-inmem + fixture-stub |
+| `orchestrator` | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack 2.x BM25 pipeline, offline, telemetry off) | `R2RFixtureOrchestrator` (file-fixture REST stub, honest-surface narrowing) | real-lib-inmem + fixture-stub |
 
 What each family is for:
 
@@ -213,6 +213,28 @@ What each family is for:
 - **`orchestrator`** is the opaque end-to-end surface for whole frameworks and
   apps (LlamaIndex, Haystack, txtai, and the server-shaped R2R/RAGFlow/Verba/...
   reached through a fixture stub).
+
+## Honest surface: what each concrete narrows
+
+A connector advertises only what it can honor. Selection is gated on the
+`<family>_backend` value (an unknown backend matches nothing,
+`test_unknown_backend_does_not_match`), and the base `_rank` / `_run` /
+`_generate` / `_to_sql` contracts pass no extra options, so a backend never
+silently ignores an advertised one. Where a concrete covers less than its
+family's full conceptual range, the narrowing lives in behaviour (and is locked
+by a test), not in a `SUPPORTED_VALUES` attribute: there is none, and advertising
+an option a backend cannot honor would be a surface lie. The full-contract
+backends (`bm25s`, `faiss`, `tfidf`, `hybrid_rrf`, `lexical`, `extractive`,
+`adjacency`, `networkx`) narrow nothing.
+
+| Concrete | Honors | Narrows / does not support | Locked by |
+|---|---|---|---|
+| `FlashRankReranker` | the full rerank contract | model fixed to `ms-marco-TinyBERT-L-2-v2`; no model option is exposed | `test_flashrank_surface.py` |
+| `TemplateResponder` | the full generate contract | answer capped at `MAX_SENTENCES` (3) sentences, not configurable | `test_template_responder.py::test_caps_answer_at_max_sentences` |
+| `RuleBasedSql` | count, equality-filter, list-all intents | no aggregation / JOIN / ordering / grouping (unrecognised intents fall back to list-all); negative filter values unsupported (the tokenizer drops the sign) | `test_rule_based_sql.py` |
+| `AggregateSql` | the above plus avg/min/max/sum aggregation | no JOIN / ordering / grouping (fall back to list-all); negative filter values unsupported; non-numeric aggregation coerces (SQLite) to `0.0` / `None`, not an error | `test_aggregate_sql.py` |
+| `HaystackOrchestrator` | the full orchestrator contract | answer is the top document's text (no LLM); empty query / empty corpus / non-positive `top_k` yield an empty result | `orchestrator_contract.py::test_answer_drawn_from_top_document` |
+| `R2RFixtureOrchestrator` | the full orchestrator contract | bound to canned fixture queries (unknown query -> empty); canned docs narrowed to the supplied corpus; answer suppressed when its source doc is not surfaced | `test_r2r_fixture_orchestrator.py` |
 
 ## Cross-cutting properties
 

@@ -114,3 +114,22 @@ class TestAggregateSql(StructuredConnectorContractBase):
         result = AggregateSql._query("what is the average age", self.table_name(), self.columns(), [])
         (only_value,) = result["rows"][0].values()
         assert only_value is None
+
+    # -- Honest surface: narrowing --------------------------------------------
+
+    def test_ordering_intent_not_supported_lists_all(self) -> None:
+        """Honest surface: ordering/grouping is not supported. An ORDER-BY-style
+        question with no aggregation cue falls back to list-all rather than
+        emitting an ORDER BY clause it does not implement."""
+        sql, params = AggregateSql._to_sql("list the pets ordered by age", self.table_name(), self.columns())
+        assert sql == 'SELECT * FROM "pets"'
+        assert "ORDER BY" not in sql
+        assert params == []
+
+    def test_negative_filter_value_sign_dropped(self) -> None:
+        """Honest surface: negative filter values are unsupported. The tokenizer
+        drops the leading sign, so "-5" binds as "5" (pinned, not a different
+        signed match)."""
+        sql, params = AggregateSql._to_sql("which pets have age -5", "pets", ["name", "age"])
+        assert 'LOWER("age") = ?' in sql
+        assert params == ["5"]

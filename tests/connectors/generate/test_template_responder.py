@@ -74,3 +74,19 @@ class TestTemplateResponder(GenerateConnectorContractBase):
         base's 'non-empty answer requires citations' guard is never tripped."""
         result = self._answer("zzz nonmatching query", self.sample_passages())
         assert result == {"answer": "", "citations": []}
+
+    def test_caps_answer_at_max_sentences(self) -> None:
+        """Honest surface: the answer draws at most ``MAX_SENTENCES`` sentences,
+        even when more passages are relevant. Four single-sentence passages all
+        match equally, but only the first three (by passage order) are selected,
+        so the fourth is neither answered nor cited."""
+        passages = [
+            {"doc_id": "p0", "text": "A cat naps."},
+            {"doc_id": "p1", "text": "A cat purrs."},
+            {"doc_id": "p2", "text": "A cat hunts."},
+            {"doc_id": "p3", "text": "A cat climbs."},
+        ]
+        result = self._answer("cat", passages)
+        assert TemplateResponder.MAX_SENTENCES == 3
+        assert result["citations"] == ["p0", "p1", "p2"], result["citations"]
+        assert "climbs" not in result["answer"]

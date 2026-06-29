@@ -77,3 +77,22 @@ class TestRuleBasedSql(StructuredConnectorContractBase):
         assert "?" in result["sql"]
         assert "2.5" not in result["sql"]
         assert [row["name"] for row in result["rows"]] == ["Rex"]
+
+    # -- Honest surface: narrowing --------------------------------------------
+
+    def test_aggregation_intent_not_supported_lists_all(self) -> None:
+        """Honest surface: this backend has no aggregation intent. An aggregation
+        question is not silently mis-answered: it falls back to list-all rather
+        than emitting an AVG (that is the ``aggregate`` backend's job)."""
+        sql, params = RuleBasedSql._to_sql("what is the average age", self.table_name(), self.columns())
+        assert sql == 'SELECT * FROM "pets"'
+        assert "AVG" not in sql
+        assert params == []
+
+    def test_negative_filter_value_sign_dropped(self) -> None:
+        """Honest surface: negative filter values are unsupported. The tokenizer
+        drops the leading sign, so "-5" binds as "5"; this is pinned, not silently
+        producing a different (signed) match."""
+        sql, params = RuleBasedSql._to_sql("which pets have age -5", "pets", ["name", "age"])
+        assert 'LOWER("age") = ?' in sql
+        assert params == ["5"]
