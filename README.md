@@ -170,6 +170,13 @@ results = mlodaAPI.run_all(
 Install a family's backend with `uv sync --extra connectors` (or `rerank` /
 `graph` / `structured` / `orchestrator`).
 
+Swapping one backend for another is an option change, not a pipeline rewrite.
+`python -m cli.swap_demo` runs that swap within a family
+(`retrieve_backend="bm25s"` -> `"tfidf"`) and across families (`retrieve` vs
+`orchestrator` over the same inputs); the contract is written up under "Swapping
+backends" in
+[`docs/rag-connector-base-classes.md`](docs/rag-connector-base-classes.md).
+
 ## Installation
 
 Clone the repository and install with uv:

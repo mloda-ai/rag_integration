@@ -118,3 +118,22 @@ python3 -m cli.rag_demo run --input ./path/to/docs/ --chunking sentence -v
 |--------|-------------|
 | `--output`, `-o` | Output file (JSON) |
 | `--verbose`, `-v` | Verbose output |
+
+## Swap-backends demo
+
+`cli/swap_demo.py` shows the connector promise: swapping one backend for another
+is an edit to the options dict, never a pipeline rewrite. It runs the same call
+shape for a within-family swap (`retrieve_backend="bm25s"` -> `"tfidf"`,
+`generate_backend="extractive"` -> `"template"`) and an across-family swap
+(`retrieve` vs `orchestrator` over identical query/corpus/top_k inputs).
+
+```bash
+python3 -m cli.swap_demo
+```
+
+The pure-Python backends always run; the `bm25s` and `haystack` backends run
+when their extras are installed (`uv sync --extra connectors` / `--extra
+orchestrator`) and are skipped with a note otherwise. The mechanics are
+documented in
+[`docs/rag-connector-base-classes.md`](../docs/rag-connector-base-classes.md)
+under "Swapping backends".

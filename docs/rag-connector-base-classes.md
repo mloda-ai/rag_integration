@@ -214,6 +214,55 @@ What each family is for:
   apps (LlamaIndex, Haystack, txtai, and the server-shaped R2R/RAGFlow/Verba/...
   reached through a fixture stub).
 
+## Swapping backends (the migration demo)
+
+The families exist so that moving from one backend to another is an edit to the
+options dict, not a pipeline rewrite, the open-kgo "swap one connector for
+another, same `Feature -> run_all` shape" promise applied to RAG. Two swap axes,
+both demonstrated end to end in
+[`cli/swap_demo.py`](../cli/swap_demo.py) (run `python -m cli.swap_demo`) and
+pinned by [`tests/connectors/test_swap_demo.py`](../tests/connectors/test_swap_demo.py).
+
+Every connector in the demo is driven through one helper, over one fixed set of
+enabled connectors (`CONNECTORS`):
+
+```python
+def run_connector(root_feature, options):
+    feature = Feature(root_feature, options=Options(context=options))
+    result = mlodaAPI.run_all(
+        [feature],
+        compute_frameworks={PythonDictFramework},
+        plugin_collector=PluginCollector.enabled_feature_groups(CONNECTORS),
+    )
+    # ... return the single result row's value
+```
+
+Neither the enabled providers nor the call shape changes between backends or
+families. Only the options dict changes, and the `<family>_backend` selector in
+it routes the request to exactly one of the enabled connectors. What changes:
+
+- **Within a family**, only the `<family>_backend` selector value moves. The
+  root feature name, the input keys, and the result shape are all unchanged, so
+  nothing downstream notices. The demo swaps `retrieve_backend="bm25s"` ->
+  `"tfidf"` (two different lexical mechanisms ranking the same documents in the
+  same order) and `generate_backend="extractive"` -> `"template"` (both grounded
+  by construction). Because selection gates on the selector value, the swap is
+  also unambiguous: exactly one backend claims the request, and an unknown value
+  claims nothing.
+- **Across families**, only the selector key and the root feature name change,
+  with the same `query_text` / `corpus` / `top_k` inputs. `retrieve` and
+  `orchestrator` share that input contract exactly, so the same inputs drive
+  either a `retrieve` connector (`retrieve_backend`, root `retrieved_passages`,
+  a ranked passage list) or an `orchestrator` connector (`orchestrator_backend`,
+  root `orchestrated_answer`, an answer plus documents). The output shape
+  differs because the families answer different questions; the call site and the
+  inputs do not.
+
+A swap is safe precisely because of the honest-surface guarantees below: a
+backend either honors the family contract or narrows it visibly (gated by its
+selector, locked by a test), so swapping never silently drops an option the new
+backend cannot serve.
+
 ## Honest surface: what each concrete narrows
 
 A connector advertises only what it can honor. Selection is gated on the
