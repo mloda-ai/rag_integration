@@ -90,6 +90,9 @@ where = ["."]
 include = ["rag_integration*"]
 
 [tool.setuptools.package-data]
+# Ship the PEP 561 marker so the "Typing :: Typed" classifier holds and
+# downstream consumers get the type hints this package checks under mypy --strict.
+"rag_integration" = ["py.typed"]
 # Ship the orchestrator R2R fixture-stub's canned-response JSON in the wheel.
 "rag_integration.feature_groups.connectors.orchestrator" = ["fixtures/*.json"]
 
