@@ -6,7 +6,7 @@
 
 RAG integration plugin for [mloda](https://github.com/mloda-ai/mloda). Composes modular FeatureGroups into text and image processing pipelines with PII redaction, chunking, deduplication, embedding, FAISS vector search, retrieval, evaluation, and LLM response generation.
 
-See the [demo notebook](demo.ipynb) for an interactive walkthrough or the [CLI](cli/README.md) for command-line usage.
+See the [demo notebook](https://github.com/mloda-ai/rag_integration/blob/main/demo.ipynb) for an interactive walkthrough or the [CLI](https://github.com/mloda-ai/rag_integration/blob/main/cli/README.md) for command-line usage.
 
 ## Project Structure
 
@@ -134,12 +134,12 @@ path of the `retrieve` family (`retrieve_backend="faiss"`), and a stage and its
 connector counterpart emit the same passage / answer row shape under the same
 canonical feature name, so migrating between them is an option swap. See
 "Relationship to the stage pipeline" in
-[`docs/rag-connector-base-classes.md`](docs/rag-connector-base-classes.md).
+[`docs/rag-connector-base-classes.md`](https://github.com/mloda-ai/rag_integration/blob/main/docs/rag-connector-base-classes.md).
 
-See [`feature_groups/connectors/README.md`](rag_integration/feature_groups/connectors/README.md)
+See [`feature_groups/connectors/README.md`](https://github.com/mloda-ai/rag_integration/blob/main/rag_integration/feature_groups/connectors/README.md)
 for the family map (per-family contract, backends, no-Docker concrete, and
 pedigree), runnable examples, and links to the contract suites. The design
-rationale is in [`docs/rag-connector-base-classes.md`](docs/rag-connector-base-classes.md).
+rationale is in [`docs/rag-connector-base-classes.md`](https://github.com/mloda-ai/rag_integration/blob/main/docs/rag-connector-base-classes.md).
 
 ```python
 from mloda.user import mlodaAPI, Feature, Options, PluginCollector
@@ -175,7 +175,7 @@ Swapping one backend for another is an option change, not a pipeline rewrite.
 (`retrieve_backend="bm25s"` -> `"tfidf"`) and across families (`retrieve` vs
 `orchestrator` over the same inputs); the contract is written up under "Swapping
 backends" in
-[`docs/rag-connector-base-classes.md`](docs/rag-connector-base-classes.md).
+[`docs/rag-connector-base-classes.md`](https://github.com/mloda-ai/rag_integration/blob/main/docs/rag-connector-base-classes.md).
 
 ## Installation
 
@@ -201,7 +201,7 @@ To install only specific extras, use `uv sync --extra <name>`:
 
 ## CLI
 
-A command-line interface is available for running pipelines interactively. See [cli/README.md](cli/README.md) for full usage.
+A command-line interface is available for running pipelines interactively. See [cli/README.md](https://github.com/mloda-ai/rag_integration/blob/main/cli/README.md) for full usage.
 
 ```bash
 python3 -m cli.rag_demo run --input cli/docs/ --pii regex --chunking sentence --embedding tfidf -v
@@ -233,7 +233,7 @@ bandit -c pyproject.toml -r -q .
 
 ## Related
 
-- [Getting Started Guide](docs/getting-started.md) for a detailed walkthrough
-- [GitHub Workflows](docs/github-workflows.md) for CI/CD setup and required secrets
+- [Getting Started Guide](https://github.com/mloda-ai/rag_integration/blob/main/docs/getting-started.md) for a detailed walkthrough
+- [GitHub Workflows](https://github.com/mloda-ai/rag_integration/blob/main/docs/github-workflows.md) for CI/CD setup and required secrets
 - [mloda](https://github.com/mloda-ai/mloda) core library
 - [mloda-registry](https://github.com/mloda-ai/mloda-registry) for plugin guides and community plugins

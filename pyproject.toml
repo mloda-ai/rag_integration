@@ -7,9 +7,32 @@ version = "0.4.0"
 dependencies = ["mloda>=0.8.0", "mloda-testing>=0.3.2"]
 name = "rag-integration"
 description = "RAG integration plugin for mloda"
+readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [{ name = "mloda", email = "plugin-dev@mloda.ai" }]
 requires-python = ">=3.10"
+keywords = ["mloda", "rag", "retrieval-augmented-generation", "llm", "embeddings", "vector-search", "feature-engineering"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/mloda-ai/rag_integration"
+Repository = "https://github.com/mloda-ai/rag_integration"
+Issues = "https://github.com/mloda-ai/rag_integration/issues"
+"mloda core" = "https://github.com/mloda-ai/mloda"
 
 [project.optional-dependencies]
 dev = [
