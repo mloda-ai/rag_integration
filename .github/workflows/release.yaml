@@ -29,9 +29,14 @@ jobs:
 
       - name: Install semantic release and plugins
         run: |
+          # conventional-changelog-conventionalcommits is loaded at runtime by
+          # @semantic-release/release-notes-generator@14 (which only ships it as
+          # a devDependency). It must be pinned: v10 broke the v9 preset API and
+          # silently produced empty release notes. Keep this in lockstep with the
+          # release-notes-generator major that semantic-release@24 resolves.
           npm install -g semantic-release@v24.2.1 \
             conventional-changelog-cli \
-            conventional-changelog-conventionalcommits \
+            conventional-changelog-conventionalcommits@9.3.1 \
             @semantic-release/changelog \
             @semantic-release/exec \
             @semantic-release/git \
