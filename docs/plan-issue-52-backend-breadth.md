@@ -27,7 +27,8 @@ follow-up once the harness exists. The reverse order is preferred.
   download a model at first use live behind an extra and are CI-skipped the
   way `FlashRankReranker` is: `pytest.importorskip("<package>")` for a clean
   skip without the extra, plus a `requires_<backend>_model` marker in
-  `tests/conftest.py` for the model-download skip. Server-shaped tools get
+  `tests/conftest.py` for the model-download skip (reusing an existing marker
+  when one already fits). Server-shaped tools get
   file-fixture stubs like `R2RFixtureOrchestrator`, never a live daemon.
 - **Honest surface.** A concrete advertises only what it honors. Narrowing
   lives in behaviour and is locked by a test, never in a `SUPPORTED_VALUES`
@@ -41,8 +42,10 @@ follow-up once the harness exists. The reverse order is preferred.
   handful of adapter methods (`connector_class`, `backend_value`, sample data).
 - **Docs.** Every backend adds its row to the family map in
   `rag_integration/feature_groups/connectors/README.md`, the family table and
-  honest-surface table in `docs/rag-connector-base-classes.md`, and flips its
-  survey row from catalogued to built.
+  honest-surface table in `docs/rag-connector-base-classes.md`. The landscape
+  survey tables carry pedigree tags, not a built/unbuilt column, so build
+  state is expressed by presence in those concrete tables, not by editing the
+  survey rows.
 
 ## Candidate backends
 
@@ -58,17 +61,21 @@ The smallest step: it mirrors the existing FlashRank pattern one to one.
 - **Extra:** new `rerank-st` extra (`sentence-transformers>=2.2.0`). Not folded
   into the existing `rerank` extra: that would force torch onto FlashRank
   users, and FlashRank exists precisely as the no-torch cross-encoder.
-- **CI:** model downloads on first use, so `pytest.importorskip` plus a new
-  `requires_cross_encoder_model` conftest marker, exactly the FlashRank
-  arrangement. `LexicalReranker` stays the family's always-on CI anchor.
+- **CI:** model downloads on first use, so `pytest.importorskip` plus the
+  existing `requires_sentence_transformer_model` marker in `tests/conftest.py`
+  (it already covers Hugging Face Hub downloads by sentence-transformers), the
+  FlashRank arrangement with no new marker needed. `LexicalReranker` stays the
+  family's always-on CI anchor.
 - **Narrowing row:** model fixed, no model option exposed; locked by a
   `test_cross_encoder_surface.py` mirroring `test_flashrank_surface.py`.
 
 ### 2. `orchestrator`: LlamaIndex query engine
 
 - **Class / selector:** `LlamaIndexOrchestrator`, `orchestrator_backend="llamaindex"`.
-- **Library:** `llama-index-core` only (no integration packages). The wrapped
-  surface is the survey row's `index.as_query_engine().query(str)` shape.
+- **Library:** `llama-index-core` only (no integration packages). The survey
+  row catalogues the `index.as_query_engine().query(str)` shape; the offline
+  cut below wraps the LLM-free retriever path instead, and the query-engine
+  synthesizer stays a survey entry.
 - **Offline strategy (the main design decision):** LlamaIndex defaults pull an
   OpenAI LLM and an embedding model, both off-limits in CI. Recommended cut:
   build a `SimpleKeywordTableIndex` (regex keyword extraction, no LLM, no
@@ -114,20 +121,28 @@ placed in the prompt, and the free-form part is only the answer text.
   download size and local runtime). Chosen over Ollama because Ollama is a
   server daemon, which under the no-Docker / no-server policy would have to be
   a fixture stub rather than a real backend.
-- **Extra:** new `generate-llm` extra. Model download on first use, so
-  CI-skipped via the FlashRank pattern (`importorskip` + a
-  `requires_llama_cpp_model` marker); `ExtractiveResponder` remains the
-  family's CI anchor.
+- **Extra:** new `generate-llm` extra. Note: `llama-cpp-python` does not fetch
+  anything at `Llama(model_path=...)` construction; the backend must acquire
+  the GGUF via `Llama.from_pretrained(repo_id, filename)`, which downloads
+  from the Hugging Face Hub and caches locally. That gives the FlashRank
+  local-cache story: the contract test runs locally against the cache and is
+  CI-skipped (`importorskip` + a new `requires_llama_cpp_model` marker);
+  `ExtractiveResponder` remains the family's CI anchor.
 - **Determinism:** LLM output is not byte-stable even at temperature 0 across
   library versions. The locked tests assert structural properties only
   (grounding, citation validity, non-empty answer, prompt-passage provenance),
   not exact text. The family contract suite already leans structural, so this
   fits without contract changes.
-- **Secondary, cheap row:** fold the existing stage-side `ClaudeCliResponse`
-  (`feature_groups/rag_pipeline/llm_response/claude_cli.py`) in as
-  `generate_backend="claude_cli"`. It reuses proven code, extends the
-  documented stage-to-connector migration seam, and is skipped whenever the
-  `claude` CLI is absent (CI included). Optional; separate small PR.
+- **Secondary, cheap row:** a new adapter class `ClaudeCliResponder`
+  (`generate_backend="claude_cli"`) that reuses the subprocess CLI-call logic
+  from the stage-side `ClaudeCliResponse`
+  (`feature_groups/rag_pipeline/llm_response/claude_cli.py`). It is an
+  adapter, not a fold-in of the existing FeatureGroup: the stage contract is
+  `query + context -> answer string` with no citations, so the connector
+  subclasses `BaseGenerateConnector` and constructs citations itself from the
+  passages it placed in the prompt. Extends the documented stage-to-connector
+  migration seam; skipped whenever the `claude` CLI is absent (CI included).
+  Optional; separate small PR.
 - **Narrowing rows:** model fixed, no sampling options exposed; citations are
   the prompted passages, not model claims; `claude_cli` additionally requires
   the external CLI and is non-deterministic (locked structurally).
@@ -145,8 +160,8 @@ Recommendation: defer the build decision until after backend 1 lands, since
 the cross-encoder already establishes the torch-extra weight tolerance in this
 repo. If tolerated, build `ColbertRetriever` behind a `colbert` extra with
 local-only tests and a `research-prototype` / `real-lib-inmem` pedigree row.
-If not, record the decision in the design doc and leave the survey rows as
-catalogued. Either outcome satisfies the issue's definition of done.
+If not, record the decision in the design doc and leave them as survey rows
+only. Either outcome satisfies the issue's definition of done.
 
 ## Cross-family RRF blending (decided in #46, deferred until now)
 
