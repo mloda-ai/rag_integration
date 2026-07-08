@@ -7,7 +7,6 @@ from typing import Any, Dict, List
 from mloda.user import Feature, FeatureName, Options
 from mloda.provider import DefaultOptionKeys
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
 
 
@@ -110,9 +109,8 @@ class BaseImageDeduplicator(BaseRowDeduplicator):
     @classmethod
     def _extract_items(cls, data: List[Dict[str, Any]], feature: Feature) -> List[Any]:
         """Extract image bytes from each row's 'image_data' field."""
-        # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         items: List[Any] = []
-        for row in columnar_to_rows(data):
+        for row in data:
             image_data = row.get("image_data", b"")
             if not isinstance(image_data, bytes):
                 image_data = bytes(image_data) if image_data else b""
