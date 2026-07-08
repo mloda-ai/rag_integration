@@ -113,7 +113,8 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
 
             for q_idx, q_row in enumerate(query_rows):
                 q_id = cls._get_id(q_row)
-                relevant_ids = set(q_row.get("relevant_doc_ids", []) + q_row.get("relevant_image_ids", []))
+                # `or []` guards the None that homogenize_rows backfills on absent keys.
+                relevant_ids = set((q_row.get("relevant_doc_ids") or []) + (q_row.get("relevant_image_ids") or []))
                 query_relevant[q_id] = relevant_ids
 
                 ranked_indices = np.argsort(-sims[q_idx]).tolist()

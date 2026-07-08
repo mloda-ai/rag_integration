@@ -17,12 +17,19 @@ def flatten_result(result: Any) -> List[Dict[str, Any]]:
 
     PythonDict partitions are columnar ``dict[str, list]`` (mloda 0.9.0); pivot the
     first partition back to rows. Accepts a raw result list, a single wrapped
-    partition, or a bare columnar dict.
+    partition, a bare columnar dict, or an already-row-wise list. A leading dict is
+    treated as a partition only when every value is a list; scalar-valued dicts are
+    rows and pass through unchanged.
     """
     if isinstance(result, dict):
         return columnar_to_rows(result)
-    if result and isinstance(result[0], (dict, list)):
+    if result and isinstance(result[0], list):
         return columnar_to_rows(result[0])
+    if result and isinstance(result[0], dict):
+        first = result[0]
+        if not first or all(isinstance(value, list) for value in first.values()):
+            return columnar_to_rows(first)
+        return list(result)
     return columnar_to_rows(result)
 
 

@@ -141,7 +141,8 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
 
             for q_idx, q_row in enumerate(query_rows):
                 q_id = str(q_row.get("doc_id", q_idx))
-                relevant_ids = set(str(rid) for rid in q_row.get("relevant_doc_ids", []))
+                # `or []` guards the None that homogenize_rows backfills on absent keys.
+                relevant_ids = set(str(rid) for rid in q_row.get("relevant_doc_ids") or [])
                 query_relevant[q_id] = relevant_ids
 
                 # Map FAISS result indices → doc_ids (dedup while preserving order)
