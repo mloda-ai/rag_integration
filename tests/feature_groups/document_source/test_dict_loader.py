@@ -1,6 +1,7 @@
 """Tests for DictDocumentSource."""
 
 from typing import Type
+from unittest.mock import MagicMock
 
 import pytest
 from mloda.user import Options
@@ -58,3 +59,17 @@ class TestDictDocumentSource(DocumentSourceTestBase):
         docs = DictDocumentSource._load_documents(Options(context={"documents": documents}))
         assert docs[0]["author"] == "Bob"
         assert docs[0]["category"] == "test"
+
+    def test_calculate_feature_homogenizes_mixed_metadata(self) -> None:
+        """Rows with differing metadata keys are unified so mloda's columnar contract accepts them."""
+        documents = [
+            {"doc_id": "1", "text": "Has author", "author": "Bob"},
+            {"doc_id": "2", "text": "No author"},
+        ]
+        feature = MagicMock()
+        feature.options = Options(context={"documents": documents})
+        features = MagicMock()
+        features.features = [feature]
+        rows = DictDocumentSource.calculate_feature([], features)
+        assert {frozenset(row) for row in rows} == {frozenset({"doc_id", "text", "author"})}
+        assert rows[1]["author"] is None
