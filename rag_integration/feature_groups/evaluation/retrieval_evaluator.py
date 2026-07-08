@@ -15,6 +15,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
 
 
@@ -73,12 +74,15 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
         except ImportError as e:
             raise ImportError("numpy is required for RetrievalEvaluator. Install with: pip install numpy") from e
 
+        # mloda 0.9.0 delivers columnar data; read it row-wise.
+        rows = columnar_to_rows(data)
+
         for feature in features.features:
             source_feature = cls._extract_source_features(feature)[0]
             feature_name = feature.name
 
-            corpus_rows = [r for r in data if r.get("row_type") == "corpus"]
-            query_rows = [r for r in data if r.get("row_type") == "query"]
+            corpus_rows = [r for r in rows if r.get("row_type") == "corpus"]
+            query_rows = [r for r in rows if r.get("row_type") == "query"]
 
             if not corpus_rows or not query_rows:
                 metrics: Dict[str, Any] = {

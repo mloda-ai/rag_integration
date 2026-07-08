@@ -23,6 +23,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
+
 
 class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
     """Shared scaffolding for text and image deduplication feature groups."""
@@ -94,9 +96,12 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
         identical entries collapse by name. ``features.features`` is a set, so silently picking
         "the first" of genuinely distinct features would also be non-deterministic; raise instead.
         """
+        # mloda 0.9.0 delivers columnar data; read it row-wise.
+        rows = columnar_to_rows(data)
+
         features_by_name = {feature.name: feature for feature in features.features}
         if not features_by_name:
-            return data
+            return rows
         if len(features_by_name) > 1:
             names = sorted(str(name) for name in features_by_name)
             raise ValueError(
@@ -109,11 +114,11 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
         keep_strategy = cls._get_keep_strategy(feature)
         feature_name = feature.name
 
-        items = cls._extract_items(data, feature)
+        items = cls._extract_items(rows, feature)
         duplicate_of = cls._find_duplicates(items, threshold)
 
         result = []
-        for i, row in enumerate(data):
+        for i, row in enumerate(rows):
             new_row = row.copy()
             new_row["is_duplicate"] = duplicate_of[i] is not None
             new_row["duplicate_of"] = duplicate_of[i]

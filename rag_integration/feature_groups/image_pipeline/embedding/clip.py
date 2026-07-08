@@ -16,6 +16,7 @@ from typing import Any, Dict, List
 from mloda.provider import FeatureSet
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
 # Default local model path: looks two levels above the git repo root (mloda/models/)
@@ -200,12 +201,14 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
         This cross-modal dispatch is what makes text-to-image Recall@K meaningful.
         """
+        # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
+        rows = columnar_to_rows(data)
         for feature in features.features:
             embedding_dim = cls._get_embedding_dim(feature)
             model_name = cls._get_model_name(feature)
             feature_name = feature.name
 
-            for row in data:
+            for row in rows:
                 image_data = row.get("image_data")
                 caption = row.get("caption")
 
@@ -222,4 +225,4 @@ class CLIPImageEmbedder(BaseImageEmbedder):
                 row["embedding_dim"] = len(embedding)
                 row["embedding_model"] = model_name
 
-        return data
+        return rows

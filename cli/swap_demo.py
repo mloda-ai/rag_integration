@@ -44,6 +44,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.connectors.generate import ExtractiveResponder, TemplateResponder
 from rag_integration.feature_groups.connectors.orchestrator import HaystackOrchestrator
 from rag_integration.feature_groups.connectors.retrieve import Bm25sRetriever, TfidfRetriever
@@ -92,11 +93,9 @@ def run_connector(root_feature: str, options: Dict[str, Any]) -> Any:
         compute_frameworks={PythonDictFramework},
         plugin_collector=PluginCollector.enabled_feature_groups(CONNECTORS),
     )
-    rows: List[Any] = list(result[0]) if result and isinstance(result[0], list) else list(result)
-    # Some frameworks nest one level deeper ([[{...}]]); unwrap to match the
+    # Pivot the columnar partition (mloda 0.9.0) back to rows, matching the
     # sibling demos (cli/rag_demo.py, cli/eval_demo.py).
-    if rows and isinstance(rows[0], list):
-        rows = rows[0]
+    rows: List[Any] = columnar_to_rows(result[0]) if result else []
     for row in rows:
         if isinstance(row, dict) and root_feature in row:
             return row[root_feature]

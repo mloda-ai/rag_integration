@@ -9,12 +9,21 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
+
 
 def flatten_result(result: Any) -> List[Dict[str, Any]]:
-    """Unwrap nested mlodaAPI result to a flat list of dicts."""
-    if result and isinstance(result[0], list):
-        return result[0]
-    return list(result)
+    """Unwrap a nested mlodaAPI result to a flat list of row dicts.
+
+    PythonDict partitions are columnar ``dict[str, list]`` (mloda 0.9.0); pivot the
+    first partition back to rows. Accepts a raw result list, a single wrapped
+    partition, or a bare columnar dict.
+    """
+    if isinstance(result, dict):
+        return columnar_to_rows(result)
+    if result and isinstance(result[0], (dict, list)):
+        return columnar_to_rows(result[0])
+    return columnar_to_rows(result)
 
 
 def get_results_by_feature(raw_result: List[Any], feature_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:

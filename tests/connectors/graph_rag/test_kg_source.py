@@ -16,6 +16,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.connectors.graph_rag.kg_source import (
     BaseKnowledgeGraphSource,
     TriplesKnowledgeGraph,
@@ -145,7 +146,7 @@ def test_end_to_end_run_all() -> None:
         plugin_collector=PluginCollector.enabled_feature_groups({TriplesKnowledgeGraph}),
     )
     for partition in result:
-        for row in partition:
+        for row in columnar_to_rows(partition):
             if TriplesKnowledgeGraph.ROOT_FEATURE_NAME in row:
                 graph = row[TriplesKnowledgeGraph.ROOT_FEATURE_NAME]
                 assert [node["doc_id"] for node in graph["nodes"]] == [

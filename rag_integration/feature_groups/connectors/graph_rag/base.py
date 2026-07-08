@@ -35,12 +35,13 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, DefaultOptionKeys, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
 from mloda.user import Feature, Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, InvalidOptionError
 from rag_integration.feature_groups.connectors.mixins import (
     DocCollectionMixin,
@@ -126,31 +127,35 @@ class BaseGraphRagConnector(
         the input. Its options are the parent's group and context options minus
         ``FAMILY_OPTION_KEYS``: context keys do not propagate on their own, so
         the source's selector options (e.g. ``kg_backend``) are forwarded
-        explicitly, and the family keys are declared merge-protected so the
-        engine's own group-option merge cannot re-add query-specific keys to
-        the source feature.
+        explicitly, and ``forward_group_exclude`` keeps the family keys off the
+        source so the engine's default group-option forwarding cannot re-add
+        query-specific keys to it.
         """
         source = options.get(self.GRAPH_SOURCE)
         if source is None:
             return None
         forwarded_group = {key: value for key, value in options.group.items() if key not in self.FAMILY_OPTION_KEYS}
         forwarded_context = {key: value for key, value in options.context.items() if key not in self.FAMILY_OPTION_KEYS}
-        forwarded_context[DefaultOptionKeys.feature_chainer_parser_key] = self.FAMILY_OPTION_KEYS
-        return {Feature(str(source), options=Options(group=forwarded_group, context=forwarded_context))}
+        return {
+            Feature(
+                str(source),
+                options=Options(group=forwarded_group, context=forwarded_context),
+                forward_group_exclude=self.FAMILY_OPTION_KEYS,
+            )
+        }
 
     @classmethod
     def _graph_from_source(cls, data: Any, source_name: str) -> Dict[str, Any]:
         """Read the ``{nodes, edges}`` payload the graph-source feature produced."""
-        if isinstance(data, list):
-            for row in data:
-                if isinstance(row, dict) and source_name in row:
-                    payload = row[source_name]
-                    if not isinstance(payload, dict) or cls.NODES not in payload:
-                        raise InvalidOptionError(
-                            f"{cls.__name__} graph source '{source_name}' must produce a "
-                            f"{{nodes, edges}} dict, got {payload!r}."
-                        )
-                    return payload
+        for row in columnar_to_rows(data):
+            if isinstance(row, dict) and source_name in row:
+                payload = row[source_name]
+                if not isinstance(payload, dict) or cls.NODES not in payload:
+                    raise InvalidOptionError(
+                        f"{cls.__name__} graph source '{source_name}' must produce a "
+                        f"{{nodes, edges}} dict, got {payload!r}."
+                    )
+                return payload
         raise InvalidOptionError(f"{cls.__name__} graph source '{source_name}' produced no row.")
 
     @classmethod
