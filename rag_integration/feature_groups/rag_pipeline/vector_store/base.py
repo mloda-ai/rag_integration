@@ -13,6 +13,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
@@ -99,6 +100,9 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
         """Build FAISS index from embeddings, save via artifact, attach row metadata."""
         artifact_cls = cls.artifact()
 
+        # mloda 0.9.0 delivers columnar data; read it row-wise.
+        rows = columnar_to_rows(data)
+
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
             feature_name = feature.name
@@ -123,7 +127,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                 texts: List[str] = []
                 doc_ids: List[str] = []
 
-                for row in data:
+                for row in rows:
                     embedding = row.get(source_feature)
                     if embedding is not None and isinstance(embedding, list):
                         embeddings.append(embedding)
@@ -138,12 +142,12 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                     doc_ids.append(str(row.get("doc_id", f"row_{len(doc_ids)}")))
 
                 if not embeddings or not embeddings[0]:
-                    for i, row in enumerate(data):
+                    for i, row in enumerate(rows):
                         row[feature_name] = None
                         row["vector_id"] = i
                         row["index_type"] = cls._index_type_name()
                         row["index_size"] = 0
-                    return data
+                    return rows
 
                 dimension = len(embeddings[0])
                 index = cls._build_index(embeddings, dimension)
@@ -156,10 +160,10 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                     )
 
             # Attach row metadata
-            for i, row in enumerate(data):
+            for i, row in enumerate(rows):
                 row[feature_name] = i  # vector_id as the feature value
                 row["vector_id"] = i
                 row["index_type"] = cls._index_type_name()
                 row["index_size"] = index_size
 
-        return data
+        return rows

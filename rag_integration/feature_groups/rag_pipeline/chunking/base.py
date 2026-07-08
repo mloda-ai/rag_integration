@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
+
 
 class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     """
@@ -147,11 +149,14 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         """Perform chunking on the source feature."""
         result = []
 
+        # mloda 0.9.0 delivers columnar data; read it row-wise.
+        rows = columnar_to_rows(data)
+
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
             feature_name = feature.name
 
-            for row in data:
+            for row in rows:
                 # Get text from source feature or 'text' field
                 if source_feature in row:
                     text = str(row[source_feature])

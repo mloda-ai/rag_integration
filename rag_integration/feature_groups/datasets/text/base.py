@@ -11,6 +11,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import homogenize_rows
+
 
 class BaseTextDatasetSource(FeatureGroup):
     """
@@ -67,7 +69,7 @@ class BaseTextDatasetSource(FeatureGroup):
 
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
-        """Load and return dataset rows."""
+        """Load and return dataset rows with a uniform key schema."""
         for feature in features.features:
-            return cls._load_dataset(feature.options)
+            return homogenize_rows(cls._load_dataset(feature.options))
         return []

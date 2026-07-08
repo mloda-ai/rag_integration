@@ -44,6 +44,7 @@ from typing import Dict, List, Set, Tuple
 
 from mloda.user import Options
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
 from rag_integration.feature_groups.datasets.image.flickr30k import Flickr30kDatasetSource
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
@@ -238,9 +239,7 @@ def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
         ),
     )
 
-    rows = raw_result[0] if raw_result else []
-    if rows and isinstance(rows[0], list):
-        rows = rows[0]
+    rows = columnar_to_rows(raw_result[0]) if raw_result else []
 
     row = rows[0] if rows else {}
     metrics = row.get(feature_name, row)

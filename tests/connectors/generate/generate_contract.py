@@ -14,6 +14,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.columnar import columnar_to_rows
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
 
 
@@ -85,7 +86,7 @@ class GenerateConnectorContractBase(ABC):
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
         for partition in result:
-            for row in partition:
+            for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
                     answer: Dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
                     return answer
