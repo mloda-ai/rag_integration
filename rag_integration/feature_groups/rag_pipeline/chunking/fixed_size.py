@@ -26,7 +26,7 @@ class FixedSizeChunker(BaseChunker):
 
     PROPERTY_MAPPING = {
         BaseChunker.CHUNKING_METHOD: {
-            "fixed_size": "Fixed character count chunks",
+            DefaultOptionKeys.allowed_values: {"fixed_size": "Fixed character count chunks"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

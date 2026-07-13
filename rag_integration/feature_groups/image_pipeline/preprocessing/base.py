@@ -69,7 +69,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         PREPROCESSING_METHOD: {
-            **PREPROCESSING_METHODS,
+            DefaultOptionKeys.allowed_values: PREPROCESSING_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

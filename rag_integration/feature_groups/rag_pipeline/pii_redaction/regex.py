@@ -29,7 +29,7 @@ class RegexPIIRedactor(BasePIIRedactor):
 
     PROPERTY_MAPPING = {
         BasePIIRedactor.REDACTION_METHOD: {
-            "regex": "Regex-based PII detection",
+            DefaultOptionKeys.allowed_values: {"regex": "Regex-based PII detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -39,7 +39,7 @@ class RegexPIIRedactor(BasePIIRedactor):
             DefaultOptionKeys.default: ["ALL"],
         },
         BasePIIRedactor.REPLACEMENT_STRATEGY: {
-            **BasePIIRedactor.REPLACEMENT_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BasePIIRedactor.REPLACEMENT_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "mask",
         },

@@ -47,7 +47,7 @@ class SemanticChunker(BaseChunker):
 
     PROPERTY_MAPPING = {
         BaseChunker.CHUNKING_METHOD: {
-            "semantic": "Semantic boundary aware chunks using embeddings",
+            DefaultOptionKeys.allowed_values: {"semantic": "Semantic boundary aware chunks using embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

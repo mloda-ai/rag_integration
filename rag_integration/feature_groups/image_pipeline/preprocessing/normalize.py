@@ -28,7 +28,7 @@ class NormalizePreprocessor(BaseImagePreprocessor):
 
     PROPERTY_MAPPING = {
         BaseImagePreprocessor.PREPROCESSING_METHOD: {
-            "normalize": "Normalize pixel values to [0, 1] range",
+            DefaultOptionKeys.allowed_values: {"normalize": "Normalize pixel values to [0, 1] range"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

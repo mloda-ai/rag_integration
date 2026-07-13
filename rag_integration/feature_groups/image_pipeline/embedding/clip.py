@@ -47,7 +47,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
-            "clip": "CLIP model image embeddings",
+            DefaultOptionKeys.allowed_values: {"clip": "CLIP model image embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

@@ -37,7 +37,7 @@ class ClaudeCliResponse(BaseLLMResponse):
 
     PROPERTY_MAPPING = {
         BaseLLMResponse.LLM_METHOD: {
-            "claude_cli": "Claude CLI (claude -p) response generation",
+            DefaultOptionKeys.allowed_values: {"claude_cli": "Claude CLI (claude -p) response generation"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

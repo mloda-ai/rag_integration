@@ -36,7 +36,7 @@ class PatternPIIRedactor(BasePIIRedactor):
 
     PROPERTY_MAPPING = {
         BasePIIRedactor.REDACTION_METHOD: {
-            "pattern": "Custom pattern based detection",
+            DefaultOptionKeys.allowed_values: {"pattern": "Custom pattern based detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -46,7 +46,7 @@ class PatternPIIRedactor(BasePIIRedactor):
             DefaultOptionKeys.default: ["ALL"],
         },
         BasePIIRedactor.REPLACEMENT_STRATEGY: {
-            **BasePIIRedactor.REPLACEMENT_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BasePIIRedactor.REPLACEMENT_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "mask",
         },

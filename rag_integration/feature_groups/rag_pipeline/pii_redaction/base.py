@@ -102,7 +102,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         REDACTION_METHOD: {
-            **REDACTION_METHODS,
+            DefaultOptionKeys.allowed_values: REDACTION_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -112,7 +112,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
             DefaultOptionKeys.default: ["ALL"],
         },
         REPLACEMENT_STRATEGY: {
-            **REPLACEMENT_STRATEGIES,
+            DefaultOptionKeys.allowed_values: REPLACEMENT_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "mask",
         },

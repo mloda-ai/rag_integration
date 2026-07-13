@@ -26,7 +26,7 @@ class MockEmbedder(BaseEmbedder):
 
     PROPERTY_MAPPING = {
         BaseEmbedder.EMBEDDING_METHOD: {
-            "mock": "Deterministic mock embeddings for testing",
+            DefaultOptionKeys.allowed_values: {"mock": "Deterministic mock embeddings for testing"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

@@ -69,7 +69,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         IMAGE_EMBEDDING_METHOD: {
-            **EMBEDDING_METHODS,
+            DefaultOptionKeys.allowed_values: EMBEDDING_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

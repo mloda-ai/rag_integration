@@ -81,7 +81,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         IMAGE_REDACTION_METHOD: {
-            **REDACTION_METHODS,
+            DefaultOptionKeys.allowed_values: REDACTION_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

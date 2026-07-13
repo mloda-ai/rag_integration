@@ -34,7 +34,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
 
     PROPERTY_MAPPING = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
-            "pixel": "Pixelate PII regions",
+            DefaultOptionKeys.allowed_values: {"pixel": "Pixelate PII regions"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

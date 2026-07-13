@@ -34,7 +34,7 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
 
     PROPERTY_MAPPING = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
-            "blur": "Gaussian blur over PII regions",
+            DefaultOptionKeys.allowed_values: {"blur": "Gaussian blur over PII regions"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

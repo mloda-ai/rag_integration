@@ -25,7 +25,7 @@ class SentenceChunker(BaseChunker):
 
     PROPERTY_MAPPING = {
         BaseChunker.CHUNKING_METHOD: {
-            "sentence": "Sentence-boundary aware chunks",
+            DefaultOptionKeys.allowed_values: {"sentence": "Sentence-boundary aware chunks"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
