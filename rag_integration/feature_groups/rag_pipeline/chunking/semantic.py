@@ -6,7 +6,7 @@ import re
 import threading
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
 
@@ -46,30 +46,17 @@ class SemanticChunker(BaseChunker):
     DEFAULT_MODEL = "all-MiniLM-L6-v2"
 
     PROPERTY_MAPPING = {
-        BaseChunker.CHUNKING_METHOD: {
-            DefaultOptionKeys.allowed_values: {"semantic": "Semantic boundary aware chunks using embeddings"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseChunker.CHUNK_SIZE: {
-            "explanation": "Maximum size of each chunk (in characters, soft limit)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 512,
-        },
-        SIMILARITY_THRESHOLD: {
-            "explanation": "Cosine similarity threshold for grouping sentences (0.0-1.0)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: DEFAULT_SIMILARITY_THRESHOLD,
-        },
-        MODEL_NAME: {
-            "explanation": "Sentence transformer model name",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: DEFAULT_MODEL,
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to chunk",
-            DefaultOptionKeys.context: True,
-        },
+        BaseChunker.CHUNKING_METHOD: property_spec(
+            "Strategy used to split documents into chunks",
+            strict=True,
+            allowed_values={"semantic": "Semantic boundary aware chunks using embeddings"},
+        ),
+        BaseChunker.CHUNK_SIZE: property_spec("Maximum size of each chunk (in characters, soft limit)", default=512),
+        SIMILARITY_THRESHOLD: property_spec(
+            "Cosine similarity threshold for grouping sentences (0.0-1.0)", default=DEFAULT_SIMILARITY_THRESHOLD
+        ),
+        MODEL_NAME: property_spec("Sentence transformer model name", default=DEFAULT_MODEL),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to chunk"),
     }
 
     # Cached as a single (model_name, model) tuple so the lock-free fast path

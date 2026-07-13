@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, List
 
 import numpy as np
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.vector_store.base import BaseVectorStore
 
@@ -22,15 +22,12 @@ class FaissFlatIndexer(BaseVectorStore):
     """
 
     PROPERTY_MAPPING = {
-        BaseVectorStore.INDEX_METHOD: {
-            DefaultOptionKeys.allowed_values: {"flat": "Exact search using IndexFlatL2"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing embedding vectors to index",
-            DefaultOptionKeys.context: True,
-        },
+        BaseVectorStore.INDEX_METHOD: property_spec(
+            "FAISS index type backing the vector store",
+            strict=True,
+            allowed_values={"flat": "Exact search using IndexFlatL2"},
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing embedding vectors to index"),
     }
 
     @classmethod

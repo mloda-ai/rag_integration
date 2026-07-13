@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type
 
-from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
 from mloda.provider import FeatureChainParserMixin
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -101,25 +101,14 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
-        REDACTION_METHOD: {
-            DefaultOptionKeys.allowed_values: REDACTION_METHODS,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        PII_TYPES: {
-            "explanation": "List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: ["ALL"],
-        },
-        REPLACEMENT_STRATEGY: {
-            DefaultOptionKeys.allowed_values: REPLACEMENT_STRATEGIES,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "mask",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to redact",
-            DefaultOptionKeys.context: True,
-        },
+        REDACTION_METHOD: property_spec(
+            "Detector used to locate PII in text", strict=True, allowed_values=REDACTION_METHODS
+        ),
+        PII_TYPES: property_spec("List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)", default=["ALL"]),
+        REPLACEMENT_STRATEGY: property_spec(
+            "How detected PII is replaced in the redacted text", allowed_values=REPLACEMENT_STRATEGIES, default="mask"
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to redact"),
     }
 
     @classmethod

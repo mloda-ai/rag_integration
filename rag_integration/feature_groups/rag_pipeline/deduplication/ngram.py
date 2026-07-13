@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Set
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.deduplication.base import BaseDeduplicator
 
@@ -23,25 +23,20 @@ class NGramDeduplicator(BaseDeduplicator):
     """
 
     PROPERTY_MAPPING = {
-        BaseDeduplicator.DEDUPLICATION_METHOD: {
-            DefaultOptionKeys.allowed_values: {"ngram": "N-gram Jaccard similarity based detection"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseDeduplicator.SIMILARITY_THRESHOLD: {
-            "explanation": "Threshold for considering texts as duplicates (0.0-1.0)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 1.0,
-        },
-        BaseDeduplicator.KEEP_STRATEGY: {
-            DefaultOptionKeys.allowed_values: BaseDeduplicator.KEEP_STRATEGIES,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "first",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to deduplicate",
-            DefaultOptionKeys.context: True,
-        },
+        BaseDeduplicator.DEDUPLICATION_METHOD: property_spec(
+            "Algorithm used to detect duplicate texts",
+            strict=True,
+            allowed_values={"ngram": "N-gram Jaccard similarity based detection"},
+        ),
+        BaseDeduplicator.SIMILARITY_THRESHOLD: property_spec(
+            "Threshold for considering texts as duplicates (0.0-1.0)", default=1.0
+        ),
+        BaseDeduplicator.KEEP_STRATEGY: property_spec(
+            "How a group of detected duplicates is resolved",
+            allowed_values=BaseDeduplicator.KEEP_STRATEGIES,
+            default="first",
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to deduplicate"),
     }
 
     # Default n-gram size

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Set, Type
 
-from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
 from mloda.provider import FeatureChainParserMixin
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -68,10 +68,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing FAISS-indexed corpus + query rows",
-            DefaultOptionKeys.context: True,
-        },
+        DefaultOptionKeys.in_features: property_spec("Source feature containing FAISS-indexed corpus + query rows"),
     }
 
     @classmethod

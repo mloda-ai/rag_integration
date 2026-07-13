@@ -7,7 +7,8 @@ import subprocess  # nosec B404
 from typing import Any, Dict, List
 
 from mloda.user import Options
-from mloda.provider import DefaultOptionKeys
+
+from mloda.provider import property_spec
 
 from rag_integration.feature_groups.rag_pipeline.llm_response.base import BaseLLMResponse
 
@@ -36,38 +37,17 @@ class ClaudeCliResponse(BaseLLMResponse):
     }
 
     PROPERTY_MAPPING = {
-        BaseLLMResponse.LLM_METHOD: {
-            DefaultOptionKeys.allowed_values: {"claude_cli": "Claude CLI (claude -p) response generation"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseLLMResponse.QUERY: {
-            "explanation": "The user question to answer",
-            DefaultOptionKeys.context: True,
-        },
-        BaseLLMResponse.CONTEXT: {
-            "explanation": "Retrieved context to include in the prompt (list or string)",
-            DefaultOptionKeys.context: True,
-        },
-        BaseLLMResponse.SYSTEM_PROMPT: {
-            "explanation": "System prompt for the LLM",
-            DefaultOptionKeys.context: True,
-        },
-        ALLOWED_TOOLS: {
-            "explanation": "Comma-separated tools to allow for Claude CLI",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "",
-        },
-        MAX_TURNS: {
-            "explanation": "Maximum conversation turns for Claude CLI",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 1,
-        },
-        TIMEOUT: {
-            "explanation": "Subprocess timeout in seconds for Claude CLI",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 300,
-        },
+        BaseLLMResponse.LLM_METHOD: property_spec(
+            "Backend used to generate the LLM response",
+            strict=True,
+            allowed_values={"claude_cli": "Claude CLI (claude -p) response generation"},
+        ),
+        BaseLLMResponse.QUERY: property_spec("The user question to answer"),
+        BaseLLMResponse.CONTEXT: property_spec("Retrieved context to include in the prompt (list or string)"),
+        BaseLLMResponse.SYSTEM_PROMPT: property_spec("System prompt for the LLM"),
+        ALLOWED_TOOLS: property_spec("Comma-separated tools to allow for Claude CLI", default=""),
+        MAX_TURNS: property_spec("Maximum conversation turns for Claude CLI", default=1),
+        TIMEOUT: property_spec("Subprocess timeout in seconds for Claude CLI", default=300),
     }
 
     @classmethod

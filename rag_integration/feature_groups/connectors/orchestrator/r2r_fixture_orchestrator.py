@@ -30,6 +30,8 @@ import threading
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.orchestrator.base import BaseOrchestratorConnector
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "r2r_responses.json"
@@ -48,12 +50,18 @@ class R2RFixtureOrchestrator(BaseOrchestratorConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: {"explanation": "Use 'r2r' for the R2R fixture-stub pipeline"},
-        BaseOrchestratorConnector.QUERY_TEXT: {"explanation": "The query to look up in the canned R2R responses"},
-        BaseOrchestratorConnector.TOP_K: {
-            "explanation": f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})"
-        },
-        BaseOrchestratorConnector.CORPUS: {"explanation": "Inline corpus (the documents ingested into R2R)"},
+        BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: property_spec(
+            "Use 'r2r' for the R2R fixture-stub pipeline", context=False
+        ),
+        BaseOrchestratorConnector.QUERY_TEXT: property_spec(
+            "The query to look up in the canned R2R responses", context=False
+        ),
+        BaseOrchestratorConnector.TOP_K: property_spec(
+            f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})", context=False
+        ),
+        BaseOrchestratorConnector.CORPUS: property_spec(
+            "Inline corpus (the documents ingested into R2R)", context=False
+        ),
     }
 
     _responses: Dict[str, Any] | None = None

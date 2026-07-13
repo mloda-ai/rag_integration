@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.pii_redaction.base import BaseImagePIIRedactor
 
@@ -33,25 +33,18 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
     DEFAULT_FILL_COLOR = (0, 0, 0)
 
     PROPERTY_MAPPING = {
-        BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
-            DefaultOptionKeys.allowed_values: {"solid": "Solid color fill over PII regions"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        FILL_COLOR: {
-            "explanation": "RGB color tuple for solid fill (e.g., [0, 0, 0] for black)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: list(DEFAULT_FILL_COLOR),
-        },
-        BaseImagePIIRedactor.PII_REGIONS: {
-            "explanation": "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: [],
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing images to redact",
-            DefaultOptionKeys.context: True,
-        },
+        BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: property_spec(
+            "Technique used to obscure PII regions in images",
+            strict=True,
+            allowed_values={"solid": "Solid color fill over PII regions"},
+        ),
+        FILL_COLOR: property_spec(
+            "RGB color tuple for solid fill (e.g., [0, 0, 0] for black)", default=list(DEFAULT_FILL_COLOR)
+        ),
+        BaseImagePIIRedactor.PII_REGIONS: property_spec(
+            "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'", default=[]
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing images to redact"),
     }
 
     @classmethod

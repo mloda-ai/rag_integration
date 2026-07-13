@@ -14,6 +14,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.orchestrator.base import BaseOrchestratorConnector
 
 
@@ -30,12 +32,14 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: {"explanation": "Use 'haystack' for a Haystack BM25 pipeline"},
-        BaseOrchestratorConnector.QUERY_TEXT: {"explanation": "The query to run through the pipeline"},
-        BaseOrchestratorConnector.TOP_K: {
-            "explanation": f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})"
-        },
-        BaseOrchestratorConnector.CORPUS: {"explanation": "Inline corpus: a list of {doc_id, text} dicts"},
+        BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: property_spec(
+            "Use 'haystack' for a Haystack BM25 pipeline", context=False
+        ),
+        BaseOrchestratorConnector.QUERY_TEXT: property_spec("The query to run through the pipeline", context=False),
+        BaseOrchestratorConnector.TOP_K: property_spec(
+            f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})", context=False
+        ),
+        BaseOrchestratorConnector.CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
     }
 
     @classmethod

@@ -7,12 +7,11 @@ from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
 
 
 class BaseRetriever(FeatureGroup):
@@ -54,27 +53,11 @@ class BaseRetriever(FeatureGroup):
     RETRIEVAL_METHODS: Dict[str, str] = {}
 
     PROPERTY_MAPPING = {
-        RETRIEVAL_METHOD: {
-            "explanation": "Which retriever implementation to use",
-            DefaultOptionKeys.context: True,
-        },
-        TOP_K: {
-            "explanation": "Number of results to return",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 5,
-        },
-        QUERY_TEXT: {
-            "explanation": "Raw text query to embed and search",
-            DefaultOptionKeys.context: True,
-        },
-        INDEX_PATH: {
-            "explanation": "Path to the FAISS index file",
-            DefaultOptionKeys.context: True,
-        },
-        METADATA_PATH: {
-            "explanation": "Path to the metadata JSON sidecar",
-            DefaultOptionKeys.context: True,
-        },
+        RETRIEVAL_METHOD: property_spec("Which retriever implementation to use"),
+        TOP_K: property_spec("Number of results to return", default=5),
+        QUERY_TEXT: property_spec("Raw text query to embed and search"),
+        INDEX_PATH: property_spec("Path to the FAISS index file"),
+        METADATA_PATH: property_spec("Path to the metadata JSON sidecar"),
     }
 
     @classmethod

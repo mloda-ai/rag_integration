@@ -12,6 +12,8 @@ from __future__ import annotations
 import re
 from typing import Any, List, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
@@ -33,16 +35,19 @@ class NetworkxGraphRag(BaseGraphRagConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseGraphRagConnector.GRAPH_BACKEND: {"explanation": "Use 'networkx' for graph-expansion retrieval"},
-        BaseGraphRagConnector.QUERY_TEXT: {"explanation": "Raw text query to search the graph"},
-        BaseGraphRagConnector.TOP_K: {
-            "explanation": f"Number of passages to return (default {BaseGraphRagConnector.DEFAULT_TOP_K})"
-        },
-        BaseGraphRagConnector.NODES: {"explanation": "Graph nodes: a list of {doc_id, text} dicts"},
-        BaseGraphRagConnector.EDGES: {
-            "explanation": "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
-            " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)"
-        },
+        BaseGraphRagConnector.GRAPH_BACKEND: property_spec(
+            "Use 'networkx' for graph-expansion retrieval", context=False
+        ),
+        BaseGraphRagConnector.QUERY_TEXT: property_spec("Raw text query to search the graph", context=False),
+        BaseGraphRagConnector.TOP_K: property_spec(
+            f"Number of passages to return (default {BaseGraphRagConnector.DEFAULT_TOP_K})", context=False
+        ),
+        BaseGraphRagConnector.NODES: property_spec("Graph nodes: a list of {doc_id, text} dicts", context=False),
+        BaseGraphRagConnector.EDGES: property_spec(
+            "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
+            " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)",
+            context=False,
+        ),
     }
 
     @staticmethod

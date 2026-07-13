@@ -27,7 +27,7 @@ import sqlite3
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -60,11 +60,11 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
     STRUCTURED_BACKENDS: Dict[str, str] = {}
 
     PROPERTY_MAPPING = {
-        STRUCTURED_BACKEND: {"explanation": "Which structured (text-to-SQL) backend to use"},
-        QUESTION: {"explanation": "Natural-language question to answer over the table"},
-        TABLE: {"explanation": "Table name (a simple SQL identifier)"},
-        COLUMNS: {"explanation": "Column names (simple SQL identifiers)"},
-        ROWS: {"explanation": "Table rows: a list of {column: value} dicts"},
+        STRUCTURED_BACKEND: property_spec("Which structured (text-to-SQL) backend to use", context=False),
+        QUESTION: property_spec("Natural-language question to answer over the table", context=False),
+        TABLE: property_spec("Table name (a simple SQL identifier)", context=False),
+        COLUMNS: property_spec("Column names (simple SQL identifiers)", context=False),
+        ROWS: property_spec("Table rows: a list of {column: value} dicts", context=False),
     }
 
     @classmethod

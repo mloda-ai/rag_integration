@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, List
 
 import numpy as np
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.vector_store.base import BaseVectorStore
 
@@ -30,25 +30,14 @@ class FaissIVFIndexer(BaseVectorStore):
     NPROBE = "nprobe"
 
     PROPERTY_MAPPING = {
-        BaseVectorStore.INDEX_METHOD: {
-            DefaultOptionKeys.allowed_values: {"ivf": "Approximate search using IndexIVFFlat"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        NLIST: {
-            "explanation": "Number of clusters for IVF index",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 10,
-        },
-        NPROBE: {
-            "explanation": "Number of clusters to search at query time",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 3,
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing embedding vectors to index",
-            DefaultOptionKeys.context: True,
-        },
+        BaseVectorStore.INDEX_METHOD: property_spec(
+            "FAISS index type backing the vector store",
+            strict=True,
+            allowed_values={"ivf": "Approximate search using IndexIVFFlat"},
+        ),
+        NLIST: property_spec("Number of clusters for IVF index", default=10),
+        NPROBE: property_spec("Number of clusters to search at query time", default=3),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing embedding vectors to index"),
     }
 
     @classmethod

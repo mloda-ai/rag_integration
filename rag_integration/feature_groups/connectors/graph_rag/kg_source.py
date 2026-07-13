@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -44,7 +44,7 @@ class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, FeatureGrou
     KG_BACKENDS: Dict[str, str] = {}
 
     PROPERTY_MAPPING = {
-        KG_BACKEND: {"explanation": "Which knowledge-graph source backend to use"},
+        KG_BACKEND: property_spec("Which knowledge-graph source backend to use", context=False),
     }
 
     @classmethod
@@ -107,8 +107,10 @@ class TriplesKnowledgeGraph(BaseKnowledgeGraphSource):
     }
 
     PROPERTY_MAPPING = {
-        BaseKnowledgeGraphSource.KG_BACKEND: {"explanation": "Use 'triples' for a triple-built passage graph"},
-        TRIPLES: {"explanation": "Knowledge-graph triples: a list of [subject, predicate, object]"},
+        BaseKnowledgeGraphSource.KG_BACKEND: property_spec(
+            "Use 'triples' for a triple-built passage graph", context=False
+        ),
+        TRIPLES: property_spec("Knowledge-graph triples: a list of [subject, predicate, object]", context=False),
     }
 
     @classmethod

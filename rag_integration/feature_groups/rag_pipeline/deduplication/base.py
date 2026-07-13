@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from mloda.user import Feature
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
 
@@ -69,25 +69,14 @@ class BaseDeduplicator(BaseRowDeduplicator):
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
-        DEDUPLICATION_METHOD: {
-            DefaultOptionKeys.allowed_values: DEDUPLICATION_METHODS,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        SIMILARITY_THRESHOLD: {
-            "explanation": "Threshold for considering texts as duplicates (0.0-1.0)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 1.0,  # Exact match by default
-        },
-        KEEP_STRATEGY: {
-            DefaultOptionKeys.allowed_values: KEEP_STRATEGIES,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "first",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to deduplicate",
-            DefaultOptionKeys.context: True,
-        },
+        DEDUPLICATION_METHOD: property_spec(
+            "Algorithm used to detect duplicate texts", strict=True, allowed_values=DEDUPLICATION_METHODS
+        ),
+        SIMILARITY_THRESHOLD: property_spec("Threshold for considering texts as duplicates (0.0-1.0)", default=1.0),
+        KEEP_STRATEGY: property_spec(
+            "How a group of detected duplicates is resolved", allowed_values=KEEP_STRATEGIES, default="first"
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to deduplicate"),
     }
 
     @classmethod

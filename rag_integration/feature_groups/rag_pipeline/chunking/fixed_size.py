@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
 
@@ -25,25 +25,14 @@ class FixedSizeChunker(BaseChunker):
     """
 
     PROPERTY_MAPPING = {
-        BaseChunker.CHUNKING_METHOD: {
-            DefaultOptionKeys.allowed_values: {"fixed_size": "Fixed character count chunks"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseChunker.CHUNK_SIZE: {
-            "explanation": "Maximum size of each chunk (in characters)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 512,
-        },
-        BaseChunker.CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks, in characters",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 128,
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to chunk",
-            DefaultOptionKeys.context: True,
-        },
+        BaseChunker.CHUNKING_METHOD: property_spec(
+            "Strategy used to split documents into chunks",
+            strict=True,
+            allowed_values={"fixed_size": "Fixed character count chunks"},
+        ),
+        BaseChunker.CHUNK_SIZE: property_spec("Maximum size of each chunk (in characters)", default=512),
+        BaseChunker.CHUNK_OVERLAP: property_spec("Overlap between consecutive chunks, in characters", default=128),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to chunk"),
     }
 
     @classmethod

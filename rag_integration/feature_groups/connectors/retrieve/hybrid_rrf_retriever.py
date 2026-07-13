@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.fusion import rrf_fuse
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
 from rag_integration.feature_groups.connectors.retrieve.bm25s_retriever import Bm25sRetriever
@@ -36,12 +38,14 @@ class HybridRrfRetriever(BaseRetrieveConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseRetrieveConnector.RETRIEVE_BACKEND: {"explanation": "Use 'hybrid_rrf' for RRF-fused lexical + dense"},
-        BaseRetrieveConnector.QUERY_TEXT: {"explanation": "Raw text query to search the corpus"},
-        BaseRetrieveConnector.TOP_K: {
-            "explanation": f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})"
-        },
-        BaseRetrieveConnector.CORPUS: {"explanation": "Inline corpus: a list of {doc_id, text} dicts"},
+        BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec(
+            "Use 'hybrid_rrf' for RRF-fused lexical + dense", context=False
+        ),
+        BaseRetrieveConnector.QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
+        BaseRetrieveConnector.TOP_K: property_spec(
+            f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})", context=False
+        ),
+        BaseRetrieveConnector.CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
     }
 
     @classmethod

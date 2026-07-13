@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List
 
-from mloda.provider import FeatureSet
+from mloda.provider import FeatureSet, property_spec
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.columnar import columnar_to_rows
@@ -46,25 +46,16 @@ class CLIPImageEmbedder(BaseImageEmbedder):
     _model_cache: dict[str, Any] = {}
 
     PROPERTY_MAPPING = {
-        BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
-            DefaultOptionKeys.allowed_values: {"clip": "CLIP model image embeddings"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseImageEmbedder.EMBEDDING_DIM: {
-            "explanation": "Dimension of the embedding vectors (CLIP default: 512)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 512,
-        },
-        BaseImageEmbedder.MODEL_NAME: {
-            "explanation": "Local path or HuggingFace model ID",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: _HF_MODEL_ID,
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing images to embed",
-            DefaultOptionKeys.context: True,
-        },
+        BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: property_spec(
+            "Algorithm used to embed images into vectors",
+            strict=True,
+            allowed_values={"clip": "CLIP model image embeddings"},
+        ),
+        BaseImageEmbedder.EMBEDDING_DIM: property_spec(
+            "Dimension of the embedding vectors (CLIP default: 512)", default=512
+        ),
+        BaseImageEmbedder.MODEL_NAME: property_spec("Local path or HuggingFace model ID", default=_HF_MODEL_ID),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing images to embed"),
     }
 
     @classmethod

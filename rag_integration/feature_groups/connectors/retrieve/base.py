@@ -24,7 +24,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -84,10 +84,12 @@ class BaseRetrieveConnector(
     # consume are intentionally omitted here; defaulting and validation live in
     # the code below (``_get_top_k``) and in ``match_feature_group_criteria``.
     PROPERTY_MAPPING = {
-        RETRIEVE_BACKEND: {"explanation": "Which retrieve-connector backend to use"},
-        QUERY_TEXT: {"explanation": "Raw text query to search the corpus"},
-        TopKMixin.TOP_K: {"explanation": f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})"},
-        CORPUS: {"explanation": "Inline corpus: a list of {doc_id, text} dicts"},
+        RETRIEVE_BACKEND: property_spec("Which retrieve-connector backend to use", context=False),
+        QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
+        TopKMixin.TOP_K: property_spec(
+            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False
+        ),
+        CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
     }
 
     @classmethod

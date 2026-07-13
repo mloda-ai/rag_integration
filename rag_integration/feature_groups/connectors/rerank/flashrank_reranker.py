@@ -13,6 +13,8 @@ from __future__ import annotations
 import threading
 from typing import Any, List, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.rerank.base import BaseRerankConnector
 
 
@@ -35,12 +37,14 @@ class FlashRankReranker(BaseRerankConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseRerankConnector.RERANK_BACKEND: {"explanation": "Use 'flashrank' for cross-encoder reranking"},
-        BaseRerankConnector.QUERY_TEXT: {"explanation": "Query the candidates are reranked against"},
-        BaseRerankConnector.TOP_K: {
-            "explanation": f"Number of passages to return after reranking (default {BaseRerankConnector.DEFAULT_TOP_K})"
-        },
-        BaseRerankConnector.CANDIDATES: {"explanation": "Candidate passages: a list of {doc_id, text} dicts"},
+        BaseRerankConnector.RERANK_BACKEND: property_spec("Use 'flashrank' for cross-encoder reranking", context=False),
+        BaseRerankConnector.QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
+        BaseRerankConnector.TOP_K: property_spec(
+            f"Number of passages to return after reranking (default {BaseRerankConnector.DEFAULT_TOP_K})", context=False
+        ),
+        BaseRerankConnector.CANDIDATES: property_spec(
+            "Candidate passages: a list of {doc_id, text} dicts", context=False
+        ),
     }
 
     # Single-slot cache: only DEFAULT_MODEL is ever loaded.

@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type
 
-from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
 from mloda.provider import FeatureChainParserMixin
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -69,25 +69,12 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
-        CHUNKING_METHOD: {
-            DefaultOptionKeys.allowed_values: CHUNKING_METHODS,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        CHUNK_SIZE: {
-            "explanation": "Maximum size of each chunk (in characters)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 512,
-        },
-        CHUNK_OVERLAP: {
-            "explanation": "Overlap between consecutive chunks, in characters",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 128,
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to chunk",
-            DefaultOptionKeys.context: True,
-        },
+        CHUNKING_METHOD: property_spec(
+            "Strategy used to split documents into chunks", strict=True, allowed_values=CHUNKING_METHODS
+        ),
+        CHUNK_SIZE: property_spec("Maximum size of each chunk (in characters)", default=512),
+        CHUNK_OVERLAP: property_spec("Overlap between consecutive chunks, in characters", default=128),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to chunk"),
     }
 
     @classmethod
