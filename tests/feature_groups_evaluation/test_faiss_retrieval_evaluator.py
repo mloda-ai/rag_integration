@@ -7,10 +7,21 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import (
+    homogenize_rows,
+    rows_to_columnar,
+)
+
 from rag_integration.feature_groups.evaluation.faiss_retrieval_evaluator import FaissRetrievalEvaluator
 
 pytest.importorskip("numpy")
 pytest.importorskip("faiss")
+
+
+def _columnar(rows: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
+    """Pivot test rows to the columnar shape the framework delivers."""
+    return rows_to_columnar(homogenize_rows(rows))
+
 
 # The embedding feature is one level above __indexed
 _EMBEDDING_FEATURE = "eval_docs__chunked__deduped__embedded"
@@ -39,26 +50,28 @@ def _embed(values: List[float]) -> List[float]:
     return list(v / np.linalg.norm(v))
 
 
-def _make_data(emb_feature: str = _EMBEDDING_FEATURE) -> List[Dict[str, Any]]:
+def _make_data(emb_feature: str = _EMBEDDING_FEATURE) -> Dict[str, List[Any]]:
     """Two corpus docs, two queries; query i matches corpus i exactly."""
-    return [
-        {"doc_id": "d0", "row_type": "corpus", emb_feature: _embed([1.0, 0.0, 0.0]), _INDEXED_FEATURE: 0},
-        {"doc_id": "d1", "row_type": "corpus", emb_feature: _embed([0.0, 1.0, 0.0]), _INDEXED_FEATURE: 1},
-        {
-            "doc_id": "q0",
-            "row_type": "query",
-            emb_feature: _embed([1.0, 0.0, 0.0]),
-            _INDEXED_FEATURE: 2,
-            "relevant_doc_ids": ["d0"],
-        },
-        {
-            "doc_id": "q1",
-            "row_type": "query",
-            emb_feature: _embed([0.0, 1.0, 0.0]),
-            _INDEXED_FEATURE: 3,
-            "relevant_doc_ids": ["d1"],
-        },
-    ]
+    return _columnar(
+        [
+            {"doc_id": "d0", "row_type": "corpus", emb_feature: _embed([1.0, 0.0, 0.0]), _INDEXED_FEATURE: 0},
+            {"doc_id": "d1", "row_type": "corpus", emb_feature: _embed([0.0, 1.0, 0.0]), _INDEXED_FEATURE: 1},
+            {
+                "doc_id": "q0",
+                "row_type": "query",
+                emb_feature: _embed([1.0, 0.0, 0.0]),
+                _INDEXED_FEATURE: 2,
+                "relevant_doc_ids": ["d0"],
+            },
+            {
+                "doc_id": "q1",
+                "row_type": "query",
+                emb_feature: _embed([0.0, 1.0, 0.0]),
+                _INDEXED_FEATURE: 3,
+                "relevant_doc_ids": ["d1"],
+            },
+        ]
+    )
 
 
 class TestFaissRetrievalEvaluator:
@@ -80,18 +93,20 @@ class TestFaissRetrievalEvaluator:
     def test_zero_recall(self) -> None:
         """Orthogonal query embeddings never match → Recall@1 = 0.0."""
         emb = _EMBEDDING_FEATURE
-        data = [
-            {"doc_id": "d0", "row_type": "corpus", emb: _embed([1.0, 0.0, 0.0]), _INDEXED_FEATURE: 0},
-            {"doc_id": "d1", "row_type": "corpus", emb: _embed([0.0, 1.0, 0.0]), _INDEXED_FEATURE: 1},
-            # Query points to d0 but its embedding is orthogonal to d0
-            {
-                "doc_id": "q0",
-                "row_type": "query",
-                emb: _embed([0.0, 1.0, 0.0]),  # matches d1, not d0
-                _INDEXED_FEATURE: 2,
-                "relevant_doc_ids": ["d0"],
-            },
-        ]
+        data = _columnar(
+            [
+                {"doc_id": "d0", "row_type": "corpus", emb: _embed([1.0, 0.0, 0.0]), _INDEXED_FEATURE: 0},
+                {"doc_id": "d1", "row_type": "corpus", emb: _embed([0.0, 1.0, 0.0]), _INDEXED_FEATURE: 1},
+                # Query points to d0 but its embedding is orthogonal to d0
+                {
+                    "doc_id": "q0",
+                    "row_type": "query",
+                    emb: _embed([0.0, 1.0, 0.0]),  # matches d1, not d0
+                    _INDEXED_FEATURE: 2,
+                    "relevant_doc_ids": ["d0"],
+                },
+            ]
+        )
         features = _make_features()
 
         with patch.object(FaissRetrievalEvaluator, "_extract_source_features", return_value=[_INDEXED_FEATURE]):
@@ -103,36 +118,38 @@ class TestFaissRetrievalEvaluator:
         """Corpus doc split into 2 chunks; query matches chunk 1 → doc-level Recall@1 = 1.0."""
         emb = _EMBEDDING_FEATURE
         # d0 has two chunks, both share doc_id="d0"
-        data = [
-            {
-                "doc_id": "d0",
-                "chunk_id": "d0_chunk_0",
-                "row_type": "corpus",
-                emb: _embed([1.0, 0.0, 0.0]),
-                _INDEXED_FEATURE: 0,
-            },
-            {
-                "doc_id": "d0",
-                "chunk_id": "d0_chunk_1",
-                "row_type": "corpus",
-                emb: _embed([0.9, 0.1, 0.0]),
-                _INDEXED_FEATURE: 1,
-            },
-            {
-                "doc_id": "d1",
-                "chunk_id": "d1_chunk_0",
-                "row_type": "corpus",
-                emb: _embed([0.0, 1.0, 0.0]),
-                _INDEXED_FEATURE: 2,
-            },
-            {
-                "doc_id": "q0",
-                "row_type": "query",
-                emb: _embed([0.9, 0.1, 0.0]),  # closest to d0_chunk_1
-                _INDEXED_FEATURE: 3,
-                "relevant_doc_ids": ["d0"],
-            },
-        ]
+        data = _columnar(
+            [
+                {
+                    "doc_id": "d0",
+                    "chunk_id": "d0_chunk_0",
+                    "row_type": "corpus",
+                    emb: _embed([1.0, 0.0, 0.0]),
+                    _INDEXED_FEATURE: 0,
+                },
+                {
+                    "doc_id": "d0",
+                    "chunk_id": "d0_chunk_1",
+                    "row_type": "corpus",
+                    emb: _embed([0.9, 0.1, 0.0]),
+                    _INDEXED_FEATURE: 1,
+                },
+                {
+                    "doc_id": "d1",
+                    "chunk_id": "d1_chunk_0",
+                    "row_type": "corpus",
+                    emb: _embed([0.0, 1.0, 0.0]),
+                    _INDEXED_FEATURE: 2,
+                },
+                {
+                    "doc_id": "q0",
+                    "row_type": "query",
+                    emb: _embed([0.9, 0.1, 0.0]),  # closest to d0_chunk_1
+                    _INDEXED_FEATURE: 3,
+                    "relevant_doc_ids": ["d0"],
+                },
+            ]
+        )
         features = _make_features()
 
         with patch.object(FaissRetrievalEvaluator, "_extract_source_features", return_value=[_INDEXED_FEATURE]):
@@ -144,15 +161,17 @@ class TestFaissRetrievalEvaluator:
     def test_empty_corpus_returns_zero_metrics(self) -> None:
         """No corpus rows → returns zeros gracefully."""
         emb = _EMBEDDING_FEATURE
-        data = [
-            {
-                "doc_id": "q0",
-                "row_type": "query",
-                emb: _embed([1.0, 0.0, 0.0]),
-                _INDEXED_FEATURE: 0,
-                "relevant_doc_ids": ["d0"],
-            }
-        ]
+        data = _columnar(
+            [
+                {
+                    "doc_id": "q0",
+                    "row_type": "query",
+                    emb: _embed([1.0, 0.0, 0.0]),
+                    _INDEXED_FEATURE: 0,
+                    "relevant_doc_ids": ["d0"],
+                }
+            ]
+        )
         features = _make_features()
 
         with patch.object(FaissRetrievalEvaluator, "_extract_source_features", return_value=[_INDEXED_FEATURE]):

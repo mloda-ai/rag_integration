@@ -9,28 +9,29 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
 def flatten_result(result: Any) -> List[Dict[str, Any]]:
     """Unwrap a nested mlodaAPI result to a flat list of row dicts.
 
-    PythonDict partitions are columnar ``dict[str, list]`` (mloda 0.9.0); pivot the
-    first partition back to rows. Accepts a raw result list, a single wrapped
-    partition, a bare columnar dict, or an already-row-wise list. A leading dict is
-    treated as a partition only when every value is a list; scalar-valued dicts are
-    rows and pass through unchanged.
+    PythonDict partitions are columnar ``dict[str, list]``; pivot the first
+    partition back to rows. Accepts a raw result list, a single wrapped partition,
+    a bare columnar dict, or an already-row-wise list. A leading dict is treated as
+    a partition only when every value is a list; scalar-valued dicts are rows and
+    pass through unchanged. mloda's ``columnar_to_rows`` raises on non-columnar
+    input, so the shape dispatch lives here and only genuine columnar dicts reach it.
     """
     if isinstance(result, dict):
         return columnar_to_rows(result)
     if result and isinstance(result[0], list):
-        return columnar_to_rows(result[0])
+        return list(result[0])
     if result and isinstance(result[0], dict):
         first = result[0]
         if not first or all(isinstance(value, list) for value in first.values()):
             return columnar_to_rows(first)
         return list(result)
-    return columnar_to_rows(result)
+    return list(result) if isinstance(result, list) else []
 
 
 def get_results_by_feature(raw_result: List[Any], feature_names: List[str]) -> Dict[str, List[Dict[str, Any]]]:

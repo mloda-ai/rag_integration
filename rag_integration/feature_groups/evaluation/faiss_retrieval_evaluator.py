@@ -31,7 +31,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
 
 
@@ -76,7 +76,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Build FAISS index from corpus embeddings, search with query embeddings, compute Recall@K."""
         try:
             import faiss

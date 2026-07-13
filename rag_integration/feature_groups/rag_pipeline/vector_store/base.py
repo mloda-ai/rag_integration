@@ -13,7 +13,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
@@ -91,7 +91,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Build FAISS index from embeddings, save via artifact, attach row metadata."""
         artifact_cls = cls.artifact()
 
