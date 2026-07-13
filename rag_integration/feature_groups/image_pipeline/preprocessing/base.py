@@ -149,7 +149,8 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
 
             for row in rows:
                 image_data = row.get("image_data", b"")
-                image_format = row.get("format", "png")
+                # Homogenized rows fill an absent key with None, so `or` rather than a get default.
+                image_format = row.get("format") or "png"
 
                 if not isinstance(image_data, bytes):
                     image_data = bytes(image_data) if image_data else b""

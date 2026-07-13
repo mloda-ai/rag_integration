@@ -54,12 +54,29 @@ def _chained_options(extra: Dict[str, Any] | None = None) -> Options:
     return Options(context=_chained_context(extra=extra))
 
 
-def _run_chained(options: Options, connector: type[BaseGraphRagConnector] = AdjacencyGraphRag) -> List[Dict[str, Any]]:
+_RECORDED_GROUP: List[Dict[str, Any]] = []
+
+
+class _RecordingKnowledgeGraph(TriplesKnowledgeGraph):
+    """Records the group options the engine actually hands the graph source at calculate time."""
+
+    @classmethod
+    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
+        for feature in features.features:
+            _RECORDED_GROUP.append(dict(feature.options.group))
+        return super().calculate_feature(data, features)
+
+
+def _run_chained(
+    options: Options,
+    connector: type[BaseGraphRagConnector] = AdjacencyGraphRag,
+    source: type[TriplesKnowledgeGraph] = TriplesKnowledgeGraph,
+) -> List[Dict[str, Any]]:
     feature = Feature(connector.ROOT_FEATURE_NAME, options=options)
     result = mlodaAPI.run_all(
         [feature],
         compute_frameworks={PythonDictFramework},
-        plugin_collector=PluginCollector.enabled_feature_groups({connector, TriplesKnowledgeGraph}),
+        plugin_collector=PluginCollector.enabled_feature_groups({connector, source}),
     )
     for partition in result:
         for row in as_rows(partition):
@@ -103,11 +120,20 @@ def test_graph_source_declares_input_feature_with_forwarded_context() -> None:
 
 
 def test_graph_source_forwards_group_options_without_family_keys() -> None:
-    """A group-style caller (Options(dict)) still reaches the source, and family keys stay off it."""
-    passages = _run_chained(Options(_chained_context()))
-    # The ranking ran over the KG-derived nodes, so kg_backend/triples reached the source
-    # through the engine's default group forwarding.
-    assert {p["doc_id"] for p in passages} >= {"photosynthesis"}
+    """Group-style caller: the source gets the selector keys and none of the family's.
+
+    Asserted on what the engine hands the source at calculate time, not on the Feature attribute:
+    dropping forward_group_exclude leaks query_text/graph_backend/graph_source onto the source, and
+    only this assertion catches that.
+    """
+    _RECORDED_GROUP.clear()
+    passages = _run_chained(Options(_chained_context()), source=_RecordingKnowledgeGraph)
+    assert passages, "the chain must actually run for the recording to mean anything"
+
+    (group,) = _RECORDED_GROUP
+    assert group.get(TriplesKnowledgeGraph.KG_BACKEND) == "triples"
+    assert group.get(TriplesKnowledgeGraph.TRIPLES) == _TRIPLES
+    assert AdjacencyGraphRag.FAMILY_OPTION_KEYS.isdisjoint(group)
 
 
 # -- End to end ---------------------------------------------------------------------

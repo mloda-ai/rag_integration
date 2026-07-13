@@ -240,9 +240,11 @@ def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
     )
 
     rows = as_rows(raw_result[0]) if raw_result else []
+    if not rows:
+        # An evaluation harness that prints invented zeros is worse than one that stops.
+        raise RuntimeError(f"evaluation produced no rows for '{feature_name}'")
 
-    row = rows[0] if rows else {}
-    metrics = row.get(feature_name, row)
+    metrics = rows[0].get(feature_name, rows[0])
 
     results: Dict[str, object] = {
         "recall@1": metrics.get("recall@1", 0.0),

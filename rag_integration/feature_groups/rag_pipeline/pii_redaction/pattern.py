@@ -84,7 +84,7 @@ class PatternPIIRedactor(BasePIIRedactor):
         return patterns
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: Any) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
         """Extract custom patterns from feature options before redacting."""
         for feature in features.features:
             cls._active_patterns = cls._get_patterns(feature)

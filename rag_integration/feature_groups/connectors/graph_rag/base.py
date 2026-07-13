@@ -72,9 +72,9 @@ class BaseGraphRagConnector(
     EDGES = "edges"
     GRAPH_SOURCE = "graph_source"
 
-    # The family's own option keys: kept off the graph-source feature in
-    # input_features (forwarding excludes them; the merge protection below
-    # stops the engine re-adding them from parent group options).
+    # The family's own option keys: kept off the graph-source feature in input_features, which
+    # declares them as the child's forward_group_exclude so the engine's default group forwarding
+    # cannot hand query-specific keys to the source.
     FAMILY_OPTION_KEYS = frozenset({GRAPH_BACKEND, GRAPH_SOURCE, QUERY_TEXT, TopKMixin.TOP_K, NODES, EDGES})
 
     # Filled per concrete; empty on the base so it never matches.

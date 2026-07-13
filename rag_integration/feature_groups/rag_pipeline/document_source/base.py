@@ -6,7 +6,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
-from mloda.user import Options, FeatureName
+from mloda.user import Options, FeatureName, homogenize_rows
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -65,6 +65,7 @@ class BaseDocumentSource(FeatureGroup):
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Load and return documents."""
         for feature in features.features:
-            documents = cls._load_documents(feature.options)
-            return documents
+            # metadata is optional per document and loaders preserve arbitrary extra fields, so
+            # the rows are heterogeneous. PythonDict rejects that since mloda 0.9.0: fill the union.
+            return homogenize_rows(cls._load_documents(feature.options))
         return []
