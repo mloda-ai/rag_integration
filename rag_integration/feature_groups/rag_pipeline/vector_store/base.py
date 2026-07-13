@@ -49,7 +49,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         INDEX_METHOD: {
-            **INDEX_METHODS,
+            DefaultOptionKeys.allowed_values: INDEX_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

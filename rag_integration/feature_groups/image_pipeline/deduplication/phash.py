@@ -30,7 +30,7 @@ class PerceptualHashImageDeduplicator(BaseImageDeduplicator):
 
     PROPERTY_MAPPING = {
         BaseImageDeduplicator.IMAGE_DEDUPLICATION_METHOD: {
-            "phash": "Perceptual hash-based near-duplicate detection",
+            DefaultOptionKeys.allowed_values: {"phash": "Perceptual hash-based near-duplicate detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -40,7 +40,7 @@ class PerceptualHashImageDeduplicator(BaseImageDeduplicator):
             DefaultOptionKeys.default: 0.9,
         },
         BaseImageDeduplicator.KEEP_STRATEGY: {
-            **BaseImageDeduplicator.KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BaseImageDeduplicator.KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

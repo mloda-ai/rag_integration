@@ -30,7 +30,7 @@ class FaissHNSWIndexer(BaseVectorStore):
 
     PROPERTY_MAPPING = {
         BaseVectorStore.INDEX_METHOD: {
-            "hnsw": "Graph-based ANN using IndexHNSWFlat",
+            DefaultOptionKeys.allowed_values: {"hnsw": "Graph-based ANN using IndexHNSWFlat"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

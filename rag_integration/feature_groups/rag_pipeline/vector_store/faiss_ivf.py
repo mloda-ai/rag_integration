@@ -31,7 +31,7 @@ class FaissIVFIndexer(BaseVectorStore):
 
     PROPERTY_MAPPING = {
         BaseVectorStore.INDEX_METHOD: {
-            "ivf": "Approximate search using IndexIVFFlat",
+            DefaultOptionKeys.allowed_values: {"ivf": "Approximate search using IndexIVFFlat"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

@@ -26,7 +26,7 @@ class TfidfEmbedder(BaseEmbedder):
 
     PROPERTY_MAPPING = {
         BaseEmbedder.EMBEDDING_METHOD: {
-            "tfidf": "TF-IDF based embeddings",
+            DefaultOptionKeys.allowed_values: {"tfidf": "TF-IDF based embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

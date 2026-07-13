@@ -70,7 +70,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         CHUNKING_METHOD: {
-            **CHUNKING_METHODS,
+            DefaultOptionKeys.allowed_values: CHUNKING_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

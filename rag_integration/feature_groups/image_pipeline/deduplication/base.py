@@ -73,7 +73,7 @@ class BaseImageDeduplicator(BaseRowDeduplicator):
 
     PROPERTY_MAPPING = {
         IMAGE_DEDUPLICATION_METHOD: {
-            **DEDUPLICATION_METHODS,
+            DefaultOptionKeys.allowed_values: DEDUPLICATION_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -83,7 +83,7 @@ class BaseImageDeduplicator(BaseRowDeduplicator):
             DefaultOptionKeys.default: 1.0,
         },
         KEEP_STRATEGY: {
-            **KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

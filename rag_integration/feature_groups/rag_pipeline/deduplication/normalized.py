@@ -26,7 +26,7 @@ class NormalizedDeduplicator(BaseDeduplicator):
 
     PROPERTY_MAPPING = {
         BaseDeduplicator.DEDUPLICATION_METHOD: {
-            "normalized": "Normalized text hash-based detection",
+            DefaultOptionKeys.allowed_values: {"normalized": "Normalized text hash-based detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -36,7 +36,7 @@ class NormalizedDeduplicator(BaseDeduplicator):
             DefaultOptionKeys.default: 1.0,
         },
         BaseDeduplicator.KEEP_STRATEGY: {
-            **BaseDeduplicator.KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BaseDeduplicator.KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

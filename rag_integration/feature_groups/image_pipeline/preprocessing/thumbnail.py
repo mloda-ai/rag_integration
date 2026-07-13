@@ -26,7 +26,7 @@ class ThumbnailPreprocessor(BaseImagePreprocessor):
 
     PROPERTY_MAPPING = {
         BaseImagePreprocessor.PREPROCESSING_METHOD: {
-            "thumbnail": "Generate thumbnail preserving aspect ratio",
+            DefaultOptionKeys.allowed_values: {"thumbnail": "Generate thumbnail preserving aspect ratio"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

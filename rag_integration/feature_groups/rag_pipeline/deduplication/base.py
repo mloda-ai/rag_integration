@@ -70,7 +70,7 @@ class BaseDeduplicator(BaseRowDeduplicator):
 
     PROPERTY_MAPPING = {
         DEDUPLICATION_METHOD: {
-            **DEDUPLICATION_METHODS,
+            DefaultOptionKeys.allowed_values: DEDUPLICATION_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -80,7 +80,7 @@ class BaseDeduplicator(BaseRowDeduplicator):
             DefaultOptionKeys.default: 1.0,  # Exact match by default
         },
         KEEP_STRATEGY: {
-            **KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

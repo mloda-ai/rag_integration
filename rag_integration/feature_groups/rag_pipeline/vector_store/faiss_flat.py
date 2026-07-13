@@ -23,7 +23,7 @@ class FaissFlatIndexer(BaseVectorStore):
 
     PROPERTY_MAPPING = {
         BaseVectorStore.INDEX_METHOD: {
-            "flat": "Exact search using IndexFlatL2",
+            DefaultOptionKeys.allowed_values: {"flat": "Exact search using IndexFlatL2"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

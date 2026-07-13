@@ -42,7 +42,7 @@ class SentenceTransformerEmbedder(BaseEmbedder):
 
     PROPERTY_MAPPING = {
         BaseEmbedder.EMBEDDING_METHOD: {
-            "sentence_transformer": "Sentence Transformer semantic embeddings",
+            DefaultOptionKeys.allowed_values: {"sentence_transformer": "Sentence Transformer semantic embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
