@@ -82,6 +82,30 @@ def test_validator_catches_default_rejected_by_element_validator() -> None:
     assert _validate("DummyOwner", bad_mapping)
 
 
+def test_group_context_split_is_stable() -> None:
+    """Connector options resolve the backend, so they are group; every other family is context.
+
+    mloda reads a missing ``context`` key as group, while ``property_spec`` defaults it to True, so a
+    spec authored without an explicit ``context=False`` silently flips a connector option to context
+    and changes feature-group resolution and hashing. Pin the split so that flip cannot land quietly.
+    """
+    misplaced: List[str] = []
+    for feature_group in _all_feature_groups():
+        is_connector = ".connectors." in feature_group.__module__
+        for key, spec in (feature_group.PROPERTY_MAPPING or {}).items():
+            if not isinstance(spec, dict):
+                continue
+            is_context = bool(spec.get(DefaultOptionKeys.context, False))
+            if is_context is is_connector:
+                owner = f"{feature_group.__module__}.{feature_group.__name__}"
+                expected = "group (pass context=False)" if is_connector else "context"
+                misplaced.append(f"{owner}.{key}: expected {expected}")
+
+    assert not misplaced, "PROPERTY_MAPPING options on the wrong side of the group/context split:\n" + "\n".join(
+        misplaced
+    )
+
+
 def test_all_property_mapping_defaults_are_accepted_values() -> None:
     feature_groups = _all_feature_groups()
     # 74 feature groups exist today; lower this only when groups are deliberately removed.

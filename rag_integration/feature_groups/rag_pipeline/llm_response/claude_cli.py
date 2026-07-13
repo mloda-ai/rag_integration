@@ -6,9 +6,8 @@ import json
 import subprocess  # nosec B404
 from typing import Any, Dict, List
 
-from mloda.user import Options
-
 from mloda.provider import property_spec
+from mloda.user import Options
 
 from rag_integration.feature_groups.rag_pipeline.llm_response.base import BaseLLMResponse
 
@@ -38,7 +37,7 @@ class ClaudeCliResponse(BaseLLMResponse):
 
     PROPERTY_MAPPING = {
         BaseLLMResponse.LLM_METHOD: property_spec(
-            "Backend used to generate the LLM response",
+            "Which LLM implementation to use",
             strict=True,
             allowed_values={"claude_cli": "Claude CLI (claude -p) response generation"},
         ),
