@@ -6,7 +6,7 @@ import hashlib
 import math
 from typing import List
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
@@ -28,25 +28,14 @@ class HashImageEmbedder(BaseImageEmbedder):
     """
 
     PROPERTY_MAPPING = {
-        BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
-            DefaultOptionKeys.allowed_values: {"hash": "Feature hashing based image embeddings"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseImageEmbedder.EMBEDDING_DIM: {
-            "explanation": "Dimension of the embedding vectors",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 512,
-        },
-        BaseImageEmbedder.MODEL_NAME: {
-            "explanation": "Name of the embedding model",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "default",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing images to embed",
-            DefaultOptionKeys.context: True,
-        },
+        BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: property_spec(
+            "Algorithm used to embed images into vectors",
+            strict=True,
+            allowed_values={"hash": "Feature hashing based image embeddings"},
+        ),
+        BaseImageEmbedder.EMBEDDING_DIM: property_spec("Dimension of the embedding vectors", default=512),
+        BaseImageEmbedder.MODEL_NAME: property_spec("Name of the embedding model", default="default"),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing images to embed"),
     }
 
     @classmethod

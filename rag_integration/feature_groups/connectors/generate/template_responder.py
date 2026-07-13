@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.generate._text import SENTENCE_RE, tokenize
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
 
@@ -49,9 +51,13 @@ class TemplateResponder(BaseGenerateConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseGenerateConnector.GENERATE_BACKEND: {"explanation": "Use 'template' for multi-sentence templated answers"},
-        BaseGenerateConnector.QUERY_TEXT: {"explanation": "The question to answer"},
-        BaseGenerateConnector.PASSAGES: {"explanation": "Supporting passages: a list of {doc_id, text} dicts"},
+        BaseGenerateConnector.GENERATE_BACKEND: property_spec(
+            "Use 'template' for multi-sentence templated answers", context=False
+        ),
+        BaseGenerateConnector.QUERY_TEXT: property_spec("The question to answer", context=False),
+        BaseGenerateConnector.PASSAGES: property_spec(
+            "Supporting passages: a list of {doc_id, text} dicts", context=False
+        ),
     }
 
     @classmethod

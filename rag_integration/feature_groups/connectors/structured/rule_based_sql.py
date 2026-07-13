@@ -12,6 +12,8 @@ from __future__ import annotations
 import re
 from typing import Any, List, Optional, Tuple
 
+from mloda.provider import property_spec
+
 from rag_integration.feature_groups.connectors.structured.base import BaseStructuredConnector
 
 # Tokens keep underscores (snake_case columns) and decimals ("2.5"). Negative
@@ -42,11 +44,15 @@ class RuleBasedSql(BaseStructuredConnector):
     }
 
     PROPERTY_MAPPING = {
-        BaseStructuredConnector.STRUCTURED_BACKEND: {"explanation": "Use 'rule_based' for rule-based text-to-SQL"},
-        BaseStructuredConnector.QUESTION: {"explanation": "Natural-language question to answer over the table"},
-        BaseStructuredConnector.TABLE: {"explanation": "Table name (a simple SQL identifier)"},
-        BaseStructuredConnector.COLUMNS: {"explanation": "Column names (simple SQL identifiers)"},
-        BaseStructuredConnector.ROWS: {"explanation": "Table rows: a list of {column: value} dicts"},
+        BaseStructuredConnector.STRUCTURED_BACKEND: property_spec(
+            "Use 'rule_based' for rule-based text-to-SQL", context=False
+        ),
+        BaseStructuredConnector.QUESTION: property_spec(
+            "Natural-language question to answer over the table", context=False
+        ),
+        BaseStructuredConnector.TABLE: property_spec("Table name (a simple SQL identifier)", context=False),
+        BaseStructuredConnector.COLUMNS: property_spec("Column names (simple SQL identifiers)", context=False),
+        BaseStructuredConnector.ROWS: property_spec("Table rows: a list of {column: value} dicts", context=False),
     }
 
     @classmethod

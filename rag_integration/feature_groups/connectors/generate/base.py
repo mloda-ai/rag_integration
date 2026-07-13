@@ -26,7 +26,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -60,9 +60,9 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
     PROPERTY_MAPPING = {
-        GENERATE_BACKEND: {"explanation": "Which generate-connector backend to use"},
-        QUERY_TEXT: {"explanation": "The question to answer"},
-        PASSAGES: {"explanation": "Supporting passages: a list of {doc_id, text} dicts"},
+        GENERATE_BACKEND: property_spec("Which generate-connector backend to use", context=False),
+        QUERY_TEXT: property_spec("The question to answer", context=False),
+        PASSAGES: property_spec("Supporting passages: a list of {doc_id, text} dicts", context=False),
     }
 
     @classmethod

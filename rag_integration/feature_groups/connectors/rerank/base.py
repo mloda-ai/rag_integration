@@ -29,7 +29,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -73,12 +73,12 @@ class BaseRerankConnector(
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
     PROPERTY_MAPPING = {
-        RERANK_BACKEND: {"explanation": "Which rerank-connector backend to use"},
-        QUERY_TEXT: {"explanation": "Query the candidates are reranked against"},
-        TopKMixin.TOP_K: {
-            "explanation": f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})"
-        },
-        CANDIDATES: {"explanation": "Candidate passages to rerank: a list of {doc_id, text} dicts"},
+        RERANK_BACKEND: property_spec("Which rerank-connector backend to use", context=False),
+        QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
+        TopKMixin.TOP_K: property_spec(
+            f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})", context=False
+        ),
+        CANDIDATES: property_spec("Candidate passages to rerank: a list of {doc_id, text} dicts", context=False),
     }
 
     @classmethod

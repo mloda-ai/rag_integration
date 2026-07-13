@@ -35,7 +35,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Feature, Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -83,18 +83,22 @@ class BaseGraphRagConnector(
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
     PROPERTY_MAPPING = {
-        GRAPH_BACKEND: {"explanation": "Which graph-RAG backend to use"},
-        QUERY_TEXT: {"explanation": "Raw text query to search the graph"},
-        TopKMixin.TOP_K: {"explanation": f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})"},
-        NODES: {"explanation": "Graph nodes: a list of {doc_id, text} dicts"},
-        EDGES: {
-            "explanation": "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
-            " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)"
-        },
-        GRAPH_SOURCE: {
-            "explanation": "Name of an upstream feature whose row carries the {nodes, edges} graph payload."
-            " Optional: replaces inline nodes/edges with a consumed graph source"
-        },
+        GRAPH_BACKEND: property_spec("Which graph-RAG backend to use", context=False),
+        QUERY_TEXT: property_spec("Raw text query to search the graph", context=False),
+        TopKMixin.TOP_K: property_spec(
+            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False
+        ),
+        NODES: property_spec("Graph nodes: a list of {doc_id, text} dicts", context=False),
+        EDGES: property_spec(
+            "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
+            " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)",
+            context=False,
+        ),
+        GRAPH_SOURCE: property_spec(
+            "Name of an upstream feature whose row carries the {nodes, edges} graph payload."
+            " Optional: replaces inline nodes/edges with a consumed graph source",
+            context=False,
+        ),
     }
 
     @classmethod

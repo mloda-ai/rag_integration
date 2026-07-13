@@ -6,7 +6,7 @@ import math
 from collections import Counter
 from typing import Dict, List, Set
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
 
@@ -25,25 +25,14 @@ class TfidfEmbedder(BaseEmbedder):
     """
 
     PROPERTY_MAPPING = {
-        BaseEmbedder.EMBEDDING_METHOD: {
-            DefaultOptionKeys.allowed_values: {"tfidf": "TF-IDF based embeddings"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseEmbedder.EMBEDDING_DIM: {
-            "explanation": "Dimension of the embedding vectors",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 384,
-        },
-        BaseEmbedder.MODEL_NAME: {
-            "explanation": "Name of the embedding model",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "default",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to embed",
-            DefaultOptionKeys.context: True,
-        },
+        BaseEmbedder.EMBEDDING_METHOD: property_spec(
+            "Algorithm used to embed text into vectors",
+            strict=True,
+            allowed_values={"tfidf": "TF-IDF based embeddings"},
+        ),
+        BaseEmbedder.EMBEDDING_DIM: property_spec("Dimension of the embedding vectors", default=384),
+        BaseEmbedder.MODEL_NAME: property_spec("Name of the embedding model", default="default"),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to embed"),
     }
 
     @classmethod

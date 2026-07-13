@@ -6,7 +6,7 @@ import re
 from typing import Any, Dict, List, Pattern
 
 from mloda.user import Feature
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
 
@@ -35,25 +35,20 @@ class PatternPIIRedactor(BasePIIRedactor):
     """
 
     PROPERTY_MAPPING = {
-        BasePIIRedactor.REDACTION_METHOD: {
-            DefaultOptionKeys.allowed_values: {"pattern": "Custom pattern based detection"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BasePIIRedactor.PII_TYPES: {
-            "explanation": "List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: ["ALL"],
-        },
-        BasePIIRedactor.REPLACEMENT_STRATEGY: {
-            DefaultOptionKeys.allowed_values: BasePIIRedactor.REPLACEMENT_STRATEGIES,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "mask",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to redact",
-            DefaultOptionKeys.context: True,
-        },
+        BasePIIRedactor.REDACTION_METHOD: property_spec(
+            "Detector used to locate PII in text",
+            strict=True,
+            allowed_values={"pattern": "Custom pattern based detection"},
+        ),
+        BasePIIRedactor.PII_TYPES: property_spec(
+            "List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)", default=["ALL"]
+        ),
+        BasePIIRedactor.REPLACEMENT_STRATEGY: property_spec(
+            "How detected PII is replaced in the redacted text",
+            allowed_values=BasePIIRedactor.REPLACEMENT_STRATEGIES,
+            default="mask",
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to redact"),
     }
 
     # Default patterns (can be extended via options)

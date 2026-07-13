@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Type
 if TYPE_CHECKING:
     from mloda.user import Feature
 
-from mloda.provider import BaseArtifact
+from mloda.provider import BaseArtifact, property_spec
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
@@ -41,25 +41,18 @@ class SentenceTransformerEmbedder(BaseEmbedder):
     """
 
     PROPERTY_MAPPING = {
-        BaseEmbedder.EMBEDDING_METHOD: {
-            DefaultOptionKeys.allowed_values: {"sentence_transformer": "Sentence Transformer semantic embeddings"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseEmbedder.EMBEDDING_DIM: {
-            "explanation": "Dimension of embeddings (determined by model, this is informational)",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 384,
-        },
-        BaseEmbedder.MODEL_NAME: {
-            "explanation": "Sentence transformer model name from Hugging Face",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: "all-MiniLM-L6-v2",
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing text to embed",
-            DefaultOptionKeys.context: True,
-        },
+        BaseEmbedder.EMBEDDING_METHOD: property_spec(
+            "Algorithm used to embed text into vectors",
+            strict=True,
+            allowed_values={"sentence_transformer": "Sentence Transformer semantic embeddings"},
+        ),
+        BaseEmbedder.EMBEDDING_DIM: property_spec(
+            "Dimension of embeddings (determined by model, this is informational)", default=384
+        ),
+        BaseEmbedder.MODEL_NAME: property_spec(
+            "Sentence transformer model name from Hugging Face", default="all-MiniLM-L6-v2"
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing text to embed"),
     }
 
     # Default model for sentence transformers

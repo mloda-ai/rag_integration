@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type
 
-from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
 from mloda.provider import FeatureChainParserMixin
 from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -80,20 +80,11 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
-        IMAGE_REDACTION_METHOD: {
-            DefaultOptionKeys.allowed_values: REDACTION_METHODS,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        PII_REGIONS: {
-            "explanation": "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: [],
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing images to redact",
-            DefaultOptionKeys.context: True,
-        },
+        IMAGE_REDACTION_METHOD: property_spec(
+            "Technique used to obscure PII regions in images", strict=True, allowed_values=REDACTION_METHODS
+        ),
+        PII_REGIONS: property_spec("List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'", default=[]),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing images to redact"),
     }
 
     @classmethod

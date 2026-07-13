@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type
 
-from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
 from mloda.provider import FeatureChainParserMixin
 from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -68,20 +68,11 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
-        PREPROCESSING_METHOD: {
-            DefaultOptionKeys.allowed_values: PREPROCESSING_METHODS,
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        TARGET_SIZE: {
-            "explanation": "Target size as [width, height] in pixels",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: [224, 224],
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing images to preprocess",
-            DefaultOptionKeys.context: True,
-        },
+        PREPROCESSING_METHOD: property_spec(
+            "Image preprocessing operation to apply", strict=True, allowed_values=PREPROCESSING_METHODS
+        ),
+        TARGET_SIZE: property_spec("Target size as [width, height] in pixels", default=[224, 224]),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing images to preprocess"),
     }
 
     @classmethod

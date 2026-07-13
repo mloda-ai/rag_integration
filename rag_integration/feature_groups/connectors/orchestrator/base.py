@@ -27,7 +27,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -61,12 +61,12 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
     ORCHESTRATOR_BACKENDS: Dict[str, str] = {}
 
     PROPERTY_MAPPING = {
-        ORCHESTRATOR_BACKEND: {"explanation": "Which orchestrator (external framework) backend to use"},
-        QUERY_TEXT: {"explanation": "The query to run through the framework pipeline"},
-        TopKMixin.TOP_K: {
-            "explanation": f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})"
-        },
-        CORPUS: {"explanation": "Inline corpus: a list of {doc_id, text} dicts"},
+        ORCHESTRATOR_BACKEND: property_spec("Which orchestrator (external framework) backend to use", context=False),
+        QUERY_TEXT: property_spec("The query to run through the framework pipeline", context=False),
+        TopKMixin.TOP_K: property_spec(
+            f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})", context=False
+        ),
+        CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
     }
 
     @classmethod

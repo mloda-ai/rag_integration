@@ -8,7 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from mloda.user import Options
-from mloda.provider import DefaultOptionKeys
+
+from mloda.provider import property_spec
 
 from rag_integration.feature_groups.rag_pipeline.retrieval.base import BaseRetriever
 
@@ -34,28 +35,13 @@ class FaissRetriever(BaseRetriever):
     }
 
     PROPERTY_MAPPING = {
-        BaseRetriever.RETRIEVAL_METHOD: {
-            DefaultOptionKeys.allowed_values: {"faiss": "FAISS-based similarity search"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BaseRetriever.TOP_K: {
-            "explanation": "Number of results to return",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: 5,
-        },
-        BaseRetriever.QUERY_TEXT: {
-            "explanation": "Raw text query to embed and search",
-            DefaultOptionKeys.context: True,
-        },
-        BaseRetriever.INDEX_PATH: {
-            "explanation": "Path to the FAISS index file",
-            DefaultOptionKeys.context: True,
-        },
-        BaseRetriever.METADATA_PATH: {
-            "explanation": "Path to the metadata JSON sidecar",
-            DefaultOptionKeys.context: True,
-        },
+        BaseRetriever.RETRIEVAL_METHOD: property_spec(
+            "Backend used for similarity search", strict=True, allowed_values={"faiss": "FAISS-based similarity search"}
+        ),
+        BaseRetriever.TOP_K: property_spec("Number of results to return", default=5),
+        BaseRetriever.QUERY_TEXT: property_spec("Raw text query to embed and search"),
+        BaseRetriever.INDEX_PATH: property_spec("Path to the FAISS index file"),
+        BaseRetriever.METADATA_PATH: property_spec("Path to the metadata JSON sidecar"),
     }
 
     # Class-level caches, each stored as a single (path, value) tuple so the

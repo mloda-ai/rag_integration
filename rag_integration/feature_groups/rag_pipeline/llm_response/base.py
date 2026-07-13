@@ -5,12 +5,11 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type, Union
 
-from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
 
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Answer the question using the provided context."
 
@@ -45,23 +44,10 @@ class BaseLLMResponse(FeatureGroup):
     LLM_METHODS: Dict[str, str] = {}
 
     PROPERTY_MAPPING = {
-        LLM_METHOD: {
-            "explanation": "Which LLM implementation to use",
-            DefaultOptionKeys.context: True,
-        },
-        QUERY: {
-            "explanation": "The user question to answer",
-            DefaultOptionKeys.context: True,
-        },
-        CONTEXT: {
-            "explanation": "Retrieved context to include in the prompt (list or string)",
-            DefaultOptionKeys.context: True,
-        },
-        SYSTEM_PROMPT: {
-            "explanation": "System prompt for the LLM",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: DEFAULT_SYSTEM_PROMPT,
-        },
+        LLM_METHOD: property_spec("Which LLM implementation to use"),
+        QUERY: property_spec("The user question to answer"),
+        CONTEXT: property_spec("Retrieved context to include in the prompt (list or string)"),
+        SYSTEM_PROMPT: property_spec("System prompt for the LLM", default=DEFAULT_SYSTEM_PROMPT),
     }
 
     @classmethod

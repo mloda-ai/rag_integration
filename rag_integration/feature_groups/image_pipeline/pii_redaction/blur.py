@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List
 
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.pii_redaction.base import BaseImagePIIRedactor
 
@@ -33,25 +33,16 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
     DEFAULT_BLUR_RADIUS = 20
 
     PROPERTY_MAPPING = {
-        BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
-            DefaultOptionKeys.allowed_values: {"blur": "Gaussian blur over PII regions"},
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.strict_validation: True,
-        },
-        BLUR_RADIUS: {
-            "explanation": "Radius of the Gaussian blur effect",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: DEFAULT_BLUR_RADIUS,
-        },
-        BaseImagePIIRedactor.PII_REGIONS: {
-            "explanation": "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'",
-            DefaultOptionKeys.context: True,
-            DefaultOptionKeys.default: [],
-        },
-        DefaultOptionKeys.in_features: {
-            "explanation": "Source feature containing images to redact",
-            DefaultOptionKeys.context: True,
-        },
+        BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: property_spec(
+            "Technique used to obscure PII regions in images",
+            strict=True,
+            allowed_values={"blur": "Gaussian blur over PII regions"},
+        ),
+        BLUR_RADIUS: property_spec("Radius of the Gaussian blur effect", default=DEFAULT_BLUR_RADIUS),
+        BaseImagePIIRedactor.PII_REGIONS: property_spec(
+            "List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'", default=[]
+        ),
+        DefaultOptionKeys.in_features: property_spec("Source feature containing images to redact"),
     }
 
     @classmethod
