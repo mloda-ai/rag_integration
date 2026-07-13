@@ -7,9 +7,19 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import (
+    homogenize_rows,
+    rows_to_columnar,
+)
+
 from rag_integration.feature_groups.evaluation.retrieval_evaluator import RetrievalEvaluator
 
 pytest.importorskip("numpy")
+
+
+def _columnar(rows: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
+    """Pivot test rows to the columnar shape the framework delivers."""
+    return rows_to_columnar(homogenize_rows(rows))
 
 
 def _make_features(source_name: str = "eval_docs__embedded") -> Any:
@@ -34,14 +44,16 @@ def _embed(values: List[float]) -> List[float]:
     return list(v / np.linalg.norm(v))
 
 
-def _make_data(source: str = "eval_docs__embedded") -> List[Dict[str, Any]]:
+def _make_data(source: str = "eval_docs__embedded") -> Dict[str, List[Any]]:
     """Two corpus docs, two queries; query 0 matches corpus 0, query 1 matches corpus 1."""
-    return [
-        {"doc_id": "d0", "row_type": "corpus", source: _embed([1.0, 0.0, 0.0])},
-        {"doc_id": "d1", "row_type": "corpus", source: _embed([0.0, 1.0, 0.0])},
-        {"doc_id": "q0", "row_type": "query", source: _embed([1.0, 0.0, 0.0]), "relevant_doc_ids": ["d0"]},
-        {"doc_id": "q1", "row_type": "query", source: _embed([0.0, 1.0, 0.0]), "relevant_doc_ids": ["d1"]},
-    ]
+    return _columnar(
+        [
+            {"doc_id": "d0", "row_type": "corpus", source: _embed([1.0, 0.0, 0.0])},
+            {"doc_id": "d1", "row_type": "corpus", source: _embed([0.0, 1.0, 0.0])},
+            {"doc_id": "q0", "row_type": "query", source: _embed([1.0, 0.0, 0.0]), "relevant_doc_ids": ["d0"]},
+            {"doc_id": "q1", "row_type": "query", source: _embed([0.0, 1.0, 0.0]), "relevant_doc_ids": ["d1"]},
+        ]
+    )
 
 
 class TestRetrievalEvaluator:
@@ -60,10 +72,17 @@ class TestRetrievalEvaluator:
 
     def test_zero_recall(self) -> None:
         source = "eval_docs__embedded"
-        data = [
-            {"doc_id": "d0", "row_type": "corpus", source: _embed([1.0, 0.0, 0.0])},
-            {"doc_id": "q0", "row_type": "query", source: _embed([0.0, 1.0, 0.0]), "relevant_doc_ids": ["d_missing"]},
-        ]
+        data = _columnar(
+            [
+                {"doc_id": "d0", "row_type": "corpus", source: _embed([1.0, 0.0, 0.0])},
+                {
+                    "doc_id": "q0",
+                    "row_type": "query",
+                    source: _embed([0.0, 1.0, 0.0]),
+                    "relevant_doc_ids": ["d_missing"],
+                },
+            ]
+        )
         features = _make_features(source)
 
         with patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]):
@@ -84,9 +103,11 @@ class TestRetrievalEvaluator:
 
     def test_empty_corpus(self) -> None:
         source = "eval_docs__embedded"
-        data = [
-            {"doc_id": "q0", "row_type": "query", source: _embed([1.0, 0.0]), "relevant_doc_ids": ["d0"]},
-        ]
+        data = _columnar(
+            [
+                {"doc_id": "q0", "row_type": "query", source: _embed([1.0, 0.0]), "relevant_doc_ids": ["d0"]},
+            ]
+        )
         features = _make_features(source)
 
         with patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]):

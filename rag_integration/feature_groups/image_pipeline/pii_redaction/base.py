@@ -13,7 +13,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
 class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
@@ -159,7 +159,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         return cls._redact_region(image_data, image_format, regions)
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform PII redaction on images, processing row by row for memory efficiency."""
         # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         rows = columnar_to_rows(data)

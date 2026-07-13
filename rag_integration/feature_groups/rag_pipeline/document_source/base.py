@@ -11,7 +11,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
-from rag_integration.feature_groups.columnar import homogenize_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import homogenize_rows
 
 
 class BaseDocumentSource(FeatureGroup):

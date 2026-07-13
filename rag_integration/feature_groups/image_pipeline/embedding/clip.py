@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 from mloda.provider import FeatureSet, property_spec
 from mloda.provider import DefaultOptionKeys
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
 # Default local model path: looks two levels above the git repo root (mloda/models/)
@@ -182,7 +182,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         return embedding  # type: ignore[no-any-return]
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """
         Embed each row using CLIP's vision or text encoder based on row content.
 

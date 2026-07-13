@@ -44,7 +44,7 @@ from typing import Dict, List, Set, Tuple
 
 from mloda.user import Options
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
 from rag_integration.feature_groups.datasets.image.flickr30k import Flickr30kDatasetSource
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k

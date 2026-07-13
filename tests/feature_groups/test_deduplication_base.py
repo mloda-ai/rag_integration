@@ -81,25 +81,25 @@ class TestBaseRowDeduplicatorKeepStrategies:
 
     def test_keep_longest_selects_largest_item_per_group(self) -> None:
         """Strategy "longest" keeps the longest string from each duplicate group."""
-        data = [{"item": "aa"}, {"item": "aaaa"}, {"item": "bb"}, {"item": "b"}]
+        data = {"item": ["aa", "aaaa", "bb", "b"]}
         result = _LenDeduplicator.calculate_feature(data, _features("longest"))
         assert [row["items__deduped"] for row in result] == ["aaaa", "bb"]
 
     def test_keep_largest_uses_length_for_bytes_and_custom_strategy_value(self) -> None:
         """A subclass with KEEP_LARGEST_STRATEGY="largest" keeps the largest bytes per group."""
-        data = [{"item": b"aa"}, {"item": b"aaaa"}, {"item": b"bb"}]
+        data = {"item": [b"aa", b"aaaa", b"bb"]}
         result = _LargestLenDeduplicator.calculate_feature(data, _features("largest"))
         assert [row["items__deduped"] for row in result] == [b"aaaa", b"bb"]
 
     def test_keep_first_keeps_only_non_duplicate_rows(self) -> None:
         """Strategy "first" keeps the first occurrence of each group and drops the duplicates."""
-        data = [{"item": "aa"}, {"item": "aaaa"}, {"item": "bb"}, {"item": "b"}]
+        data = {"item": ["aa", "aaaa", "bb", "b"]}
         result = _LenDeduplicator.calculate_feature(data, _features("first"))
         assert [row["items__deduped"] for row in result] == ["aa", "bb"]
 
     def test_all_unique_keeps_all_rows_with_duplicate_metadata(self) -> None:
         """Strategy "all_unique" keeps every row but still annotates duplicate metadata."""
-        data = [{"item": "aa"}, {"item": "aaaa"}, {"item": "bb"}, {"item": "b"}]
+        data = {"item": ["aa", "aaaa", "bb", "b"]}
         result = _LenDeduplicator.calculate_feature(data, _features("all_unique"))
         assert [row["items__deduped"] for row in result] == ["aa", "aaaa", "bb", "b"]
         assert [(row["is_duplicate"], row["duplicate_of"]) for row in result] == [
@@ -109,21 +109,21 @@ class TestBaseRowDeduplicatorKeepStrategies:
             (True, 2),
         ]
 
-    def test_empty_feature_set_returns_data_unchanged(self) -> None:
-        """An empty FeatureSet is a no-op: the input rows are returned as-is."""
-        data = [{"item": "aa"}, {"item": "bb"}]
+    def test_empty_feature_set_returns_rows_unfiltered(self) -> None:
+        """An empty FeatureSet is a no-op: the pivoted rows come back unfiltered."""
+        data = {"item": ["aa", "bb"]}
         result = _LenDeduplicator.calculate_feature(data, _features_named())
-        assert result is data
+        assert result == [{"item": "aa"}, {"item": "bb"}]
 
     def test_repeated_same_feature_is_processed_once(self) -> None:
         """The same feature appearing multiple times (a framework duplicate) collapses by name."""
-        data = [{"item": "aa"}, {"item": "aaaa"}, {"item": "bb"}]
+        data = {"item": ["aa", "aaaa", "bb"]}
         result = _LenDeduplicator.calculate_feature(data, _features_named("items__deduped", "items__deduped"))
         # "first" strategy: one row survives per duplicate group, under the single feature name.
         assert [row["items__deduped"] for row in result] == ["aa", "bb"]
 
     def test_distinct_features_raise_instead_of_silently_dropping(self) -> None:
         """Deduplication is undefined for >1 distinct feature (row-filtering + shared metadata)."""
-        data = [{"item": "aa"}, {"item": "aaaa"}]
+        data = {"item": ["aa", "aaaa"]}
         with pytest.raises(ValueError, match="distinct features"):
             _LenDeduplicator.calculate_feature(data, _features_named("a__deduped", "b__deduped"))

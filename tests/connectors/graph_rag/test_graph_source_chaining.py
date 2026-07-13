@@ -19,7 +19,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
-from rag_integration.feature_groups.columnar import columnar_to_rows
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 from rag_integration.feature_groups.connectors.graph_rag.adjacency_graph_rag import AdjacencyGraphRag
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
 from rag_integration.feature_groups.connectors.graph_rag.kg_source import TriplesKnowledgeGraph
@@ -145,21 +145,21 @@ def test_chained_top_k_applies() -> None:
 def test_graph_source_with_inline_nodes_raises() -> None:
     options = _chained_options(extra={AdjacencyGraphRag.NODES: [{"doc_id": "n", "text": "t"}]})
     with pytest.raises(ValueError, match="one graph only"):
-        AdjacencyGraphRag.calculate_feature([], _feature_set(options))
+        AdjacencyGraphRag.calculate_feature({}, _feature_set(options))
 
 
 def test_graph_source_with_inline_edges_raises() -> None:
     options = _chained_options(extra={AdjacencyGraphRag.EDGES: [["a", "b"]]})
     with pytest.raises(ValueError, match="one graph only"):
-        AdjacencyGraphRag.calculate_feature([], _feature_set(options))
+        AdjacencyGraphRag.calculate_feature({}, _feature_set(options))
 
 
 def test_graph_source_without_upstream_row_raises() -> None:
     with pytest.raises(ValueError, match="produced no row"):
-        AdjacencyGraphRag.calculate_feature([], _feature_set(_chained_options()))
+        AdjacencyGraphRag.calculate_feature({}, _feature_set(_chained_options()))
 
 
 def test_graph_source_with_malformed_payload_raises() -> None:
-    data = [{TriplesKnowledgeGraph.ROOT_FEATURE_NAME: ["not", "a", "dict"]}]
+    data = {TriplesKnowledgeGraph.ROOT_FEATURE_NAME: [["not", "a", "dict"]]}
     with pytest.raises(ValueError, match="nodes"):
         AdjacencyGraphRag.calculate_feature(data, _feature_set(_chained_options()))
