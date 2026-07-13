@@ -7,9 +7,8 @@ import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from mloda.user import Options
-
 from mloda.provider import property_spec
+from mloda.user import Options
 
 from rag_integration.feature_groups.rag_pipeline.retrieval.base import BaseRetriever
 
@@ -36,7 +35,9 @@ class FaissRetriever(BaseRetriever):
 
     PROPERTY_MAPPING = {
         BaseRetriever.RETRIEVAL_METHOD: property_spec(
-            "Backend used for similarity search", strict=True, allowed_values={"faiss": "FAISS-based similarity search"}
+            "Which retriever implementation to use",
+            strict=True,
+            allowed_values={"faiss": "FAISS-based similarity search"},
         ),
         BaseRetriever.TOP_K: property_spec("Number of results to return", default=5),
         BaseRetriever.QUERY_TEXT: property_spec("Raw text query to embed and search"),
