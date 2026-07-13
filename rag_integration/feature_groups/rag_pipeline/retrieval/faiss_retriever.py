@@ -35,7 +35,7 @@ class FaissRetriever(BaseRetriever):
 
     PROPERTY_MAPPING = {
         BaseRetriever.RETRIEVAL_METHOD: {
-            "faiss": "FAISS-based similarity search",
+            DefaultOptionKeys.allowed_values: {"faiss": "FAISS-based similarity search"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

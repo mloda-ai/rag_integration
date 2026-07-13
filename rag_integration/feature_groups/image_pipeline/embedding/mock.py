@@ -26,7 +26,7 @@ class MockImageEmbedder(BaseImageEmbedder):
 
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
-            "mock": "Deterministic mock image embeddings for testing",
+            DefaultOptionKeys.allowed_values: {"mock": "Deterministic mock image embeddings for testing"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

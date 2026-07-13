@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.rows import as_rows
+
 
 class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
     """
@@ -67,7 +69,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         IMAGE_EMBEDDING_METHOD: {
-            **EMBEDDING_METHODS,
+            DefaultOptionKeys.allowed_values: EMBEDDING_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -154,15 +156,16 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Generate embeddings for images, processing row by row for memory efficiency."""
+        rows = as_rows(data)
         for feature in features.features:
             cls._get_source_feature_name(feature)
             embedding_dim = cls._get_embedding_dim(feature)
             model_name = cls._get_model_name(feature)
             feature_name = feature.name
 
-            for row in data:
+            for row in rows:
                 image_data = row.get("image_data", b"")
                 if not isinstance(image_data, bytes):
                     image_data = bytes(image_data) if image_data else b""
@@ -173,4 +176,4 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
                 row["embedding_dim"] = len(embedding)
                 row["embedding_model"] = model_name
 
-        return data
+        return rows

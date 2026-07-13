@@ -25,7 +25,7 @@ class ResizePreprocessor(BaseImagePreprocessor):
 
     PROPERTY_MAPPING = {
         BaseImagePreprocessor.PREPROCESSING_METHOD: {
-            "resize": "Resize images to target dimensions",
+            DefaultOptionKeys.allowed_values: {"resize": "Resize images to target dimensions"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

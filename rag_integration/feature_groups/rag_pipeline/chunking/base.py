@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.rows import as_rows
+
 
 class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     """
@@ -68,7 +70,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         CHUNKING_METHOD: {
-            **CHUNKING_METHODS,
+            DefaultOptionKeys.allowed_values: CHUNKING_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -143,15 +145,16 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         return cls._chunk_text(text, cls._get_chunk_size(feature), cls._get_chunk_overlap(feature))
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform chunking on the source feature."""
+        rows = as_rows(data)
         result = []
 
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
             feature_name = feature.name
 
-            for row in data:
+            for row in rows:
                 # Get text from source feature or 'text' field
                 if source_feature in row:
                     text = str(row[source_feature])

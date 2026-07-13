@@ -32,6 +32,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
+from rag_integration.feature_groups.rows import as_rows
 
 
 class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
@@ -78,8 +79,9 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Build FAISS index from corpus embeddings, search with query embeddings, compute Recall@K."""
+        rows = as_rows(data)
         try:
             import faiss
             import numpy as np
@@ -99,8 +101,8 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
             # vector_id under source_feature but does NOT overwrite the embedding.
             embedding_feature = source_feature.rsplit("__indexed", 1)[0]
 
-            corpus_rows = [r for r in data if r.get("row_type") == "corpus"]
-            query_rows = [r for r in data if r.get("row_type") == "query"]
+            corpus_rows = [r for r in rows if r.get("row_type") == "corpus"]
+            query_rows = [r for r in rows if r.get("row_type") == "query"]
 
             if not corpus_rows or not query_rows:
                 metrics: Dict[str, Any] = {
@@ -137,7 +139,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
 
             for q_idx, q_row in enumerate(query_rows):
                 q_id = str(q_row.get("doc_id", q_idx))
-                relevant_ids = set(str(rid) for rid in q_row.get("relevant_doc_ids", []))
+                relevant_ids = set(str(rid) for rid in (q_row.get("relevant_doc_ids") or []))
                 query_relevant[q_id] = relevant_ids
 
                 # Map FAISS result indices → doc_ids (dedup while preserving order)

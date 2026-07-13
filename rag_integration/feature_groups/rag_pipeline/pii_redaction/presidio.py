@@ -46,7 +46,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
 
     PROPERTY_MAPPING = {
         BasePIIRedactor.REDACTION_METHOD: {
-            "presidio": "Microsoft Presidio-based PII detection",
+            DefaultOptionKeys.allowed_values: {"presidio": "Microsoft Presidio-based PII detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -61,7 +61,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
             DefaultOptionKeys.default: ["ALL"],
         },
         BasePIIRedactor.REPLACEMENT_STRATEGY: {
-            **BasePIIRedactor.REPLACEMENT_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BasePIIRedactor.REPLACEMENT_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "mask",
         },

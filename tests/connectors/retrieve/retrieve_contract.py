@@ -23,6 +23,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
+from rag_integration.feature_groups.rows import as_rows
 
 
 class RetrieveConnectorContractBase(ABC):
@@ -119,7 +120,7 @@ class RetrieveConnectorContractBase(ABC):
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
         for partition in result:
-            for row in partition:
+            for row in as_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
                     passages: List[Dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
                     return passages

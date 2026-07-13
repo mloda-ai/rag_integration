@@ -35,6 +35,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     PatternPIIRedactor,
     PresidioPIIRedactor,
 )
+from rag_integration.feature_groups.rows import as_rows
 
 # ANSI color codes
 CYAN = "\033[36m"
@@ -257,9 +258,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     )
 
     # Extract results - mlodaAPI returns list of results per feature
-    result_rows = raw_result[0] if raw_result else []
-    if result_rows and isinstance(result_rows[0], list):
-        result_rows = result_rows[0]
+    result_rows = as_rows(raw_result[0]) if raw_result else []
 
     # Extract embeddings and chunks from the result
     embeddings = []

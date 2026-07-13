@@ -25,7 +25,7 @@ class SimplePIIRedactor(BasePIIRedactor):
 
     PROPERTY_MAPPING = {
         BasePIIRedactor.REDACTION_METHOD: {
-            "simple": "Simple word-list based detection",
+            DefaultOptionKeys.allowed_values: {"simple": "Simple word-list based detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -35,7 +35,7 @@ class SimplePIIRedactor(BasePIIRedactor):
             DefaultOptionKeys.default: ["ALL"],
         },
         BasePIIRedactor.REPLACEMENT_STRATEGY: {
-            **BasePIIRedactor.REPLACEMENT_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BasePIIRedactor.REPLACEMENT_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "mask",
         },

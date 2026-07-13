@@ -1452,10 +1452,10 @@ wheels = [
 
 [[package]]
 name = "mloda"
-version = "0.8.0"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6c/d8/b4f8beceec599fe75b4956fc8614ead1d40bc0642e6562c18c2c683f2685/mloda-0.8.0-py3-none-any.whl", hash = "sha256:521e0425169a99370b3d1cdf9fd480ebecb3f9a0ec67c62fe6a321ca8e3bcabe", size = 428976, upload-time = "2026-06-05T17:24:09.732Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/9d/2251f947bfde5e168b9f6759079c8b54af0393c3e854987268459b860776/mloda-0.10.0-py3-none-any.whl", hash = "sha256:13fd1482566de203cac661c29f5736423ce7d1cc8e43ec26f8d24d19e6386229", size = 456550, upload-time = "2026-07-13T18:35:02.322Z" },
 ]
 
 [[package]]
@@ -3164,7 +3164,7 @@ requires-dist = [
     { name = "flashrank", marker = "extra == 'rerank'", specifier = ">=0.2.0" },
     { name = "haystack-ai", marker = "extra == 'orchestrator'", specifier = ">=2.0" },
     { name = "joblib", marker = "extra == 'advanced'", specifier = ">=1.0.0" },
-    { name = "mloda", specifier = ">=0.8.0" },
+    { name = "mloda", specifier = ">=0.10.0" },
     { name = "mloda-testing", specifier = ">=0.3.2" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "networkx", marker = "extra == 'graph'", specifier = ">=3.0" },

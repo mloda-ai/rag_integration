@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.rows import as_rows
+
 
 class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     """
@@ -100,7 +102,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         REDACTION_METHOD: {
-            **REDACTION_METHODS,
+            DefaultOptionKeys.allowed_values: REDACTION_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -110,7 +112,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
             DefaultOptionKeys.default: ["ALL"],
         },
         REPLACEMENT_STRATEGY: {
-            **REPLACEMENT_STRATEGIES,
+            DefaultOptionKeys.allowed_values: REPLACEMENT_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "mask",
         },
@@ -183,14 +185,15 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         )
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform PII redaction on the source feature."""
+        rows = as_rows(data)
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
 
             # Extract texts from source feature (use 'text' field if source is root)
             texts = []
-            for row in data:
+            for row in rows:
                 if source_feature in row:
                     texts.append(str(row[source_feature]))
                 elif "text" in row:
@@ -202,7 +205,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
             redacted_texts = cls._redact_texts_for_feature(texts, feature)
 
             # Add results to data
-            for i, row in enumerate(data):
+            for i, row in enumerate(rows):
                 row[feature.name] = redacted_texts[i]
 
-        return data
+        return rows

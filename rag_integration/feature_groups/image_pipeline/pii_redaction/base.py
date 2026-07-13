@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.rows import as_rows
+
 
 class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     """
@@ -79,7 +81,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         IMAGE_REDACTION_METHOD: {
-            **REDACTION_METHODS,
+            DefaultOptionKeys.allowed_values: REDACTION_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -166,14 +168,15 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         return cls._redact_region(image_data, image_format, regions)
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Perform PII redaction on images, processing row by row for memory efficiency."""
+        rows = as_rows(data)
         for feature in features.features:
             cls._get_source_feature_name(feature)
             regions = cls._get_pii_regions(feature)
             feature_name = feature.name
 
-            for row in data:
+            for row in rows:
                 image_data = row.get("image_data", b"")
                 image_format = row.get("format", "png")
 
@@ -190,4 +193,4 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
                 row["pii_redacted"] = len(regions) > 0
                 row["pii_regions_count"] = len(regions)
 
-        return data
+        return rows

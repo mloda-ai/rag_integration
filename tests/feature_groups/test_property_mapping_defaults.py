@@ -1,9 +1,9 @@
 """Repo-wide invariant: every PROPERTY_MAPPING default must be an accepted value.
 
-Upstream mloda will enforce this at class-definition time via
-``FeatureChainParser.validate_property_mapping_defaults`` in ``FeatureGroup.__init_subclass__``.
-Enforce it here first: delegate to that validator when the installed mloda has it,
-otherwise replicate it on the ``FeatureChainParser`` helpers present in 0.8.x.
+mloda enforces this at class-definition time (``FeatureChainParser.validate_property_mapping_defaults``
+in ``FeatureGroup.__init_subclass__``), so a violation is already an import error. The sweep here
+still earns its place: it pins that every feature group is reachable and actually reached, which is
+what stops the invariant from passing vacuously.
 """
 
 from __future__ import annotations
@@ -17,53 +17,10 @@ from mloda.provider import DefaultOptionKeys, FeatureChainParser, FeatureGroup
 import rag_integration.feature_groups
 
 
-def _validate_with_replica(owner_name: str, property_mapping: Optional[Dict[str, Any]]) -> List[str]:
-    """Replicate upstream validate_property_mapping_defaults; returns violation messages."""
-    violations: List[str] = []
-    if property_mapping is None:
-        return violations
-    for key, spec in property_mapping.items():
-        if not isinstance(spec, dict):
-            continue
-        if DefaultOptionKeys.default not in spec:
-            continue
-        default = spec[DefaultOptionKeys.default]
-        if default is None:
-            continue
-        validation_function = FeatureChainParser._get_validation_function(spec)
-        if validation_function is not None:
-            if not FeatureChainParser._is_strict_validation(spec):
-                continue
-            try:
-                verdict = validation_function(default)
-            except Exception as exc:
-                violations.append(
-                    f"{owner_name}.PROPERTY_MAPPING['{key}'] default {default!r}: validation_function raised {exc!r}"
-                )
-                continue
-            if not verdict:
-                violations.append(
-                    f"{owner_name}.PROPERTY_MAPPING['{key}'] default {default!r}: rejected by validation_function"
-                )
-            continue
-        accepted = FeatureChainParser._extract_property_values(spec)
-        try:
-            FeatureChainParser._validate_property_value(default, accepted, key, spec)
-        except (ValueError, TypeError):
-            violations.append(
-                f"{owner_name}.PROPERTY_MAPPING['{key}'] default {default!r}: "
-                f"not in accepted values {sorted(accepted, key=repr)}"
-            )
-    return violations
-
-
 def _validate(owner_name: str, property_mapping: Optional[Dict[str, Any]]) -> List[str]:
-    """Delegate to the upstream validator when available, else use the replica."""
-    upstream = getattr(FeatureChainParser, "validate_property_mapping_defaults", None)
-    if upstream is None:
-        return _validate_with_replica(owner_name, property_mapping)
+    """Run the upstream validator; returns violation messages."""
     try:
-        upstream(owner_name, property_mapping)
+        FeatureChainParser.validate_property_mapping_defaults(owner_name, property_mapping)
     except (ValueError, TypeError) as exc:
         return [str(exc)]
     return []
@@ -105,8 +62,7 @@ def test_validator_catches_bad_default() -> None:
     """Guard against a vacuously green check: a default outside the accepted values must be flagged."""
     bad_mapping: Dict[str, Any] = {
         "mode": {
-            "fast": "fast mode",
-            "slow": "slow mode",
+            DefaultOptionKeys.allowed_values: {"fast": "fast mode", "slow": "slow mode"},
             DefaultOptionKeys.default: "turbo",
             DefaultOptionKeys.strict_validation: True,
         }
@@ -114,13 +70,13 @@ def test_validator_catches_bad_default() -> None:
     assert _validate("DummyOwner", bad_mapping)
 
 
-def test_validator_catches_default_rejected_by_validation_function() -> None:
+def test_validator_catches_default_rejected_by_element_validator() -> None:
     bad_mapping: Dict[str, Any] = {
         "size": {
             "explanation": "positive size",
             DefaultOptionKeys.default: -1,
             DefaultOptionKeys.strict_validation: True,
-            DefaultOptionKeys.validation_function: lambda value: isinstance(value, int) and value > 0,
+            DefaultOptionKeys.element_validator: lambda value: isinstance(value, int) and value > 0,
         }
     }
     assert _validate("DummyOwner", bad_mapping)

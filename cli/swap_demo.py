@@ -47,6 +47,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from rag_integration.feature_groups.connectors.generate import ExtractiveResponder, TemplateResponder
 from rag_integration.feature_groups.connectors.orchestrator import HaystackOrchestrator
 from rag_integration.feature_groups.connectors.retrieve import Bm25sRetriever, TfidfRetriever
+from rag_integration.feature_groups.rows import as_rows
 
 # A tiny corpus where the query shares terms with the pet docs and nothing else,
 # so every lexical backend ranks the same two documents above the distractors.
@@ -92,13 +93,9 @@ def run_connector(root_feature: str, options: Dict[str, Any]) -> Any:
         compute_frameworks={PythonDictFramework},
         plugin_collector=PluginCollector.enabled_feature_groups(CONNECTORS),
     )
-    rows: List[Any] = list(result[0]) if result and isinstance(result[0], list) else list(result)
-    # Some frameworks nest one level deeper ([[{...}]]); unwrap to match the
-    # sibling demos (cli/rag_demo.py, cli/eval_demo.py).
-    if rows and isinstance(rows[0], list):
-        rows = rows[0]
+    rows: List[Any] = as_rows(result[0]) if result else []
     for row in rows:
-        if isinstance(row, dict) and root_feature in row:
+        if root_feature in row:
             return row[root_feature]
     raise AssertionError(f"run_all returned no '{root_feature}' row: {result!r}")
 

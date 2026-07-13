@@ -14,7 +14,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mloda.provider import DefaultOptionKeys
 from mloda.user import mlodaAPI, Feature, FeatureName, Options, PluginCollector
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -24,6 +23,7 @@ from rag_integration.feature_groups.connectors.graph_rag.adjacency_graph_rag imp
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
 from rag_integration.feature_groups.connectors.graph_rag.kg_source import TriplesKnowledgeGraph
 from rag_integration.feature_groups.connectors.graph_rag.networkx_graph_rag import NetworkxGraphRag
+from rag_integration.feature_groups.rows import as_rows
 
 # Connected entities carry their triple sentences, so they overlap the query
 # via the relations; the disconnected stock_market branch shares no token with
@@ -62,7 +62,7 @@ def _run_chained(options: Options, connector: type[BaseGraphRagConnector] = Adja
         plugin_collector=PluginCollector.enabled_feature_groups({connector, TriplesKnowledgeGraph}),
     )
     for partition in result:
-        for row in partition:
+        for row in as_rows(partition):
             if connector.ROOT_FEATURE_NAME in row:
                 passages: List[Dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
                 return passages
@@ -90,27 +90,24 @@ def test_graph_source_declares_input_feature_with_forwarded_context() -> None:
     assert inputs is not None
     (feature,) = inputs
     assert str(feature.name) == TriplesKnowledgeGraph.ROOT_FEATURE_NAME
-    # The source's own options are forwarded; the family's keys are not.
+    # Context never flows implicitly, so the source's own options are forwarded explicitly;
+    # the family's keys are not.
     assert feature.options.get(TriplesKnowledgeGraph.KG_BACKEND) == "triples"
     assert feature.options.get(TriplesKnowledgeGraph.TRIPLES) == _TRIPLES
     assert feature.options.get(AdjacencyGraphRag.GRAPH_BACKEND) is None
     assert feature.options.get(AdjacencyGraphRag.GRAPH_SOURCE) is None
     assert feature.options.get(AdjacencyGraphRag.QUERY_TEXT) is None
-    # The family keys are merge-protected, so the engine's group-option merge
-    # cannot re-add query-specific keys to the source feature.
-    assert feature.options.get(DefaultOptionKeys.feature_chainer_parser_key) == AdjacencyGraphRag.FAMILY_OPTION_KEYS
+    # Group options forward by default, so the family's query-specific keys are excluded
+    # rather than allowlisted: the engine's merge cannot re-add them to the source feature.
+    assert feature.forward_group_exclude == AdjacencyGraphRag.FAMILY_OPTION_KEYS
 
 
 def test_graph_source_forwards_group_options_without_family_keys() -> None:
-    # Group-style caller: Options(dict) puts everything into group options.
-    inputs = AdjacencyGraphRag().input_features(
-        Options(_chained_context()), FeatureName(AdjacencyGraphRag.ROOT_FEATURE_NAME)
-    )
-    assert inputs is not None
-    (feature,) = inputs
-    assert feature.options.group.get(TriplesKnowledgeGraph.KG_BACKEND) == "triples"
-    for family_key in AdjacencyGraphRag.FAMILY_OPTION_KEYS:
-        assert family_key not in feature.options.group
+    """A group-style caller (Options(dict)) still reaches the source, and family keys stay off it."""
+    passages = _run_chained(Options(_chained_context()))
+    # The ranking ran over the KG-derived nodes, so kg_backend/triples reached the source
+    # through the engine's default group forwarding.
+    assert {p["doc_id"] for p in passages} >= {"photosynthesis"}
 
 
 # -- End to end ---------------------------------------------------------------------

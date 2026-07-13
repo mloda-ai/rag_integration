@@ -17,6 +17,7 @@ from mloda.provider import FeatureSet
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
+from rag_integration.feature_groups.rows import as_rows
 
 # Default local model path: looks two levels above the git repo root (mloda/models/)
 # clip.py lives at rag_integration/rag_integration/feature_groups/image_pipeline/embedding/clip.py
@@ -46,7 +47,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
-            "clip": "CLIP model image embeddings",
+            DefaultOptionKeys.allowed_values: {"clip": "CLIP model image embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -190,7 +191,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         return embedding  # type: ignore[no-any-return]
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """
         Embed each row using CLIP's vision or text encoder based on row content.
 
@@ -200,12 +201,13 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
         This cross-modal dispatch is what makes text-to-image Recall@K meaningful.
         """
+        rows = as_rows(data)
         for feature in features.features:
             embedding_dim = cls._get_embedding_dim(feature)
             model_name = cls._get_model_name(feature)
             feature_name = feature.name
 
-            for row in data:
+            for row in rows:
                 image_data = row.get("image_data")
                 caption = row.get("caption")
 
@@ -222,4 +224,4 @@ class CLIPImageEmbedder(BaseImageEmbedder):
                 row["embedding_dim"] = len(embedding)
                 row["embedding_model"] = model_name
 
-        return data
+        return rows

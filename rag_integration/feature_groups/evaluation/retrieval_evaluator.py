@@ -16,6 +16,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda.provider import DefaultOptionKeys
 
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
+from rag_integration.feature_groups.rows import as_rows
 
 
 class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
@@ -66,8 +67,9 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Compute Recall@K over the embedded corpus and query rows."""
+        rows = as_rows(data)
         try:
             import numpy as np
         except ImportError as e:
@@ -77,8 +79,8 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
             source_feature = cls._extract_source_features(feature)[0]
             feature_name = feature.name
 
-            corpus_rows = [r for r in data if r.get("row_type") == "corpus"]
-            query_rows = [r for r in data if r.get("row_type") == "query"]
+            corpus_rows = [r for r in rows if r.get("row_type") == "corpus"]
+            query_rows = [r for r in rows if r.get("row_type") == "query"]
 
             if not corpus_rows or not query_rows:
                 metrics: Dict[str, Any] = {
@@ -109,7 +111,8 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
 
             for q_idx, q_row in enumerate(query_rows):
                 q_id = cls._get_id(q_row)
-                relevant_ids = set(q_row.get("relevant_doc_ids", []) + q_row.get("relevant_image_ids", []))
+                # Homogenized rows fill an absent key with None, so `or []` rather than a get default.
+                relevant_ids = set((q_row.get("relevant_doc_ids") or []) + (q_row.get("relevant_image_ids") or []))
                 query_relevant[q_id] = relevant_ids
 
                 ranked_indices = np.argsort(-sims[q_idx]).tolist()

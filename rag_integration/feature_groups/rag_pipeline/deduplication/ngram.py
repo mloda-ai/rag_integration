@@ -24,7 +24,7 @@ class NGramDeduplicator(BaseDeduplicator):
 
     PROPERTY_MAPPING = {
         BaseDeduplicator.DEDUPLICATION_METHOD: {
-            "ngram": "N-gram Jaccard similarity based detection",
+            DefaultOptionKeys.allowed_values: {"ngram": "N-gram Jaccard similarity based detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -34,7 +34,7 @@ class NGramDeduplicator(BaseDeduplicator):
             DefaultOptionKeys.default: 1.0,
         },
         BaseDeduplicator.KEEP_STRATEGY: {
-            **BaseDeduplicator.KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BaseDeduplicator.KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

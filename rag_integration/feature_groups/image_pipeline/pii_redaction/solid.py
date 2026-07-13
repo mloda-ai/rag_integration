@@ -34,7 +34,7 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
 
     PROPERTY_MAPPING = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: {
-            "solid": "Solid color fill over PII regions",
+            DefaultOptionKeys.allowed_values: {"solid": "Solid color fill over PII regions"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

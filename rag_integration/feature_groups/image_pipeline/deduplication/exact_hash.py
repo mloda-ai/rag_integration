@@ -23,7 +23,7 @@ class ExactHashImageDeduplicator(BaseImageDeduplicator):
 
     PROPERTY_MAPPING = {
         BaseImageDeduplicator.IMAGE_DEDUPLICATION_METHOD: {
-            "exact_hash": "MD5 hash-based exact duplicate detection",
+            DefaultOptionKeys.allowed_values: {"exact_hash": "MD5 hash-based exact duplicate detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -33,7 +33,7 @@ class ExactHashImageDeduplicator(BaseImageDeduplicator):
             DefaultOptionKeys.default: 1.0,
         },
         BaseImageDeduplicator.KEEP_STRATEGY: {
-            **BaseImageDeduplicator.KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BaseImageDeduplicator.KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

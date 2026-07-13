@@ -5,14 +5,21 @@ from __future__ import annotations
 from typing import Any, Dict, List, Set, Type
 
 from mloda.provider import DataCreator, FeatureGroup
+from mloda.user import columnar_to_rows, is_columnar
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
 
 def flatten_result(result: Any) -> List[Dict[str, Any]]:
-    """Unwrap nested mlodaAPI result to a flat list of dicts."""
-    if result and isinstance(result[0], list):
+    """Unwrap a mlodaAPI result to rows. PythonDict results are columnar since mloda 0.9.0."""
+    if is_columnar(result):
+        return columnar_to_rows(result)
+    if not result:
+        return []
+    if is_columnar(result[0]):
+        return columnar_to_rows(result[0])
+    if isinstance(result[0], list):
         return result[0]
     return list(result)
 

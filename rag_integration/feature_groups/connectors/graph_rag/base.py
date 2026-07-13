@@ -35,13 +35,14 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
-from mloda.provider import DataCreator, DefaultOptionKeys, FeatureGroup, ComputeFramework, FeatureSet
+from mloda.provider import DataCreator, FeatureGroup, ComputeFramework, FeatureSet
 from mloda.user import Feature, Options, FeatureName
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
 from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, InvalidOptionError
+from rag_integration.feature_groups.rows import as_rows
 from rag_integration.feature_groups.connectors.mixins import (
     DocCollectionMixin,
     OptionsMixin,
@@ -123,20 +124,22 @@ class BaseGraphRagConnector(
         Without ``GRAPH_SOURCE`` this is a root feature (graph arrives via
         Options); ``input_data`` stays declared for that mode, the engine uses
         whichever applies. With ``GRAPH_SOURCE``, the named upstream feature is
-        the input. Its options are the parent's group and context options minus
-        ``FAMILY_OPTION_KEYS``: context keys do not propagate on their own, so
-        the source's selector options (e.g. ``kg_backend``) are forwarded
-        explicitly, and the family keys are declared merge-protected so the
-        engine's own group-option merge cannot re-add query-specific keys to
-        the source feature.
+        the input. Group options forward by default since mloda 0.9.0, so the
+        family's own query-specific keys are excluded rather than allowlisted.
+        Context never flows implicitly, so the source's selector options (e.g.
+        ``kg_backend``) are still forwarded explicitly, minus the family keys.
         """
         source = options.get(self.GRAPH_SOURCE)
         if source is None:
             return None
-        forwarded_group = {key: value for key, value in options.group.items() if key not in self.FAMILY_OPTION_KEYS}
         forwarded_context = {key: value for key, value in options.context.items() if key not in self.FAMILY_OPTION_KEYS}
-        forwarded_context[DefaultOptionKeys.feature_chainer_parser_key] = self.FAMILY_OPTION_KEYS
-        return {Feature(str(source), options=Options(group=forwarded_group, context=forwarded_context))}
+        return {
+            Feature(
+                str(source),
+                options=Options(context=forwarded_context),
+                forward_group_exclude=self.FAMILY_OPTION_KEYS,
+            )
+        }
 
     @classmethod
     def _graph_from_source(cls, data: Any, source_name: str) -> Dict[str, Any]:
@@ -257,7 +260,7 @@ class BaseGraphRagConnector(
                             f"{cls.__name__} got both '{cls.GRAPH_SOURCE}' and inline '{inline_key}'; "
                             f"pass one graph only."
                         )
-                payload = cls._graph_from_source(data, str(source))
+                payload = cls._graph_from_source(as_rows(data), str(source))
                 nodes = list(payload[cls.NODES])
                 edges = cls._resolve_edges(payload.get(cls.EDGES))
             else:

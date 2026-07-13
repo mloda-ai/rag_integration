@@ -25,7 +25,7 @@ class ParagraphChunker(BaseChunker):
 
     PROPERTY_MAPPING = {
         BaseChunker.CHUNKING_METHOD: {
-            "paragraph": "Paragraph-boundary aware chunks",
+            DefaultOptionKeys.allowed_values: {"paragraph": "Paragraph-boundary aware chunks"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

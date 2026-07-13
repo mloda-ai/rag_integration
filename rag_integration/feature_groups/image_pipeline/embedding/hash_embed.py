@@ -29,7 +29,7 @@ class HashImageEmbedder(BaseImageEmbedder):
 
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: {
-            "hash": "Feature hashing based image embeddings",
+            DefaultOptionKeys.allowed_values: {"hash": "Feature hashing based image embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

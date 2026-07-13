@@ -47,6 +47,7 @@ from mloda.user import Options
 from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
 from rag_integration.feature_groups.datasets.image.flickr30k import Flickr30kDatasetSource
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
+from rag_integration.feature_groups.rows import as_rows
 
 
 def _print_results(dataset: str, embedder: str, results: Dict[str, object]) -> None:
@@ -238,9 +239,7 @@ def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
         ),
     )
 
-    rows = raw_result[0] if raw_result else []
-    if rows and isinstance(rows[0], list):
-        rows = rows[0]
+    rows = as_rows(raw_result[0]) if raw_result else []
 
     row = rows[0] if rows else {}
     metrics = row.get(feature_name, row)

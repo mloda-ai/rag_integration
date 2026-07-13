@@ -27,7 +27,7 @@ class HashEmbedder(BaseEmbedder):
 
     PROPERTY_MAPPING = {
         BaseEmbedder.EMBEDDING_METHOD: {
-            "hash": "Feature hashing based embeddings",
+            DefaultOptionKeys.allowed_values: {"hash": "Feature hashing based embeddings"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },

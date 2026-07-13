@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 version = "0.3.4"
-dependencies = ["mloda>=0.8.0", "mloda-testing>=0.3.2"]
+dependencies = ["mloda>=0.10.0", "mloda-testing>=0.3.2"]
 name = "rag-integration"
 description = "RAG integration plugin for mloda"
 license = {text = "Apache-2.0"}

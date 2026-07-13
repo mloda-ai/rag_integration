@@ -25,7 +25,7 @@ class ExactHashDeduplicator(BaseDeduplicator):
 
     PROPERTY_MAPPING = {
         BaseDeduplicator.DEDUPLICATION_METHOD: {
-            "exact_hash": "MD5 hash-based exact duplicate detection",
+            DefaultOptionKeys.allowed_values: {"exact_hash": "MD5 hash-based exact duplicate detection"},
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -35,7 +35,7 @@ class ExactHashDeduplicator(BaseDeduplicator):
             DefaultOptionKeys.default: 1.0,
         },
         BaseDeduplicator.KEEP_STRATEGY: {
-            **BaseDeduplicator.KEEP_STRATEGIES,
+            DefaultOptionKeys.allowed_values: BaseDeduplicator.KEEP_STRATEGIES,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.default: "first",
         },

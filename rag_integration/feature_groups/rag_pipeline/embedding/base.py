@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.rows import as_rows
+
 
 class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
     """
@@ -66,7 +68,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         EMBEDDING_METHOD: {
-            **EMBEDDING_METHODS,
+            DefaultOptionKeys.allowed_values: EMBEDDING_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -140,8 +142,9 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Generate embeddings for the source feature, with optional artifact support."""
+        rows = as_rows(data)
         artifact_cls = cls.artifact()
 
         for feature in features.features:
@@ -168,7 +171,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
             if embeddings is None:
                 # Extract texts from source feature
                 texts = []
-                for row in data:
+                for row in rows:
                     if source_feature in row:
                         texts.append(str(row[source_feature]))
                     elif "text" in row:
@@ -190,9 +193,9 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
                     artifact_cls.save_embedding_artifact(features, artifact_key, artifact_data)  # type: ignore[attr-defined]
 
             # Add results to data
-            for i, row in enumerate(data):
+            for i, row in enumerate(rows):
                 row[feature_name] = embeddings[i]
                 row["embedding_dim"] = len(embeddings[i])
                 row["embedding_model"] = model_name
 
-        return data
+        return rows

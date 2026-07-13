@@ -6,7 +6,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Set, Type, Union
 
 from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
-from mloda.user import Options, FeatureName
+from mloda.user import Options, FeatureName, homogenize_rows
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -69,5 +69,7 @@ class BaseTextDatasetSource(FeatureGroup):
     def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Load and return dataset rows."""
         for feature in features.features:
-            return cls._load_dataset(feature.options)
+            # Corpus rows carry no relevant_doc_ids and query rows do; PythonDict rejects
+            # heterogeneous rows since mloda 0.9.0, so fill the union with None.
+            return homogenize_rows(cls._load_dataset(feature.options))
         return []

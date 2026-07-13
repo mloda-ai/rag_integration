@@ -13,6 +13,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda.provider import DefaultOptionKeys
 
+from rag_integration.feature_groups.rows import as_rows
+
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
@@ -48,7 +50,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
 
     PROPERTY_MAPPING = {
         INDEX_METHOD: {
-            **INDEX_METHODS,
+            DefaultOptionKeys.allowed_values: INDEX_METHODS,
             DefaultOptionKeys.context: True,
             DefaultOptionKeys.strict_validation: True,
         },
@@ -95,8 +97,9 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: List[Dict[str, Any]], features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
         """Build FAISS index from embeddings, save via artifact, attach row metadata."""
+        rows = as_rows(data)
         artifact_cls = cls.artifact()
 
         for feature in features.features:
@@ -123,7 +126,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                 texts: List[str] = []
                 doc_ids: List[str] = []
 
-                for row in data:
+                for row in rows:
                     embedding = row.get(source_feature)
                     if embedding is not None and isinstance(embedding, list):
                         embeddings.append(embedding)
@@ -138,12 +141,12 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                     doc_ids.append(str(row.get("doc_id", f"row_{len(doc_ids)}")))
 
                 if not embeddings or not embeddings[0]:
-                    for i, row in enumerate(data):
+                    for i, row in enumerate(rows):
                         row[feature_name] = None
                         row["vector_id"] = i
                         row["index_type"] = cls._index_type_name()
                         row["index_size"] = 0
-                    return data
+                    return rows
 
                 dimension = len(embeddings[0])
                 index = cls._build_index(embeddings, dimension)
@@ -156,10 +159,10 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                     )
 
             # Attach row metadata
-            for i, row in enumerate(data):
+            for i, row in enumerate(rows):
                 row[feature_name] = i  # vector_id as the feature value
                 row["vector_id"] = i
                 row["index_type"] = cls._index_type_name()
                 row["index_size"] = index_size
 
-        return data
+        return rows
