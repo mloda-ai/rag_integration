@@ -70,15 +70,17 @@ from rag_integration.feature_groups.connectors.retrieve import Bm25sRetriever
 
 feature = Feature(
     "retrieved_passages",
-    options=Options(context={
-        "retrieve_backend": "bm25s",
-        "query_text": "cat pet",
-        "corpus": [
-            {"doc_id": "d1", "text": "A cat is an independent and curious pet."},
-            {"doc_id": "d2", "text": "Cars need regular engine oil and maintenance."},
-        ],
-        "top_k": 3,
-    }),
+    options=Options(
+        context={
+            "retrieve_backend": "bm25s",
+            "query_text": "cat pet",
+            "corpus": [
+                {"doc_id": "d1", "text": "A cat is an independent and curious pet."},
+                {"doc_id": "d2", "text": "Cars need regular engine oil and maintenance."},
+            ],
+            "top_k": 3,
+        }
+    ),
 )
 results = mlodaAPI.run_all(
     [feature],

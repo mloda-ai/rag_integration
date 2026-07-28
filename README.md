@@ -85,14 +85,16 @@ Use `Options` to select specific implementations and tune parameters:
 ```python
 feature = Feature(
     "docs__pii_redacted__chunked__deduped__embedded",
-    options=Options(context={
-        "redaction_method": "regex",        # or "simple", "pattern", "presidio"
-        "chunking_method": "sentence",      # or "fixed_size", "paragraph", "semantic"
-        "deduplication_method": "exact_hash",  # or "normalized", "ngram"
-        "embedding_method": "sentence_transformer",  # or "hash", "tfidf", "mock"
-        "chunk_size": 512,
-        "chunk_overlap": 128,
-    }),
+    options=Options(
+        context={
+            "redaction_method": "regex",  # or "simple", "pattern", "presidio"
+            "chunking_method": "sentence",  # or "fixed_size", "paragraph", "semantic"
+            "deduplication_method": "exact_hash",  # or "normalized", "ngram"
+            "embedding_method": "sentence_transformer",  # or "hash", "tfidf", "mock"
+            "chunk_size": 512,
+            "chunk_overlap": 128,
+        }
+    ),
 )
 ```
 
@@ -150,15 +152,17 @@ from rag_integration.feature_groups.connectors.retrieve import Bm25sRetriever
 
 feature = Feature(
     "retrieved_passages",
-    options=Options(context={
-        "retrieve_backend": "bm25s",
-        "query_text": "cat pet",
-        "corpus": [
-            {"doc_id": "d1", "text": "A cat is an independent and curious pet."},
-            {"doc_id": "d2", "text": "Cars need regular engine oil and maintenance."},
-        ],
-        "top_k": 3,
-    }),
+    options=Options(
+        context={
+            "retrieve_backend": "bm25s",
+            "query_text": "cat pet",
+            "corpus": [
+                {"doc_id": "d1", "text": "A cat is an independent and curious pet."},
+                {"doc_id": "d2", "text": "Cars need regular engine oil and maintenance."},
+            ],
+            "top_k": 3,
+        }
+    ),
 )
 results = mlodaAPI.run_all(
     [feature],
