@@ -39,7 +39,11 @@ dev = [
     "tox",
     "tox-uv",
     "pytest",
-    "ruff",
+    # tox resolves this extra fresh rather than from uv.lock, so an upstream ruff
+    # release changes the gate with no code change here. 0.16.0 widened the default
+    # rule set (1772 new errors) and started formatting python blocks in markdown.
+    # Pinned to the 0.15 line the lock already resolves; lift it with the cleanup.
+    "ruff<0.16",
     "mypy",
     "bandit",
 ]
