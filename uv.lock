@@ -3176,7 +3176,7 @@ requires-dist = [
     { name = "pillow", marker = "extra == 'advanced'", specifier = ">=9.0.0" },
     { name = "presidio-analyzer", marker = "extra == 'advanced'", specifier = ">=2.2.0" },
     { name = "pytest", marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "<0.16" },
     { name = "sentence-transformers", marker = "extra == 'advanced'", specifier = ">=2.2.0" },
     { name = "sqlglot", marker = "extra == 'structured'", specifier = ">=25" },
     { name = "tox", marker = "extra == 'dev'" },
