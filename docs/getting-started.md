@@ -90,14 +90,16 @@ Use `Options` to select specific implementations and tune parameters:
 ```python
 feature = Feature(
     "docs__pii_redacted__chunked__deduped__embedded",
-    options=Options(context={
-        "redaction_method": "regex",        # or "simple", "pattern", "presidio"
-        "chunking_method": "sentence",      # or "fixed_size", "paragraph", "semantic"
-        "deduplication_method": "exact_hash",  # or "normalized", "ngram"
-        "embedding_method": "sentence_transformer",  # or "hash", "tfidf", "mock"
-        "chunk_size": 512,
-        "chunk_overlap": 128,
-    }),
+    options=Options(
+        context={
+            "redaction_method": "regex",  # or "simple", "pattern", "presidio"
+            "chunking_method": "sentence",  # or "fixed_size", "paragraph", "semantic"
+            "deduplication_method": "exact_hash",  # or "normalized", "ngram"
+            "embedding_method": "sentence_transformer",  # or "hash", "tfidf", "mock"
+            "chunk_size": 512,
+            "chunk_overlap": 128,
+        }
+    ),
 )
 ```
 
