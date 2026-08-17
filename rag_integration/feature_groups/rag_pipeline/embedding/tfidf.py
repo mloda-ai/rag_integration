@@ -29,6 +29,7 @@ class TfidfEmbedder(BaseEmbedder):
             "Algorithm used to embed text into vectors",
             strict=True,
             allowed_values={"tfidf": "TF-IDF based embeddings"},
+            deferred_binding=True,
         ),
         BaseEmbedder.EMBEDDING_DIM: property_spec("Dimension of the embedding vectors", default=384),
         BaseEmbedder.MODEL_NAME: property_spec("Name of the embedding model", default="default"),

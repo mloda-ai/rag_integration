@@ -96,13 +96,17 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
 
     # Pattern for feature chain parsing
     PREFIX_PATTERN = r".*__pii_redacted$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
 
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
         REDACTION_METHOD: property_spec(
-            "Detector used to locate PII in text", strict=True, allowed_values=REDACTION_METHODS
+            "Detector used to locate PII in text", strict=True, allowed_values=REDACTION_METHODS, deferred_binding=True
         ),
         PII_TYPES: property_spec("List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)", default=["ALL"]),
         REPLACEMENT_STRATEGY: property_spec(

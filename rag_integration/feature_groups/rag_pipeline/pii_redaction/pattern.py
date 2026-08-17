@@ -39,6 +39,7 @@ class PatternPIIRedactor(BasePIIRedactor):
             "Detector used to locate PII in text",
             strict=True,
             allowed_values={"pattern": "Custom pattern based detection"},
+            deferred_binding=True,
         ),
         BasePIIRedactor.PII_TYPES: property_spec(
             "List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)", default=["ALL"]

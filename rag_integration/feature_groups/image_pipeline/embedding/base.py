@@ -63,13 +63,20 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
     }
 
     PREFIX_PATTERN = r".*__embedded$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
 
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
         IMAGE_EMBEDDING_METHOD: property_spec(
-            "Algorithm used to embed images into vectors", strict=True, allowed_values=EMBEDDING_METHODS
+            "Algorithm used to embed images into vectors",
+            strict=True,
+            allowed_values=EMBEDDING_METHODS,
+            deferred_binding=True,
         ),
         EMBEDDING_DIM: property_spec("Dimension of the embedding vectors", default=512),
         MODEL_NAME: property_spec("Name of the embedding model", default="default"),
@@ -107,14 +114,9 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
 
     @classmethod
     def _get_model_name(cls, feature: Feature) -> str:
-        """Get model name from feature options, falling back to PROPERTY_MAPPING default."""
+        """Get model name from feature options; mloda materializes the subclass MODEL_NAME default before this runs."""
         name = feature.options.get(cls.MODEL_NAME)
-        if name is not None:
-            return str(name)
-        # Check subclass PROPERTY_MAPPING for a provider-specific default
-        mapping = cls.PROPERTY_MAPPING.get(cls.MODEL_NAME, {})
-        default = mapping.get(DefaultOptionKeys.default, "default")
-        return str(default)
+        return str(name) if name is not None else "default"
 
     @staticmethod
     def artifact() -> Optional[Type[BaseArtifact]]:

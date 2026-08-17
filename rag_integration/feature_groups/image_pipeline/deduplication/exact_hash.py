@@ -26,6 +26,7 @@ class ExactHashImageDeduplicator(BaseImageDeduplicator):
             "Algorithm used to detect duplicate images",
             strict=True,
             allowed_values={"exact_hash": "MD5 hash-based exact duplicate detection"},
+            deferred_binding=True,
         ),
         BaseImageDeduplicator.SIMILARITY_THRESHOLD: property_spec(
             "Threshold for considering images as duplicates (0.0-1.0)", default=1.0

@@ -75,13 +75,20 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     }
 
     PREFIX_PATTERN = r".*__pii_redacted$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
 
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
         IMAGE_REDACTION_METHOD: property_spec(
-            "Technique used to obscure PII regions in images", strict=True, allowed_values=REDACTION_METHODS
+            "Technique used to obscure PII regions in images",
+            strict=True,
+            allowed_values=REDACTION_METHODS,
+            deferred_binding=True,
         ),
         PII_REGIONS: property_spec("List of PII region dicts with 'bbox' [x1,y1,x2,y2] and 'type'", default=[]),
         DefaultOptionKeys.in_features: property_spec("Source feature containing images to redact"),

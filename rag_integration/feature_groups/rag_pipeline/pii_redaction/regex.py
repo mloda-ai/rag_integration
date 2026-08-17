@@ -29,7 +29,10 @@ class RegexPIIRedactor(BasePIIRedactor):
 
     PROPERTY_MAPPING = {
         BasePIIRedactor.REDACTION_METHOD: property_spec(
-            "Detector used to locate PII in text", strict=True, allowed_values={"regex": "Regex-based PII detection"}
+            "Detector used to locate PII in text",
+            strict=True,
+            allowed_values={"regex": "Regex-based PII detection"},
+            deferred_binding=True,
         ),
         BasePIIRedactor.PII_TYPES: property_spec(
             "List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)", default=["ALL"]

@@ -31,6 +31,7 @@ class NormalizePreprocessor(BaseImagePreprocessor):
             "Image preprocessing operation to apply",
             strict=True,
             allowed_values={"normalize": "Normalize pixel values to [0, 1] range"},
+            deferred_binding=True,
         ),
         BaseImagePreprocessor.TARGET_SIZE: property_spec(
             "Target size as [width, height] in pixels", default=[224, 224]

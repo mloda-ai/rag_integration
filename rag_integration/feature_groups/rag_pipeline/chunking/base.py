@@ -64,13 +64,20 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     }
 
     PREFIX_PATTERN = r".*__chunked$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
 
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
         CHUNKING_METHOD: property_spec(
-            "Strategy used to split documents into chunks", strict=True, allowed_values=CHUNKING_METHODS
+            "Strategy used to split documents into chunks",
+            strict=True,
+            allowed_values=CHUNKING_METHODS,
+            deferred_binding=True,
         ),
         CHUNK_SIZE: property_spec("Maximum size of each chunk (in characters)", default=512),
         CHUNK_OVERLAP: property_spec("Overlap between consecutive chunks, in characters", default=128),
