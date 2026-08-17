@@ -5,19 +5,14 @@ description: mloda plugin development guides. Use when creating FeatureGroups, C
 
 # mloda Plugin Development Guides
 
-**Repository layout:**
-mloda and mloda-registry are sibling folders:
-```
-project/
-├── mloda/              # Core library
-├── mloda-registry/     # Plugin registry and guides
-└── rag_integration/    # This plugin repo
-```
+**Path detection:**
+!`echo ${MLODA_REGISTRY_PATH:-$(find .. -maxdepth 2 -name "mloda-registry" -type d 2>/dev/null | head -1)}`
 
-**Local path:** `../mloda-registry/docs/guides/`
-**Online:** [mloda-registry](https://github.com/mloda-ai/mloda-registry)
+If path is empty, browse online: https://github.com/mloda-ai/mloda-registry/tree/main/docs/guides
 
-## Quick Start Guides (01-08)
+**Guides location (relative to mloda-registry path):** `docs/guides/`
+
+## Top-Level Guides (01-11)
 
 | # | Guide | Description |
 |---|-------|-------------|
@@ -29,6 +24,10 @@ project/
 | 06 | `06-publish-to-community.md` | Submit to mloda-registry |
 | 07 | `07-contribute-to-official.md` | Improve existing plugins |
 | 08 | `08-become-official.md` | Get plugin merged into registry |
+| 09 | `09-create-feature-group.md` | Decision tree for choosing the right feature group pattern |
+| 10 | `10-create-compute-framework.md` | Decision tree for creating a compute framework plugin |
+| 11 | `11-create-extender.md` | Guide for creating extender plugins (logging, tracing, metrics) |
+| -- | `index.md` | Your Plugin Journey: step-by-step progression overview |
 
 ---
 
@@ -95,11 +94,29 @@ Q18: Does it receive data programmatically at runtime (e.g. via API call)?
 
 Q19: Need to create feature groups dynamically or simplify complex input sources?
     YES → See 21-experimental-shortcuts
+
+Q20: Need to define features via JSON config (e.g., for AI agents or config-driven pipelines)?
+    YES → See 22-feature-config
+
+Q21: Need to consume results incrementally as each feature group completes?
+    YES → See 23-streaming
+
+Q22: Need to build the execution plan once at startup and reuse it for repeated calls with fresh data?
+    YES → See 24-realtime
+
+Q23: Need both plan reuse and incremental per-group delivery?
+    YES → Use session.stream_run(), see 23-streaming and 24-realtime
+
+Q24: Need conditional aggregation that nulls out non-matching values instead of removing rows?
+    YES → See 25-masking
+
+Q25: Several readers under one root group, or a non-file (HTTP/API) source?
+    YES → See 27-input-data-readers
 ```
 
 ### Feature Group Pattern Guides
 
-Location: `docs/guides/feature-group-patterns/` in [mloda-registry](https://github.com/mloda-ai/mloda-registry)
+Location: `docs/guides/feature-group-patterns/`
 
 | # | Guide | Description |
 |---|-------|-------------|
@@ -124,6 +141,12 @@ Location: `docs/guides/feature-group-patterns/` in [mloda-registry](https://gith
 | 19 | `19-domain.md` | Disambiguate matching |
 | 20 | `20-versioning.md` | Version tracking |
 | 21 | `21-experimental-shortcuts.md` | Dynamic creation helpers |
+| 22 | `22-feature-config.md` | JSON-based feature definition |
+| 23 | `23-streaming.md` | Incremental results with `stream_all` |
+| 24 | `24-realtime.md` | Reuse execution plans with `prepare` + `run` |
+| 25 | `25-masking.md` | Conditional aggregation via FilterMask |
+| 26 | `26-input-feature-forwarding.md` | Consume another group's root feature; option forwarding |
+| 27 | `27-input-data-readers.md` | Sibling reader selection; non-file / HTTP readers |
 
 ---
 
@@ -172,7 +195,7 @@ Q11: Ready to test your implementation?
 
 ### Compute Framework Pattern Guides
 
-Location: `docs/guides/compute-framework-patterns/` in [mloda-registry](https://github.com/mloda-ai/mloda-registry)
+Location: `docs/guides/compute-framework-patterns/`
 
 | # | Guide | Description |
 |---|-------|-------------|
@@ -203,4 +226,4 @@ Q3: Need state with ParallelizationMode.MULTIPROCESSING?
     YES → Use class-level storage (pickle-safe)
 ```
 
-Full guide: `docs/guides/11-create-extender.md` in [mloda-registry](https://github.com/mloda-ai/mloda-registry)
+Full guide: `docs/guides/11-create-extender.md`
