@@ -64,13 +64,20 @@ class BaseDeduplicator(BaseRowDeduplicator):
     }
 
     PREFIX_PATTERN = r".*__deduped$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
 
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
         DEDUPLICATION_METHOD: property_spec(
-            "Algorithm used to detect duplicate texts", strict=True, allowed_values=DEDUPLICATION_METHODS
+            "Algorithm used to detect duplicate texts",
+            strict=True,
+            allowed_values=DEDUPLICATION_METHODS,
+            deferred_binding=True,
         ),
         SIMILARITY_THRESHOLD: property_spec("Threshold for considering texts as duplicates (0.0-1.0)", default=1.0),
         KEEP_STRATEGY: property_spec(

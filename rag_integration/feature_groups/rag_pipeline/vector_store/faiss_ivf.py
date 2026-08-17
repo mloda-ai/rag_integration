@@ -34,6 +34,7 @@ class FaissIVFIndexer(BaseVectorStore):
             "FAISS index type backing the vector store",
             strict=True,
             allowed_values={"ivf": "Approximate search using IndexIVFFlat"},
+            deferred_binding=True,
         ),
         NLIST: property_spec("Number of clusters for IVF index", default=10),
         NPROBE: property_spec("Number of clusters to search at query time", default=3),

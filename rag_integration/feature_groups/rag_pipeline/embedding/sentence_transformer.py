@@ -45,6 +45,7 @@ class SentenceTransformerEmbedder(BaseEmbedder):
             "Algorithm used to embed text into vectors",
             strict=True,
             allowed_values={"sentence_transformer": "Sentence Transformer semantic embeddings"},
+            deferred_binding=True,
         ),
         BaseEmbedder.EMBEDDING_DIM: property_spec(
             "Dimension of embeddings (determined by model, this is informational)", default=384

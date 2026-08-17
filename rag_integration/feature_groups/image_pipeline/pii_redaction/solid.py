@@ -37,6 +37,7 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
             "Technique used to obscure PII regions in images",
             strict=True,
             allowed_values={"solid": "Solid color fill over PII regions"},
+            deferred_binding=True,
         ),
         FILL_COLOR: property_spec(
             "RGB color tuple for solid fill (e.g., [0, 0, 0] for black)", default=list(DEFAULT_FILL_COLOR)

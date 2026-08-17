@@ -28,6 +28,7 @@ class SimplePIIRedactor(BasePIIRedactor):
             "Detector used to locate PII in text",
             strict=True,
             allowed_values={"simple": "Simple word-list based detection"},
+            deferred_binding=True,
         ),
         BasePIIRedactor.PII_TYPES: property_spec(
             "List of PII types to redact (EMAIL, PHONE, SSN, NAME, ALL)", default=["ALL"]

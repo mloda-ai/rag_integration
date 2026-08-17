@@ -26,6 +26,7 @@ class FaissFlatIndexer(BaseVectorStore):
             "FAISS index type backing the vector store",
             strict=True,
             allowed_values={"flat": "Exact search using IndexFlatL2"},
+            deferred_binding=True,
         ),
         DefaultOptionKeys.in_features: property_spec("Source feature containing embedding vectors to index"),
     }

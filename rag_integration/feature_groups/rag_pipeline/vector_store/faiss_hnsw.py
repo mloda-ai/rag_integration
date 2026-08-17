@@ -33,6 +33,7 @@ class FaissHNSWIndexer(BaseVectorStore):
             "FAISS index type backing the vector store",
             strict=True,
             allowed_values={"hnsw": "Graph-based ANN using IndexHNSWFlat"},
+            deferred_binding=True,
         ),
         HNSW_M: property_spec("Number of connections per node in HNSW graph", default=32),
         HNSW_EF_CONSTRUCTION: property_spec("Construction quality parameter for HNSW", default=40),

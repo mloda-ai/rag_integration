@@ -28,6 +28,7 @@ class ParagraphChunker(BaseChunker):
             "Strategy used to split documents into chunks",
             strict=True,
             allowed_values={"paragraph": "Paragraph-boundary aware chunks"},
+            deferred_binding=True,
         ),
         BaseChunker.CHUNK_SIZE: property_spec("Maximum size of each chunk (in characters)", default=512),
         BaseChunker.CHUNK_OVERLAP: property_spec("Overlap between consecutive chunks, in characters", default=128),

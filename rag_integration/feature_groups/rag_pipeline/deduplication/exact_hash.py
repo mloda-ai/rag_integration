@@ -28,6 +28,7 @@ class ExactHashDeduplicator(BaseDeduplicator):
             "Algorithm used to detect duplicate texts",
             strict=True,
             allowed_values={"exact_hash": "MD5 hash-based exact duplicate detection"},
+            deferred_binding=True,
         ),
         BaseDeduplicator.SIMILARITY_THRESHOLD: property_spec(
             "Threshold for considering texts as duplicates (0.0-1.0)", default=1.0

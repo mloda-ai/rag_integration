@@ -49,6 +49,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
             "Detector used to locate PII in text",
             strict=True,
             allowed_values={"presidio": "Microsoft Presidio-based PII detection"},
+            deferred_binding=True,
         ),
         LANGUAGE: property_spec("Language code passed to the Presidio analyzer (e.g. 'en')", default=DEFAULT_LANGUAGE),
         BasePIIRedactor.PII_TYPES: property_spec(

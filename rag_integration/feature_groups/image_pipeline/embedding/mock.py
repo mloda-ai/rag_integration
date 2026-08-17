@@ -29,6 +29,7 @@ class MockImageEmbedder(BaseImageEmbedder):
             "Algorithm used to embed images into vectors",
             strict=True,
             allowed_values={"mock": "Deterministic mock image embeddings for testing"},
+            deferred_binding=True,
         ),
         BaseImageEmbedder.EMBEDDING_DIM: property_spec("Dimension of the embedding vectors", default=512),
         BaseImageEmbedder.MODEL_NAME: property_spec("Name of the embedding model", default="default"),

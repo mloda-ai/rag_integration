@@ -11,10 +11,13 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from mloda.provider import FeatureSet, property_spec
 from mloda.provider import DefaultOptionKeys
+
+if TYPE_CHECKING:
+    from mloda.user import Feature
 
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
@@ -45,11 +48,16 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
     _model_cache: dict[str, Any] = {}
 
+    # Matches the PROPERTY_MAPPING default below; used when a caller invokes
+    # calculate_feature directly and skips mloda's option-default materialization.
+    DEFAULT_MODEL = _HF_MODEL_ID
+
     PROPERTY_MAPPING = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed images into vectors",
             strict=True,
             allowed_values={"clip": "CLIP model image embeddings"},
+            deferred_binding=True,
         ),
         BaseImageEmbedder.EMBEDDING_DIM: property_spec(
             "Dimension of the embedding vectors (CLIP default: 512)", default=512
@@ -57,6 +65,12 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         BaseImageEmbedder.MODEL_NAME: property_spec("Local path or HuggingFace model ID", default=_HF_MODEL_ID),
         DefaultOptionKeys.in_features: property_spec("Source feature containing images to embed"),
     }
+
+    @classmethod
+    def _get_model_name(cls, feature: "Feature") -> str:
+        """Get model name from feature options, defaulting to the HuggingFace CLIP model ID."""
+        name = feature.options.get(cls.MODEL_NAME)
+        return str(name) if name is not None else cls.DEFAULT_MODEL
 
     @classmethod
     def _resolve_model_path(cls, model_name: str) -> str:

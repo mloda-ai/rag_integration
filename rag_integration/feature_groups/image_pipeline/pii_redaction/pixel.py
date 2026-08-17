@@ -37,6 +37,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
             "Technique used to obscure PII regions in images",
             strict=True,
             allowed_values={"pixel": "Pixelate PII regions"},
+            deferred_binding=True,
         ),
         PIXEL_SIZE: property_spec("Size of each pixel block in the mosaic effect", default=DEFAULT_PIXEL_SIZE),
         BaseImagePIIRedactor.PII_REGIONS: property_spec(

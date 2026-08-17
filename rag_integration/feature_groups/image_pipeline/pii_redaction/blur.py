@@ -37,6 +37,7 @@ class BlurPIIRedactor(BaseImagePIIRedactor):
             "Technique used to obscure PII regions in images",
             strict=True,
             allowed_values={"blur": "Gaussian blur over PII regions"},
+            deferred_binding=True,
         ),
         BLUR_RADIUS: property_spec("Radius of the Gaussian blur effect", default=DEFAULT_BLUR_RADIUS),
         BaseImagePIIRedactor.PII_REGIONS: property_spec(

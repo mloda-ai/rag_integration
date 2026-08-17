@@ -1,4 +1,4 @@
-"""Repo-wide invariant: every PROPERTY_MAPPING default must be an accepted value.
+"""Repo-wide invariant: every PROPERTY_MAPPING value must be a valid PropertySpec.
 
 mloda enforces this at class-definition time (``FeatureChainParser.validate_property_mapping_defaults``
 in ``FeatureGroup.__init_subclass__``), so a violation is already an import error. The sweep still
@@ -12,7 +12,8 @@ import importlib
 import pkgutil
 from typing import Any, Dict, List, Optional, Type
 
-from mloda.provider import DefaultOptionKeys, FeatureChainParser, FeatureGroup
+import pytest
+from mloda.provider import FeatureChainParser, FeatureGroup, PropertySpec
 
 import rag_integration.feature_groups
 
@@ -58,28 +59,31 @@ def _all_feature_groups() -> List[Type[FeatureGroup]]:
     return sorted(collected, key=lambda c: f"{c.__module__}.{c.__name__}")
 
 
-def test_validator_catches_bad_default() -> None:
-    """Guard against a vacuously green check: a default outside the accepted values must be flagged."""
-    bad_mapping: Dict[str, Any] = {
-        "mode": {
-            DefaultOptionKeys.allowed_values: {"fast": "fast mode", "slow": "slow mode"},
-            DefaultOptionKeys.default: "turbo",
-            DefaultOptionKeys.strict_validation: True,
-        }
-    }
+def test_validator_catches_raw_dict_spec() -> None:
+    """Guard against reverting to the retired dict form: validate_property_mapping_defaults must catch it."""
+    bad_mapping: Dict[str, Any] = {"mode": {"allowed_values": {"fast": "fast mode"}}}
     assert _validate("DummyOwner", bad_mapping)
 
 
-def test_validator_catches_default_rejected_by_element_validator() -> None:
-    bad_mapping: Dict[str, Any] = {
-        "size": {
-            "explanation": "positive size",
-            DefaultOptionKeys.default: -1,
-            DefaultOptionKeys.strict_validation: True,
-            DefaultOptionKeys.element_validator: lambda value: isinstance(value, int) and value > 0,
-        }
-    }
-    assert _validate("DummyOwner", bad_mapping)
+def test_property_spec_rejects_default_outside_allowed_values() -> None:
+    """Guard against a default outside allowed_values silently passing; PropertySpec.__post_init__ must flag it."""
+    with pytest.raises(ValueError):
+        PropertySpec(
+            "mode",
+            allowed_values={"fast": "fast mode", "slow": "slow mode"},
+            default="turbo",
+            strict_validation=True,
+        )
+
+
+def test_property_spec_rejects_default_failing_element_validator() -> None:
+    with pytest.raises(ValueError):
+        PropertySpec(
+            "size",
+            default=-1,
+            strict_validation=True,
+            element_validator=lambda value: isinstance(value, int) and value > 0,
+        )
 
 
 def test_group_context_split_is_stable() -> None:
@@ -92,12 +96,11 @@ def test_group_context_split_is_stable() -> None:
     misplaced: List[str] = []
     for feature_group in _all_feature_groups():
         is_connector = ".connectors." in feature_group.__module__
+        owner = f"{feature_group.__module__}.{feature_group.__name__}"
         for key, spec in (feature_group.PROPERTY_MAPPING or {}).items():
-            if not isinstance(spec, dict):
-                continue
-            is_context = bool(spec.get(DefaultOptionKeys.context, False))
+            assert isinstance(spec, PropertySpec), f"{owner}.{key} is a {type(spec).__name__}, not a PropertySpec"
+            is_context = spec.context
             if is_context is is_connector:
-                owner = f"{feature_group.__module__}.{feature_group.__name__}"
                 expected = "group (pass context=False)" if is_connector else "context"
                 misplaced.append(f"{owner}.{key}: expected {expected}")
 
@@ -106,7 +109,7 @@ def test_group_context_split_is_stable() -> None:
     )
 
 
-def test_all_property_mapping_defaults_are_accepted_values() -> None:
+def test_all_property_mapping_values_are_property_specs() -> None:
     feature_groups = _all_feature_groups()
     # 74 feature groups exist today; lower this only when groups are deliberately removed.
     assert len(feature_groups) >= 74, f"feature group discovery looks broken, found {len(feature_groups)}"
@@ -116,4 +119,4 @@ def test_all_property_mapping_defaults_are_accepted_values() -> None:
         owner = f"{feature_group.__module__}.{feature_group.__name__}"
         violations.extend(_validate(owner, feature_group.PROPERTY_MAPPING))
 
-    assert not violations, "PROPERTY_MAPPING defaults outside accepted values:\n" + "\n".join(violations)
+    assert not violations, "PROPERTY_MAPPING values that are not valid PropertySpec objects:\n" + "\n".join(violations)

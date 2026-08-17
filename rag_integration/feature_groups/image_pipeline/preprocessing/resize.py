@@ -28,6 +28,7 @@ class ResizePreprocessor(BaseImagePreprocessor):
             "Image preprocessing operation to apply",
             strict=True,
             allowed_values={"resize": "Resize images to target dimensions"},
+            deferred_binding=True,
         ),
         BaseImagePreprocessor.TARGET_SIZE: property_spec(
             "Target size as [width, height] in pixels", default=[224, 224]

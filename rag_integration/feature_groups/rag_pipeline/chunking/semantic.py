@@ -50,6 +50,7 @@ class SemanticChunker(BaseChunker):
             "Strategy used to split documents into chunks",
             strict=True,
             allowed_values={"semantic": "Semantic boundary aware chunks using embeddings"},
+            deferred_binding=True,
         ),
         BaseChunker.CHUNK_SIZE: property_spec("Maximum size of each chunk (in characters, soft limit)", default=512),
         SIMILARITY_THRESHOLD: property_spec(

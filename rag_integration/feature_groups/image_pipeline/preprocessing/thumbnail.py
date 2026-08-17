@@ -29,6 +29,7 @@ class ThumbnailPreprocessor(BaseImagePreprocessor):
             "Image preprocessing operation to apply",
             strict=True,
             allowed_values={"thumbnail": "Generate thumbnail preserving aspect ratio"},
+            deferred_binding=True,
         ),
         BaseImagePreprocessor.TARGET_SIZE: property_spec(
             "Maximum size as [width, height] in pixels", default=[224, 224]

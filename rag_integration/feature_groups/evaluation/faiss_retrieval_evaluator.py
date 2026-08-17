@@ -64,6 +64,10 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     """
 
     PREFIX_PATTERN = r".*__indexed__evaluated$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 

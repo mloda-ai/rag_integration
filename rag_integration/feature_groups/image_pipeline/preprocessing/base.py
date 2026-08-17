@@ -63,13 +63,20 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
     }
 
     PREFIX_PATTERN = r".*__preprocessed$"
+    # Captureless: recognition only, every option comes from config, never from the name.
+    # See mloda 0.11.0 release notes for RECOGNITION_ONLY_PATTERN:
+    # https://github.com/mloda-ai/mloda/releases/tag/0.11.0
+    RECOGNITION_ONLY_PATTERN = True
 
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
     PROPERTY_MAPPING = {
         PREPROCESSING_METHOD: property_spec(
-            "Image preprocessing operation to apply", strict=True, allowed_values=PREPROCESSING_METHODS
+            "Image preprocessing operation to apply",
+            strict=True,
+            allowed_values=PREPROCESSING_METHODS,
+            deferred_binding=True,
         ),
         TARGET_SIZE: property_spec("Target size as [width, height] in pixels", default=[224, 224]),
         DefaultOptionKeys.in_features: property_spec("Source feature containing images to preprocess"),
