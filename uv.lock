@@ -3107,7 +3107,7 @@ wheels = [
 
 [[package]]
 name = "rag-integration"
-version = "0.4.1"
+version = "0.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "mloda" },
