@@ -49,21 +49,13 @@ from rag_integration.feature_groups.rag_pipeline.vector_store import (
 )
 
 __all__ = [
-    # Chunking
     "BaseChunker",
-    # Deduplication
     "BaseDeduplicator",
-    # Document Source
     "BaseDocumentSource",
-    # Embedding
     "BaseEmbedder",
-    # LLM Response
     "BaseLLMResponse",
-    # PII Redaction
     "BasePIIRedactor",
-    # Retrieval
     "BaseRetriever",
-    # Vector Store
     "BaseVectorStore",
     "ClaudeCliResponse",
     "DictDocumentSource",

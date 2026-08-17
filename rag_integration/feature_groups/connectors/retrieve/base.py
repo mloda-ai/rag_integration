@@ -30,7 +30,11 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 
-from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, RankingContractError
+from rag_integration.feature_groups.connectors.errors import (
+    DuplicateDocIdError,
+    InvalidOptionError,
+    RankingContractError,
+)
 from rag_integration.feature_groups.connectors.mixins import (
     DocCollectionMixin,
     OptionsMixin,
@@ -175,7 +179,7 @@ class BaseRetrieveConnector(
 
         for i, doc in enumerate(corpus):
             if not isinstance(doc, dict):
-                raise ValueError(
+                raise InvalidOptionError(
                     f"{cls.__name__} corpus entry at index {i} is not a dict: {doc!r}. "
                     f"Each entry must be a {{doc_id, text}} dict."
                 )

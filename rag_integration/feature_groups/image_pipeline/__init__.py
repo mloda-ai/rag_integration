@@ -31,15 +31,10 @@ from rag_integration.feature_groups.image_pipeline.preprocessing import (
 )
 
 __all__ = [
-    # Deduplication
     "BaseImageDeduplicator",
-    # Embedding
     "BaseImageEmbedder",
-    # PII Redaction
     "BaseImagePIIRedactor",
-    # Preprocessing
     "BaseImagePreprocessor",
-    # Image Source
     "BaseImageSource",
     "BlurPIIRedactor",
     "CLIPImageEmbedder",

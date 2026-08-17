@@ -124,8 +124,7 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
 
             if (
                 keep_strategy == "all_unique"
-                or keep_strategy == "first"
-                and duplicate_of[i] is None
+                or (keep_strategy == "first" and duplicate_of[i] is None)
                 or keep_strategy == cls.KEEP_LARGEST_STRATEGY
             ):
                 result.append(new_row)

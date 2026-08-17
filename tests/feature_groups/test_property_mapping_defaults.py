@@ -41,7 +41,7 @@ def _all_feature_groups() -> list[type[FeatureGroup]]:
     ):
         try:
             importlib.import_module(module_info.name)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - any import failure must fail the assert below
             import_failures.append(f"{module_info.name}: {exc!r}")
     assert not import_failures, "feature_groups modules failed to import:\n" + "\n".join(import_failures)
 
