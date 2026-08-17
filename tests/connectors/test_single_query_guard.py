@@ -9,7 +9,7 @@ that each one wires up ``_assert_single_feature`` in ``calculate_feature``.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -33,7 +33,7 @@ class _MinimalRetrieve(BaseRetrieveConnector):
     RETRIEVE_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         return []
 
 
@@ -41,7 +41,7 @@ class _MinimalRerank(BaseRerankConnector):
     RERANK_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         return []
 
 
@@ -49,7 +49,7 @@ class _MinimalGenerate(BaseGenerateConnector):
     GENERATE_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return "", []
 
 
@@ -57,7 +57,7 @@ class _MinimalGraphRag(BaseGraphRagConnector):
     GRAPH_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], edges: List[Tuple[int, int]], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], edges: list[tuple[int, int]], top_k: int) -> list[tuple[int, float]]:
         return []
 
 
@@ -65,7 +65,7 @@ class _MinimalKgSource(BaseKnowledgeGraphSource):
     KG_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _build_graph(cls, options: Any) -> Dict[str, Any]:
+    def _build_graph(cls, options: Any) -> dict[str, Any]:
         return {"nodes": [], "edges": []}
 
 
@@ -73,7 +73,7 @@ class _MinimalStructured(BaseStructuredConnector):
     STRUCTURED_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _to_sql(cls, question: str, table: str, columns: List[str]) -> Tuple[str, List[Any]]:
+    def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
         return f"SELECT * FROM {table}", []  # nosec B608
 
 
@@ -81,7 +81,7 @@ class _MinimalOrchestrator(BaseOrchestratorConnector):
     ORCHESTRATOR_BACKENDS = {"_stub": "test-only"}
 
     @classmethod
-    def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
+    def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
         return "", []
 
 

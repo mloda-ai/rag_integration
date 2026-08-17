@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import math
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -39,10 +38,10 @@ class MockEmbedder(BaseEmbedder):
     @classmethod
     def _embed_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding_dim: int,
         model_name: str,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         """
         Generate mock embeddings based on text hash.
 
@@ -63,7 +62,7 @@ class MockEmbedder(BaseEmbedder):
         return embeddings
 
     @classmethod
-    def _generate_mock_embedding(cls, text: str, dim: int) -> List[float]:
+    def _generate_mock_embedding(cls, text: str, dim: int) -> list[float]:
         """
         Generate a deterministic mock embedding for a text.
 

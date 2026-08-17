@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import BaseArtifact, ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    BaseArtifact,
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -97,7 +102,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
             return False
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -119,7 +124,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
         return str(name) if name is not None else "default"
 
     @staticmethod
-    def artifact() -> Optional[Type[BaseArtifact]]:
+    def artifact() -> type[BaseArtifact] | None:
         """Return the artifact class for this embedder. None by default."""
         return None
 
@@ -130,7 +135,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
         image_data: bytes,
         embedding_dim: int,
         model_name: str,
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Generate embedding for a single image.
 
@@ -145,7 +150,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Generate embeddings for images, processing row by row for memory efficiency."""
         # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         rows = columnar_to_rows(data)

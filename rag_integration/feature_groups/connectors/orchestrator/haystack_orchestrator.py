@@ -12,7 +12,7 @@ offline and deterministic.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -43,7 +43,7 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
     }
 
     @classmethod
-    def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
+    def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
         # Haystack evaluates telemetry at first import (and Pipeline.run() would
         # otherwise POST a PostHog event and write ~/.haystack/config.yaml), so
         # opt out before the lazy import to keep runs offline and deterministic.
@@ -69,7 +69,7 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
         pipeline.add_component("retriever", InMemoryBM25Retriever(document_store=store, top_k=effective_k))
         result = pipeline.run({"retriever": {"query": query}})
 
-        # document.score is Optional[float]; the BM25 retriever filters out
+        # document.score is float | None; the BM25 retriever filters out
         # non-positive scores, so every surfaced document carries a float score.
         documents = [
             {"doc_id": document.id, "text": document.content, "score": float(document.score)}

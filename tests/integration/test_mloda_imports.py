@@ -3,7 +3,7 @@
 
 def test_mloda_provider_imports() -> None:
     """Verify mloda.provider module imports work."""
-    from mloda.provider import FeatureGroup, ComputeFramework
+    from mloda.provider import ComputeFramework, FeatureGroup
 
     assert FeatureGroup is not None
     assert ComputeFramework is not None

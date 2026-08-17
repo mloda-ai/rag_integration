@@ -9,16 +9,15 @@ identifiers are rejected).
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Set, Type
+from typing import Any
 
 import pytest
-
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.structured.base import BaseStructuredConnector
 
 
@@ -29,7 +28,7 @@ class StructuredConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def connector_class(cls) -> Type[BaseStructuredConnector]:
+    def connector_class(cls) -> type[BaseStructuredConnector]:
         """Return the concrete ``BaseStructuredConnector`` subclass under test."""
 
     @classmethod
@@ -43,11 +42,11 @@ class StructuredConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def columns(cls) -> List[str]: ...
+    def columns(cls) -> list[str]: ...
 
     @classmethod
     @abstractmethod
-    def rows(cls) -> List[Dict[str, Any]]: ...
+    def rows(cls) -> list[dict[str, Any]]: ...
 
     @classmethod
     @abstractmethod
@@ -66,7 +65,7 @@ class StructuredConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def expected_filter_keys(cls) -> Set[str]:
+    def expected_filter_keys(cls) -> set[str]:
         """The ``key_column`` values expected from ``filter_question`` (a strict subset)."""
 
     @classmethod
@@ -77,12 +76,12 @@ class StructuredConnectorContractBase(ABC):
     # -- Helpers --------------------------------------------------------------
 
     @classmethod
-    def _query(cls, question: str) -> Dict[str, Any]:
+    def _query(cls, question: str) -> dict[str, Any]:
         connector = cls.connector_class()
         return connector._query(question, cls.table_name(), cls.columns(), cls.rows())
 
     @classmethod
-    def _run_all(cls, question: str) -> Dict[str, Any]:
+    def _run_all(cls, question: str) -> dict[str, Any]:
         connector = cls.connector_class()
         feature = Feature(
             connector.ROOT_FEATURE_NAME,
@@ -104,7 +103,7 @@ class StructuredConnectorContractBase(ABC):
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
-                    answer: Dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
+                    answer: dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
                     return answer
         raise AssertionError(f"run_all returned no '{connector.ROOT_FEATURE_NAME}' row: {result!r}")
 

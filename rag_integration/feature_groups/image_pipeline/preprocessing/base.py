@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -96,7 +100,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
             return False
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -106,7 +110,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
         return source_features[0]
 
     @classmethod
-    def _get_target_size(cls, feature: Feature) -> List[int]:
+    def _get_target_size(cls, feature: Feature) -> list[int]:
         """Get target size from feature options."""
         size = feature.options.get(cls.TARGET_SIZE)
         if size is None:
@@ -121,7 +125,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
         cls,
         image_data: bytes,
         image_format: str,
-        target_size: List[int],
+        target_size: list[int],
     ) -> bytes:
         """
         Preprocess a single image.
@@ -137,7 +141,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Preprocess images row by row for memory efficiency."""
         # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         rows = columnar_to_rows(data)

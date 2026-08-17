@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.deduplication.base import BaseImageDeduplicator
@@ -91,9 +89,9 @@ class DifferenceHashImageDeduplicator(BaseImageDeduplicator):
     @classmethod
     def _find_duplicates(
         cls,
-        image_data_list: List[bytes],
+        image_data_list: list[bytes],
         threshold: float,
-    ) -> List[Optional[int]]:
+    ) -> list[int | None]:
         """
         Find near-duplicates using difference hashing.
 
@@ -109,8 +107,8 @@ class DifferenceHashImageDeduplicator(BaseImageDeduplicator):
         total_bits = hash_size * hash_size
         max_distance = int((1.0 - threshold) * total_bits)
 
-        hashes: List[int] = []
-        result: List[Optional[int]] = []
+        hashes: list[int] = []
+        result: list[int | None] = []
 
         for i, image_data in enumerate(image_data_list):
             if not image_data:

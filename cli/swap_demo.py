@@ -35,23 +35,24 @@ fatal, and the swap story stays visible on any install.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from importlib.util import find_spec
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type
+from typing import Any
 
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
 from mloda.provider import FeatureGroup
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.generate import ExtractiveResponder, TemplateResponder
 from rag_integration.feature_groups.connectors.orchestrator import HaystackOrchestrator
 from rag_integration.feature_groups.connectors.retrieve import Bm25sRetriever, TfidfRetriever
 
 # A tiny corpus where the query shares terms with the pet docs and nothing else,
 # so every lexical backend ranks the same two documents above the distractors.
-CORPUS: List[Dict[str, str]] = [
+CORPUS: list[dict[str, str]] = [
     {"doc_id": "d0", "text": "the mat lay flat on the floor by the window"},
     {"doc_id": "d1", "text": "a dog can be a loyal and energetic pet"},
     {"doc_id": "d2", "text": "a cat is an independent and curious pet"},
@@ -62,13 +63,13 @@ TOP_K = 3
 
 # The inputs that the retrieve and orchestrator families share verbatim. The
 # across-family swap adds only a selector key on top of these.
-SHARED_INPUTS: Dict[str, Any] = {"query_text": QUERY, "corpus": CORPUS, "top_k": TOP_K}
+SHARED_INPUTS: dict[str, Any] = {"query_text": QUERY, "corpus": CORPUS, "top_k": TOP_K}
 
 # Every backend the demo can select, enabled together for every run. The fixed
 # set is the point: swapping a backend never touches this, only the options. An
 # enabled backend whose library is absent stays dormant (lazy import) unless a
 # run actually selects it, which :func:`_run_or_skip` guards.
-CONNECTORS: Set[Type[FeatureGroup]] = {
+CONNECTORS: set[type[FeatureGroup]] = {
     Bm25sRetriever,
     TfidfRetriever,
     ExtractiveResponder,
@@ -77,7 +78,7 @@ CONNECTORS: Set[Type[FeatureGroup]] = {
 }
 
 
-def run_connector(root_feature: str, options: Dict[str, Any]) -> Any:
+def run_connector(root_feature: str, options: dict[str, Any]) -> Any:
     """The invariant call shape every connector family shares.
 
     Build one Feature on the family's root name, run it through ``mlodaAPI`` with
@@ -95,14 +96,14 @@ def run_connector(root_feature: str, options: Dict[str, Any]) -> Any:
     )
     # Pivot the columnar partition (mloda 0.9.0) back to rows, matching the
     # sibling demos (cli/rag_demo.py, cli/eval_demo.py).
-    rows: List[Any] = columnar_to_rows(result[0]) if result else []
+    rows: list[Any] = columnar_to_rows(result[0]) if result else []
     for row in rows:
         if isinstance(row, dict) and root_feature in row:
             return row[root_feature]
     raise AssertionError(f"run_all returned no '{root_feature}' row: {result!r}")
 
 
-def _format_passages(passages: List[Dict[str, Any]]) -> str:
+def _format_passages(passages: list[dict[str, Any]]) -> str:
     """One line per ranked passage: ``rank. doc_id (score) text``."""
     if not passages:
         return "    (no passages)"
@@ -110,24 +111,24 @@ def _format_passages(passages: List[Dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _format_answer(answer: Dict[str, Any]) -> str:
+def _format_answer(answer: dict[str, Any]) -> str:
     """Render a ``{answer, citations}`` (generate) result."""
     if not answer.get("answer"):
         return "    (no answer)"
     return f"    answer:    {answer['answer']}\n    citations: {answer['citations']}"
 
 
-def _format_orchestrated(answer: Dict[str, Any]) -> str:
+def _format_orchestrated(answer: dict[str, Any]) -> str:
     """Render a ``{answer, documents}`` (orchestrator) result."""
     return f"    answer:    {answer['answer']}\n    documents: {[d['doc_id'] for d in answer['documents']]}"
 
 
 def _run_or_skip(
     label: str,
-    options: Dict[str, Any],
+    options: dict[str, Any],
     root_feature: str,
     render: Callable[[Any], str],
-    requires: Optional[str] = None,
+    requires: str | None = None,
 ) -> None:
     """Run one swap, skipping cleanly if its optional extra is not importable.
 
@@ -197,7 +198,7 @@ def demo_across_families() -> None:
     )
 
 
-DEMOS: Tuple[Callable[[], None], ...] = (
+DEMOS: tuple[Callable[[], None], ...] = (
     demo_within_family_retrieve,
     demo_within_family_generate,
     demo_across_families,

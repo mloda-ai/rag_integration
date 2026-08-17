@@ -10,8 +10,6 @@ Requires the ``faiss`` extra (the dense component).
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.fusion import rrf_fuse
@@ -31,7 +29,7 @@ class HybridRrfRetriever(BaseRetrieveConnector):
     yields no passages and the family rules hold unchanged.
     """
 
-    _COMPONENTS: Tuple[type[BaseRetrieveConnector], ...] = (Bm25sRetriever, FaissDenseRetriever)
+    _COMPONENTS: tuple[type[BaseRetrieveConnector], ...] = (Bm25sRetriever, FaissDenseRetriever)
 
     RETRIEVE_BACKENDS = {
         "hybrid_rrf": "Hybrid lexical (bm25s) + dense (faiss) retrieval fused with reciprocal-rank fusion",
@@ -49,7 +47,7 @@ class HybridRrfRetriever(BaseRetrieveConnector):
     }
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         # Each component ranks the whole corpus (not just top_k) so fusion sees
         # full rankings; components already return only positive-scoring pairs.
         rankings = [[idx for idx, _ in component._rank(query, texts, len(texts))] for component in cls._COMPONENTS]

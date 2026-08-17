@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import math
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -45,7 +44,7 @@ class HashImageEmbedder(BaseImageEmbedder):
         image_data: bytes,
         embedding_dim: int,
         model_name: str,
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Generate hash-based embedding from image pixel data.
 

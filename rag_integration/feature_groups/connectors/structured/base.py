@@ -25,10 +25,10 @@ from __future__ import annotations
 import re
 import sqlite3
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -57,7 +57,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
     COLUMNS = "columns"
     ROWS = "rows"
 
-    STRUCTURED_BACKENDS: Dict[str, str] = {}
+    STRUCTURED_BACKENDS: dict[str, str] = {}
 
     PROPERTY_MAPPING = {
         STRUCTURED_BACKEND: property_spec("Which structured (text-to-SQL) backend to use", context=False),
@@ -68,7 +68,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -78,7 +78,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -90,7 +90,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (the table arrives via Options)."""
-        return None
+        return
 
     @classmethod
     def _validate_identifier(cls, name: str, kind: str) -> str:
@@ -106,7 +106,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
 
     @classmethod
     @abstractmethod
-    def _to_sql(cls, question: str, table: str, columns: List[str]) -> Tuple[str, List[Any]]:
+    def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
         """Translate ``question`` into a read-only SQL statement.
 
         Returns ``(sql, params)`` where ``sql`` is a single ``SELECT`` over
@@ -140,9 +140,9 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
         cls,
         question: str,
         table: str,
-        columns: List[str],
-        rows: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        columns: list[str],
+        rows: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Translate, validate, and execute the query over an in-memory SQLite table."""
         table = cls._validate_identifier(table, "table")
         columns = [cls._validate_identifier(c, "column") for c in columns]
@@ -181,7 +181,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
         return {"sql": sql, "rows": result_rows}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Answer the question over the supplied table, return the SQL and rows."""
         cls._assert_single_feature(features)
         for feature in features.features:

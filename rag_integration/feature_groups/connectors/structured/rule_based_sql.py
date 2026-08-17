@@ -10,7 +10,7 @@ right CI anchor; LLM-backed translators are pedigree backends for later.
 from __future__ import annotations
 
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -56,7 +56,7 @@ class RuleBasedSql(BaseStructuredConnector):
     }
 
     @classmethod
-    def _find_filter(cls, tokens: List[str], columns: List[str]) -> Optional[Tuple[str, str]]:
+    def _find_filter(cls, tokens: list[str], columns: list[str]) -> tuple[str, str] | None:
         """Return ``(column, value)`` for the first column (in declaration
         order) named in the question and followed by a value token, or None."""
         for column in columns:
@@ -68,7 +68,7 @@ class RuleBasedSql(BaseStructuredConnector):
         return None
 
     @classmethod
-    def _to_sql(cls, question: str, table: str, columns: List[str]) -> Tuple[str, List[Any]]:
+    def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
         tokens = _TOKEN_RE.findall(question.lower())
         token_set = set(tokens)
 

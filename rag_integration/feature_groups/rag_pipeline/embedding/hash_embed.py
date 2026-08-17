@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import math
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -40,10 +39,10 @@ class HashEmbedder(BaseEmbedder):
     @classmethod
     def _embed_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding_dim: int,
         model_name: str,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         """
         Generate hash-based embeddings.
 
@@ -67,7 +66,7 @@ class HashEmbedder(BaseEmbedder):
         return embeddings
 
     @classmethod
-    def _hash_embed(cls, text: str, dim: int) -> List[float]:
+    def _hash_embed(cls, text: str, dim: int) -> list[float]:
         """
         Generate a hash-based embedding for text.
 

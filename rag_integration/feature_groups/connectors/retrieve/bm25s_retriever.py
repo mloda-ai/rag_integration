@@ -7,8 +7,6 @@ ranked indices with scores directly). MIT-licensed, numpy-only.
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
@@ -41,7 +39,7 @@ class Bm25sRetriever(BaseRetrieveConnector):
     }
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         import bm25s
 
         corpus_tokens = bm25s.tokenize(texts, stopwords="en", show_progress=False)

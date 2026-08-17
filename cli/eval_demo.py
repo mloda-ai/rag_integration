@@ -40,17 +40,16 @@ Usage::
 from __future__ import annotations
 
 import argparse
-from typing import Dict, List, Set, Tuple
 
 from mloda.user import Options
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
-from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
+
 from rag_integration.feature_groups.datasets.image.flickr30k import Flickr30kDatasetSource
+from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
 
 
-def _print_results(dataset: str, embedder: str, results: Dict[str, object]) -> None:
+def _print_results(dataset: str, embedder: str, results: dict[str, object]) -> None:
     print(f"\nDataset: {dataset}  |  Corpus: {results['num_corpus']}  |  Queries: {results['num_queries']}")
     print(f"Embedder: {embedder}")
     print("─" * 40)
@@ -61,10 +60,10 @@ def _print_results(dataset: str, embedder: str, results: Dict[str, object]) -> N
 
 
 def _cosine_sim_rankings(
-    corpus_rows: List[Dict],  # type: ignore[type-arg]
-    query_rows: List[Dict],  # type: ignore[type-arg]
+    corpus_rows: list[dict],  # type: ignore[type-arg]
+    query_rows: list[dict],  # type: ignore[type-arg]
     embedding_key: str,
-) -> Tuple[Dict[str, Set[str]], Dict[str, List[str]]]:
+) -> tuple[dict[str, set[str]], dict[str, list[str]]]:
     """Compute cosine-similarity rankings. Returns (query_relevant, query_ranked)."""
     import numpy as np
 
@@ -76,8 +75,8 @@ def _cosine_sim_rankings(
 
     sims = query_matrix @ corpus_matrix.T  # Q × N
 
-    query_relevant: Dict[str, Set[str]] = {}
-    query_ranked: Dict[str, List[str]] = {}
+    query_relevant: dict[str, set[str]] = {}
+    query_ranked: dict[str, list[str]] = {}
 
     for q_idx, q_row in enumerate(query_rows):
         q_id = query_ids[q_idx]
@@ -121,7 +120,7 @@ def run_text_eval(data_dir: str, embedder_name: str) -> None:
     print("Computing Recall@K...")
     query_relevant, query_ranked = _cosine_sim_rankings(corpus_rows, query_rows, embedding_key)
 
-    results: Dict[str, object] = {
+    results: dict[str, object] = {
         "recall@1": mean_recall_at_k(query_relevant, query_ranked, k=1),
         "recall@5": mean_recall_at_k(query_relevant, query_ranked, k=5),
         "recall@10": mean_recall_at_k(query_relevant, query_ranked, k=10),
@@ -176,7 +175,7 @@ def run_image_eval(data_dir: str, embedder_name: str, max_samples: int) -> None:
     print("Computing Recall@K...")
     query_relevant, query_ranked = _cosine_sim_rankings(corpus_rows, query_rows, embedding_key)
 
-    results: Dict[str, object] = {
+    results: dict[str, object] = {
         "recall@1": mean_recall_at_k(query_relevant, query_ranked, k=1),
         "recall@5": mean_recall_at_k(query_relevant, query_ranked, k=5),
         "recall@10": mean_recall_at_k(query_relevant, query_ranked, k=10),
@@ -188,10 +187,12 @@ def run_image_eval(data_dir: str, embedder_name: str, max_samples: int) -> None:
 
 def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
     """Run SciFact through the full mloda pipeline with FAISS indexing."""
-    from mloda.user import mlodaAPI, PluginCollector, Feature, Options as MlodaOptions
+    from mloda.user import Feature, PluginCollector, mlodaAPI
+    from mloda.user import Options as MlodaOptions
     from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
         PythonDictFramework,
     )
+
     from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
     from rag_integration.feature_groups.evaluation.faiss_retrieval_evaluator import FaissRetrievalEvaluator
     from rag_integration.feature_groups.rag_pipeline.chunking.fixed_size import FixedSizeChunker
@@ -244,7 +245,7 @@ def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
     row = rows[0] if rows else {}
     metrics = row.get(feature_name, row)
 
-    results: Dict[str, object] = {
+    results: dict[str, object] = {
         "recall@1": metrics.get("recall@1", 0.0),
         "recall@5": metrics.get("recall@5", 0.0),
         "recall@10": metrics.get("recall@10", 0.0),

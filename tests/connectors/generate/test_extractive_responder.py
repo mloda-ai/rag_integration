@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
 from rag_integration.feature_groups.connectors.generate.extractive_responder import ExtractiveResponder
@@ -11,7 +11,7 @@ from tests.connectors.generate.generate_contract import GenerateConnectorContrac
 
 class TestExtractiveResponder(GenerateConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseGenerateConnector]:
+    def connector_class(cls) -> type[BaseGenerateConnector]:
         return ExtractiveResponder
 
     @classmethod
@@ -19,7 +19,7 @@ class TestExtractiveResponder(GenerateConnectorContractBase):
         return "extractive"
 
     @classmethod
-    def sample_passages(cls) -> List[Dict[str, Any]]:
+    def sample_passages(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "Cars need regular engine oil and maintenance."},
             {"doc_id": "d1", "text": "Cats need fresh water, a clean litter box, and daily play."},

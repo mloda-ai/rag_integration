@@ -12,10 +12,10 @@ connector family: it answers no query and returns no ranking.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -41,14 +41,14 @@ class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, FeatureGrou
     EDGES_KEY = "edges"
 
     # Filled per concrete; empty on the base so it never matches.
-    KG_BACKENDS: Dict[str, str] = {}
+    KG_BACKENDS: dict[str, str] = {}
 
     PROPERTY_MAPPING = {
         KG_BACKEND: property_spec("Which knowledge-graph source backend to use", context=False),
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -58,7 +58,7 @@ class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, FeatureGrou
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -70,16 +70,16 @@ class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, FeatureGrou
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (the graph definition arrives via Options)."""
-        return None
+        return
 
     @classmethod
     @abstractmethod
-    def _build_graph(cls, options: Options) -> Dict[str, Any]:
+    def _build_graph(cls, options: Options) -> dict[str, Any]:
         """Build the ``{nodes, edges}`` payload from this backend's options."""
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Emit the graph payload as a single row under the root feature name."""
         cls._assert_single_feature(features)
         for feature in features.features:
@@ -114,14 +114,14 @@ class TriplesKnowledgeGraph(BaseKnowledgeGraphSource):
     }
 
     @classmethod
-    def _resolve_triples(cls, options: Options) -> List[Tuple[str, str, str]]:
+    def _resolve_triples(cls, options: Options) -> list[tuple[str, str, str]]:
         raw = cls._require_option(options, cls.TRIPLES)
         if not isinstance(raw, (list, tuple)):
             raise InvalidOptionError(
                 f"{cls.__name__} '{cls.TRIPLES}' must be a list of [subject, predicate, object], "
                 f"got {type(raw).__name__}."
             )
-        triples: List[Tuple[str, str, str]] = []
+        triples: list[tuple[str, str, str]] = []
         for i, triple in enumerate(raw):
             if not isinstance(triple, (list, tuple)) or len(triple) != 3:
                 raise InvalidOptionError(
@@ -131,11 +131,11 @@ class TriplesKnowledgeGraph(BaseKnowledgeGraphSource):
         return triples
 
     @classmethod
-    def _build_graph(cls, options: Options) -> Dict[str, Any]:
+    def _build_graph(cls, options: Options) -> dict[str, Any]:
         triples = cls._resolve_triples(options)
 
-        entities: List[str] = []
-        sentences: Dict[str, List[str]] = {}
+        entities: list[str] = []
+        sentences: dict[str, list[str]] = {}
         for subject, predicate, obj in triples:
             sentence = f"{subject} {predicate} {obj}"
             # dict.fromkeys: a self-loop contributes its sentence once, not twice.
@@ -148,8 +148,8 @@ class TriplesKnowledgeGraph(BaseKnowledgeGraphSource):
 
         nodes = [{"doc_id": entity, "text": " ".join([entity] + sentences[entity])} for entity in entities]
 
-        edges: List[List[str]] = []
-        seen_pairs: Set[Tuple[str, str]] = set()
+        edges: list[list[str]] = []
+        seen_pairs: set[tuple[str, str]] = set()
         for subject, _, obj in triples:
             if subject == obj or (subject, obj) in seen_pairs:
                 continue

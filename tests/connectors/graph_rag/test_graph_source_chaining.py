@@ -9,17 +9,16 @@ existing contract suite).
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
-from mloda.user import mlodaAPI, Feature, FeatureName, Options, PluginCollector
+from mloda.user import Feature, FeatureName, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.graph_rag.adjacency_graph_rag import AdjacencyGraphRag
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
 from rag_integration.feature_groups.connectors.graph_rag.kg_source import TriplesKnowledgeGraph
@@ -28,7 +27,7 @@ from rag_integration.feature_groups.connectors.graph_rag.networkx_graph_rag impo
 # Connected entities carry their triple sentences, so they overlap the query
 # via the relations; the disconnected stock_market branch shares no token with
 # it (the tokenizer splits "stock_market" into "stock" and "market").
-_TRIPLES: List[List[str]] = [
+_TRIPLES: list[list[str]] = [
     ["chloroplast", "hosts", "photosynthesis"],
     ["photosynthesis", "produces", "glucose"],
     ["stock_market", "fell_on", "tuesday"],
@@ -37,8 +36,8 @@ _TRIPLES: List[List[str]] = [
 _QUERY = "photosynthesis"
 
 
-def _chained_context(backend: str = "adjacency", extra: Dict[str, Any] | None = None) -> Dict[str, Any]:
-    context: Dict[str, Any] = {
+def _chained_context(backend: str = "adjacency", extra: dict[str, Any] | None = None) -> dict[str, Any]:
+    context: dict[str, Any] = {
         AdjacencyGraphRag.GRAPH_BACKEND: backend,
         AdjacencyGraphRag.GRAPH_SOURCE: TriplesKnowledgeGraph.ROOT_FEATURE_NAME,
         AdjacencyGraphRag.QUERY_TEXT: _QUERY,
@@ -50,11 +49,11 @@ def _chained_context(backend: str = "adjacency", extra: Dict[str, Any] | None = 
     return context
 
 
-def _chained_options(extra: Dict[str, Any] | None = None) -> Options:
+def _chained_options(extra: dict[str, Any] | None = None) -> Options:
     return Options(context=_chained_context(extra=extra))
 
 
-def _run_chained(options: Options, connector: type[BaseGraphRagConnector] = AdjacencyGraphRag) -> List[Dict[str, Any]]:
+def _run_chained(options: Options, connector: type[BaseGraphRagConnector] = AdjacencyGraphRag) -> list[dict[str, Any]]:
     feature = Feature(connector.ROOT_FEATURE_NAME, options=options)
     result = mlodaAPI.run_all(
         [feature],
@@ -64,7 +63,7 @@ def _run_chained(options: Options, connector: type[BaseGraphRagConnector] = Adja
     for partition in result:
         for row in columnar_to_rows(partition):
             if connector.ROOT_FEATURE_NAME in row:
-                passages: List[Dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
+                passages: list[dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
                 return passages
     raise AssertionError(f"run_all returned no graph_passages row: {result!r}")
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.rerank.base import BaseRerankConnector
 from rag_integration.feature_groups.connectors.rerank.lexical_reranker import LexicalReranker
@@ -11,7 +11,7 @@ from tests.connectors.rerank.rerank_contract import RerankConnectorContractBase
 
 class TestLexicalReranker(RerankConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseRerankConnector]:
+    def connector_class(cls) -> type[BaseRerankConnector]:
         return LexicalReranker
 
     @classmethod
@@ -19,7 +19,7 @@ class TestLexicalReranker(RerankConnectorContractBase):
         return "lexical"
 
     @classmethod
-    def sample_candidates(cls) -> List[Dict[str, Any]]:
+    def sample_candidates(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "Cars need regular engine oil and maintenance."},
             {"doc_id": "d1", "text": "A complete guide to cat care: water, litter, and vet visits."},

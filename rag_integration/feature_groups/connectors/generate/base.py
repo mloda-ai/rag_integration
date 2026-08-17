@@ -24,10 +24,10 @@ ranked-passage list, so it copies the pattern rather than subclassing them.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -55,7 +55,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     PASSAGES = "passages"
 
     # Filled per concrete; empty on the base so it never matches.
-    GENERATE_BACKENDS: Dict[str, str] = {}
+    GENERATE_BACKENDS: dict[str, str] = {}
 
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
@@ -66,7 +66,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -76,7 +76,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -88,10 +88,10 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (passages arrive via Options)."""
-        return None
+        return
 
     @classmethod
-    def _get_passages(cls, options: Options) -> List[Dict[str, Any]]:
+    def _get_passages(cls, options: Options) -> list[dict[str, Any]]:
         passages = cls._require_doc_list(options, cls.PASSAGES)
         duplicate = cls._find_duplicate_doc_id(passages)
         if duplicate is not None:
@@ -102,7 +102,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
 
     @classmethod
     @abstractmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         """Answer ``query`` from ``passages``.
 
         Returns ``(answer, citations)`` where ``answer`` is the answer text and
@@ -114,7 +114,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
         ...
 
     @classmethod
-    def _validate_citations(cls, citations: List[str], passages: List[Dict[str, Any]]) -> None:
+    def _validate_citations(cls, citations: list[str], passages: list[dict[str, Any]]) -> None:
         """Reject any citation that is not one of the supplied passage doc_ids, or cited twice."""
         known = cls._known_doc_ids(passages)
         for citation in citations:
@@ -128,7 +128,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
             )
 
     @classmethod
-    def _answer(cls, query: str, passages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _answer(cls, query: str, passages: list[dict[str, Any]]) -> dict[str, Any]:
         """Assemble the answer contract around the backend's :meth:`_generate`."""
         if not passages:
             return {"answer": "", "citations": []}
@@ -153,7 +153,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
         return {"answer": answer, "citations": citations}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Generate an answer from the passages, return the answer object."""
         cls._assert_single_feature(features)
         for feature in features.features:

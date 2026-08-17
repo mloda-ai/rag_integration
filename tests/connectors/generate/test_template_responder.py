@@ -8,7 +8,7 @@ span two passages, so the multi-citation behaviour is exercised.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
 from rag_integration.feature_groups.connectors.generate.template_responder import TemplateResponder
@@ -17,7 +17,7 @@ from tests.connectors.generate.generate_contract import GenerateConnectorContrac
 
 class TestTemplateResponder(GenerateConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseGenerateConnector]:
+    def connector_class(cls) -> type[BaseGenerateConnector]:
         return TemplateResponder
 
     @classmethod
@@ -25,7 +25,7 @@ class TestTemplateResponder(GenerateConnectorContractBase):
         return "template"
 
     @classmethod
-    def sample_passages(cls) -> List[Dict[str, Any]]:
+    def sample_passages(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "Cars need regular engine oil and maintenance."},
             {"doc_id": "d1", "text": "A cat needs fresh water every day. The cat also needs a clean box."},

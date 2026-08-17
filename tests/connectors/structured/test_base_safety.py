@@ -10,7 +10,7 @@ rejected, plus the ``calculate_feature`` option-type guards.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -25,7 +25,7 @@ class _DeleteBackend(BaseStructuredConnector):
     STRUCTURED_BACKENDS = {"_delete_stub": "test-only stub"}
 
     @classmethod
-    def _to_sql(cls, question: str, table: str, columns: List[str]) -> Tuple[str, List[Any]]:
+    def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
         return "DELETE FROM pets", []
 
 
@@ -35,7 +35,7 @@ class _StackedBackend(BaseStructuredConnector):
     STRUCTURED_BACKENDS = {"_stacked_stub": "test-only stub"}
 
     @classmethod
-    def _to_sql(cls, question: str, table: str, columns: List[str]) -> Tuple[str, List[Any]]:
+    def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
         return "SELECT 1; DROP TABLE pets", []
 
 
@@ -45,7 +45,7 @@ class _UnterminatedBackend(BaseStructuredConnector):
     STRUCTURED_BACKENDS = {"_unterminated_stub": "test-only stub"}
 
     @classmethod
-    def _to_sql(cls, question: str, table: str, columns: List[str]) -> Tuple[str, List[Any]]:
+    def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
         return "SELECT 'unterminated FROM pets", []
 
 
@@ -95,7 +95,7 @@ def test_query_rejects_duplicate_columns_case_insensitively() -> None:
         RuleBasedSql._query("anything", "pets", ["Name", "name"], [{"Name": "Rex"}])
 
 
-def _make_features(context: Dict[str, Any]) -> Any:
+def _make_features(context: dict[str, Any]) -> Any:
     """Build a minimal FeatureSet mock whose options resolve from ``context``."""
     feature = MagicMock()
     feature.options.get.side_effect = context.get

@@ -1,7 +1,5 @@
 """Tests for NGramDeduplicator."""
 
-from typing import List, Optional, Type
-
 from rag_integration.feature_groups.rag_pipeline.deduplication import NGramDeduplicator
 from rag_integration.feature_groups.rag_pipeline.deduplication.base import BaseDeduplicator
 from tests.feature_groups.deduplication.text_dedup_test_base import TextDeduplicationTestBase
@@ -11,11 +9,11 @@ class TestNGramDeduplicator(TextDeduplicationTestBase):
     """Tests for NGramDeduplicator."""
 
     @property
-    def deduplicator_class(self) -> Type[BaseDeduplicator]:
+    def deduplicator_class(self) -> type[BaseDeduplicator]:
         return NGramDeduplicator
 
     @property
-    def duplicate_texts(self) -> List[str]:
+    def duplicate_texts(self) -> list[str]:
         return [
             "The quick brown fox jumps over the lazy dog",
             "The quick brown fox jumped over the lazy dog",
@@ -23,11 +21,11 @@ class TestNGramDeduplicator(TextDeduplicationTestBase):
         ]
 
     @property
-    def duplicate_expected_indices(self) -> List[Optional[int]]:
+    def duplicate_expected_indices(self) -> list[int | None]:
         return [None, 0, None]
 
     @property
-    def unique_texts(self) -> List[str]:
+    def unique_texts(self) -> list[str]:
         return ["apple", "banana", "cherry"]
 
     @property

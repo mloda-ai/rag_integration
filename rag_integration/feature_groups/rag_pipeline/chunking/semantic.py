@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import threading
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -63,26 +63,26 @@ class SemanticChunker(BaseChunker):
     # Cached as a single (model_name, model) tuple so the lock-free fast path
     # reads it atomically (one attribute load) instead of two fields that could
     # be observed mid-update.
-    _model_cache: Optional[Tuple[str, object]] = None
+    _model_cache: tuple[str, object] | None = None
     _model_lock = threading.Lock()
 
     # Pattern to split on sentence boundaries
     SENTENCE_PATTERN = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
 
     @classmethod
-    def _get_similarity_threshold(cls, feature: "Feature") -> float:
+    def _get_similarity_threshold(cls, feature: Feature) -> float:
         """Get the similarity threshold from feature options."""
         value = feature.options.get(cls.SIMILARITY_THRESHOLD)
         return float(value) if value is not None else cls.DEFAULT_SIMILARITY_THRESHOLD
 
     @classmethod
-    def _get_model_name(cls, feature: "Feature") -> str:
+    def _get_model_name(cls, feature: Feature) -> str:
         """Get the model name from feature options."""
         value = feature.options.get(cls.MODEL_NAME)
         return str(value) if value is not None else cls.DEFAULT_MODEL
 
     @classmethod
-    def _chunk_text_for_feature(cls, text: str, feature: "Feature") -> List[str]:
+    def _chunk_text_for_feature(cls, text: str, feature: Feature) -> list[str]:
         """Chunk text using the per-feature similarity threshold and model."""
         return cls._chunk_text_semantic(
             text,
@@ -118,13 +118,13 @@ class SemanticChunker(BaseChunker):
             return model
 
     @classmethod
-    def _split_sentences(cls, text: str) -> List[str]:
+    def _split_sentences(cls, text: str) -> list[str]:
         """Split text into sentences."""
         sentences = cls.SENTENCE_PATTERN.split(text)
         return [s.strip() for s in sentences if s.strip()]
 
     @classmethod
-    def _cosine_similarity(cls, vec1: List[float], vec2: List[float]) -> float:
+    def _cosine_similarity(cls, vec1: list[float], vec2: list[float]) -> float:
         """Compute cosine similarity between two vectors."""
         import math
 
@@ -142,7 +142,7 @@ class SemanticChunker(BaseChunker):
         text: str,
         chunk_size: int,
         chunk_overlap: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Split text into semantically coherent chunks.
 
@@ -171,7 +171,7 @@ class SemanticChunker(BaseChunker):
         chunk_size: int,
         similarity_threshold: float,
         model_name: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Split text into semantically coherent chunks.
 
@@ -199,8 +199,8 @@ class SemanticChunker(BaseChunker):
         embeddings = model.encode(sentences)  # type: ignore[attr-defined]
 
         # Group sentences by semantic similarity
-        chunks: List[str] = []
-        current_chunk: List[str] = [sentences[0]]
+        chunks: list[str] = []
+        current_chunk: list[str] = [sentences[0]]
         current_length = len(sentences[0])
 
         for i in range(1, len(sentences)):

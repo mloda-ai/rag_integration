@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from mloda.user import Options
 
@@ -31,7 +31,7 @@ class DictImageSource(BaseImageSource):
     """
 
     @classmethod
-    def _load_images(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_images(cls, options: Options) -> list[dict[str, Any]]:
         """
         Load images from Options.
 
@@ -60,7 +60,7 @@ class DictImageSource(BaseImageSource):
         for i, img in enumerate(images):
             if isinstance(img, bytes):
                 # Handle raw bytes
-                normalized: Dict[str, Any] = {
+                normalized: dict[str, Any] = {
                     "image_id": f"img_{i}",
                     "image_data": img,
                     "format": "unknown",

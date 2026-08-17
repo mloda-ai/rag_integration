@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Type
 
 from mloda.user import Options
 
@@ -15,7 +14,7 @@ class TextChunkingTestBase(ABC):
 
     @property
     @abstractmethod
-    def chunker_class(self) -> Type[BaseChunker]: ...
+    def chunker_class(self) -> type[BaseChunker]: ...
 
     def test_empty_text(self) -> None:
         """Should handle empty text."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess  # nosec B404
-from typing import Any, Dict, List
+from typing import Any
 
 from mloda.provider import property_spec
 from mloda.user import Options
@@ -76,7 +76,7 @@ class ClaudeCliResponse(BaseLLMResponse):
     @classmethod
     def _build_prompt(cls, query: str, context: str, system_prompt: str) -> str:
         """Assemble the full prompt text for Claude CLI."""
-        parts: List[str] = [system_prompt, ""]
+        parts: list[str] = [system_prompt, ""]
         if context:
             parts.append("Context:")
             parts.append(context)
@@ -92,7 +92,7 @@ class ClaudeCliResponse(BaseLLMResponse):
 
         Raises ValueError on non-zero exit code.
         """
-        cmd: List[str] = ["claude", "-p", "--output-format", "json", "--max-turns", str(max_turns)]
+        cmd: list[str] = ["claude", "-p", "--output-format", "json", "--max-turns", str(max_turns)]
         if allowed_tools:
             cmd.extend(["--allowedTools", allowed_tools])
 
@@ -100,7 +100,7 @@ class ClaudeCliResponse(BaseLLMResponse):
         if result.returncode != 0:
             raise ValueError(f"claude -p failed (exit {result.returncode}): {result.stderr}")
 
-        parsed: Dict[str, Any] = json.loads(result.stdout)
+        parsed: dict[str, Any] = json.loads(result.stdout)
         return str(parsed.get("result", result.stdout))
 
     @classmethod

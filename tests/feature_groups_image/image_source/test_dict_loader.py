@@ -1,7 +1,5 @@
 """Tests for DictImageSource."""
 
-from typing import Type
-
 import pytest
 from mloda.user import Options
 
@@ -14,7 +12,7 @@ class TestDictImageSource(ImageSourceTestBase):
     """Tests for DictImageSource."""
 
     @property
-    def source_class(self) -> Type[BaseImageSource]:
+    def source_class(self) -> type[BaseImageSource]:
         return DictImageSource
 
     def test_load_from_dict_list(self) -> None:

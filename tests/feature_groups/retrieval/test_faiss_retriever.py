@@ -7,7 +7,6 @@ from pathlib import Path
 
 import faiss
 import numpy as np
-
 from mloda.user import Options
 
 from rag_integration.feature_groups.rag_pipeline.retrieval import FaissRetriever

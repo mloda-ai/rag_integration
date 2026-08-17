@@ -1,7 +1,5 @@
 """Tests for SentenceChunker."""
 
-from typing import Type
-
 from rag_integration.feature_groups.rag_pipeline.chunking import SentenceChunker
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
 from tests.feature_groups.chunking.text_chunking_test_base import TextChunkingTestBase
@@ -11,7 +9,7 @@ class TestSentenceChunker(TextChunkingTestBase):
     """Tests for SentenceChunker."""
 
     @property
-    def chunker_class(self) -> Type[BaseChunker]:
+    def chunker_class(self) -> type[BaseChunker]:
         return SentenceChunker
 
     def test_split_at_sentence_boundaries(self) -> None:

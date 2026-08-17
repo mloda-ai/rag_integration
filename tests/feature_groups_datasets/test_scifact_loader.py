@@ -6,9 +6,9 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from mloda.user import Options
 
 from rag_integration.feature_groups.datasets.text.scifact import ScifactDatasetSource
-from mloda.user import Options
 
 
 def _make_options(data_dir: str = "/fake/scifact") -> Options:

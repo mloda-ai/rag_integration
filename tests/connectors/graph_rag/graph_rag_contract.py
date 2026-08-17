@@ -9,16 +9,15 @@ is not. A plain lexical retriever could not produce that result.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import pytest
-
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
 
 
@@ -29,7 +28,7 @@ class GraphRagConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def connector_class(cls) -> Type[BaseGraphRagConnector]:
+    def connector_class(cls) -> type[BaseGraphRagConnector]:
         """Return the concrete ``BaseGraphRagConnector`` subclass under test."""
 
     @classmethod
@@ -39,13 +38,13 @@ class GraphRagConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def sample_nodes(cls) -> List[Dict[str, Any]]:
+    def sample_nodes(cls) -> list[dict[str, Any]]:
         """Nodes (``{doc_id, text}``). Must include a relevant node, a zero-overlap
         node connected to it, and a zero-overlap isolated node."""
 
     @classmethod
     @abstractmethod
-    def sample_edges(cls) -> List[List[str]]:
+    def sample_edges(cls) -> list[list[str]]:
         """Edges (``[doc_id_a, doc_id_b]``) connecting the relevant and context nodes."""
 
     @classmethod
@@ -72,16 +71,16 @@ class GraphRagConnectorContractBase(ABC):
 
     @classmethod
     def _passages(
-        cls, query: str, nodes: List[Dict[str, Any]], edges: List[List[str]], top_k: int
-    ) -> List[Dict[str, Any]]:
+        cls, query: str, nodes: list[dict[str, Any]], edges: list[list[str]], top_k: int
+    ) -> list[dict[str, Any]]:
         connector = cls.connector_class()
         edge_pairs = [(str(a), str(b)) for a, b in edges]
         return connector._retrieve(query, nodes, edge_pairs, top_k)
 
     @classmethod
     def _run_all(
-        cls, query: str, nodes: List[Dict[str, Any]], edges: List[List[str]], top_k: int
-    ) -> List[Dict[str, Any]]:
+        cls, query: str, nodes: list[dict[str, Any]], edges: list[list[str]], top_k: int
+    ) -> list[dict[str, Any]]:
         connector = cls.connector_class()
         feature = Feature(
             connector.ROOT_FEATURE_NAME,
@@ -103,7 +102,7 @@ class GraphRagConnectorContractBase(ABC):
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
-                    passages: List[Dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
+                    passages: list[dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
                     return passages
         raise AssertionError(f"run_all returned no '{connector.ROOT_FEATURE_NAME}' row: {result!r}")
 

@@ -8,14 +8,14 @@ named ``Test*`` so pytest does not collect it directly.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Type
+from typing import Any
 
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.rerank.base import BaseRerankConnector
 
 
@@ -26,7 +26,7 @@ class RerankConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def connector_class(cls) -> Type[BaseRerankConnector]:
+    def connector_class(cls) -> type[BaseRerankConnector]:
         """Return the concrete ``BaseRerankConnector`` subclass under test."""
 
     @classmethod
@@ -36,7 +36,7 @@ class RerankConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def sample_candidates(cls) -> List[Dict[str, Any]]:
+    def sample_candidates(cls) -> list[dict[str, Any]]:
         """Return candidate passages (``{doc_id, text}``) with one determinate best match."""
 
     @classmethod
@@ -52,11 +52,11 @@ class RerankConnectorContractBase(ABC):
     # -- Helpers --------------------------------------------------------------
 
     @classmethod
-    def _rerank(cls, query: str, candidates: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
+    def _rerank(cls, query: str, candidates: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
         return cls.connector_class()._rerank(query, candidates, top_k)
 
     @classmethod
-    def _run_all(cls, query: str, candidates: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
+    def _run_all(cls, query: str, candidates: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
         connector = cls.connector_class()
         feature = Feature(
             connector.ROOT_FEATURE_NAME,
@@ -77,7 +77,7 @@ class RerankConnectorContractBase(ABC):
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
-                    passages: List[Dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
+                    passages: list[dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
                     return passages
         raise AssertionError(f"run_all returned no '{connector.ROOT_FEATURE_NAME}' row: {result!r}")
 

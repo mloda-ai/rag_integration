@@ -11,7 +11,7 @@ each contributing passage is cited.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -61,12 +61,12 @@ class TemplateResponder(BaseGenerateConnector):
     }
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         query_tokens = tokenize(query)
 
         # (score, passage_index, sentence_index, sentence, doc_id) for every
         # sentence that shares at least one distinct query token.
-        scored: List[Tuple[int, int, int, str, str]] = []
+        scored: list[tuple[int, int, int, str, str]] = []
         for passage_index, passage in enumerate(passages):
             doc_id = str(passage.get("doc_id", str(passage_index)))
             for sentence_index, raw_sentence in enumerate(SENTENCE_RE.findall(str(passage.get("text", "")))):

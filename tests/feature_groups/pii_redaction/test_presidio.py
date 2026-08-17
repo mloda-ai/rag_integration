@@ -6,7 +6,7 @@ exercise the configurable language option (issue: promote hardcoded values).
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 from unittest.mock import patch
 
 from mloda.user import Feature, Options
@@ -18,9 +18,9 @@ class _RecordingAnalyzer:
     """Stand-in for a Presidio AnalyzerEngine that records the language used."""
 
     def __init__(self) -> None:
-        self.languages: List[str] = []
+        self.languages: list[str] = []
 
-    def analyze(self, text: str, entities: List[str], language: str) -> List[Any]:
+    def analyze(self, text: str, entities: list[str], language: str) -> list[Any]:
         self.languages.append(language)
         return []
 

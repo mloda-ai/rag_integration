@@ -8,28 +8,27 @@ from __future__ import annotations
 
 import math
 import tempfile
-
 from pathlib import Path
-from typing import Any, Dict, Set, Type
+from typing import Any
 
-from mloda.user import mlodaAPI, mloda, PluginCollector, Domain, Feature, Options
 from mloda.provider import DataCreator, FeatureGroup
+from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
 from rag_integration.feature_groups.rag_pipeline import (
-    RegexPIIRedactor,
-    PresidioPIIRedactor,
-    FixedSizeChunker,
-    SentenceChunker,
-    SemanticChunker,
     ExactHashDeduplicator,
-    NormalizedDeduplicator,
-    MockEmbedder,
+    FixedSizeChunker,
     HashEmbedder,
-    TfidfEmbedder,
+    MockEmbedder,
+    NormalizedDeduplicator,
+    PresidioPIIRedactor,
+    RegexPIIRedactor,
+    SemanticChunker,
+    SentenceChunker,
     SentenceTransformerEmbedder,
+    TfidfEmbedder,
 )
 from tests.conftest import requires_sentence_transformer_model, requires_spacy_model
 from tests.integration.helpers import flatten_result, get_results_by_feature
@@ -54,7 +53,7 @@ class MockDocumentDataCreator(FeatureGroup):
         return str(feature_name) == "docs"
 
     @classmethod
-    def compute_framework_rule(cls) -> Set[Type[Any]]:
+    def compute_framework_rule(cls) -> set[type[Any]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -62,7 +61,7 @@ class MockDocumentDataCreator(FeatureGroup):
         return [{"docs": doc["text"], "doc_id": doc["doc_id"]} for doc in SAMPLE_DOCUMENTS]
 
 
-def get_test_providers() -> Set[Type[FeatureGroup]]:
+def get_test_providers() -> set[type[FeatureGroup]]:
     return {MockDocumentDataCreator, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
 
 
@@ -148,7 +147,7 @@ def make_domain_providers(
     deduplicator: type,
     embedder: type,
     pii_redactor: type = RegexPIIRedactor,
-) -> Set[Type[FeatureGroup]]:
+) -> set[type[FeatureGroup]]:
     """
     Factory to create a complete provider set with a specific domain.
     All providers in the chain get the same domain so feature matching works.
@@ -260,7 +259,7 @@ class TestEmbeddingArtifactIntegration:
             )
 
             # Options with artifact storage path
-            feature_options: Dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
+            feature_options: dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
 
             # First run: compute and save embeddings (mloda sets artifact_to_save automatically)
             feature1 = Feature(

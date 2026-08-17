@@ -8,16 +8,17 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Callable, List
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 
 
-def _run_concurrently(target: Callable[[], Any], threads: int = 8) -> List[Any]:
+def _run_concurrently(target: Callable[[], Any], threads: int = 8) -> list[Any]:
     """Run target() in many threads released simultaneously; return their results."""
     barrier = threading.Barrier(threads)
-    results: List[Any] = [None] * threads
-    errors: List[BaseException] = []
+    results: list[Any] = [None] * threads
+    errors: list[BaseException] = []
 
     def worker(idx: int) -> None:
         try:

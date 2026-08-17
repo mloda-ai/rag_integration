@@ -1,7 +1,6 @@
 """Tests for ThumbnailPreprocessor."""
 
 import io
-from typing import List, Type
 
 import pytest
 
@@ -19,11 +18,11 @@ class TestThumbnailPreprocessor(ImagePreprocessingTestBase):
     """Tests for ThumbnailPreprocessor."""
 
     @property
-    def preprocessor_class(self) -> Type[BaseImagePreprocessor]:
+    def preprocessor_class(self) -> type[BaseImagePreprocessor]:
         return ThumbnailPreprocessor
 
     @property
-    def target_size(self) -> List[int]:
+    def target_size(self) -> list[int]:
         return [100, 100]
 
     @property

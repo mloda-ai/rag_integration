@@ -6,7 +6,7 @@ they exercise the chunking/grouping logic and the per-feature option wiring.
 
 from __future__ import annotations
 
-from typing import Any, List, Type
+from typing import Any
 from unittest.mock import patch
 
 import numpy as np
@@ -20,10 +20,10 @@ from tests.feature_groups.chunking.text_chunking_test_base import TextChunkingTe
 class _FakeModel:
     """Stand-in for a SentenceTransformer returning fixed embeddings."""
 
-    def __init__(self, vectors: List[List[float]]) -> None:
+    def __init__(self, vectors: list[list[float]]) -> None:
         self._vectors = vectors
 
-    def encode(self, sentences: List[str]) -> Any:
+    def encode(self, sentences: list[str]) -> Any:
         return np.array(self._vectors, dtype=np.float32)
 
 
@@ -31,7 +31,7 @@ class TestSemanticChunker(TextChunkingTestBase):
     """Shared chunker contract tests."""
 
     @property
-    def chunker_class(self) -> Type[BaseChunker]:
+    def chunker_class(self) -> type[BaseChunker]:
         return SemanticChunker
 
 

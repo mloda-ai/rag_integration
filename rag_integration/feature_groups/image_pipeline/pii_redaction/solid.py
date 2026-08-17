@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -49,7 +49,7 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
     }
 
     @classmethod
-    def _get_fill_color(cls, feature: "Feature") -> Tuple[int, int, int]:
+    def _get_fill_color(cls, feature: Feature) -> tuple[int, int, int]:
         """Get the RGB fill color from feature options."""
         value = feature.options.get(cls.FILL_COLOR)
         if value is None:
@@ -65,8 +65,8 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
         cls,
         image_data: bytes,
         image_format: str,
-        regions: List[Dict[str, Any]],
-        feature: "Feature",
+        regions: list[dict[str, Any]],
+        feature: Feature,
     ) -> bytes:
         """Apply solid fill using the per-feature fill color."""
         return cls._redact_region(image_data, image_format, regions, fill_color=cls._get_fill_color(feature))
@@ -76,8 +76,8 @@ class SolidFillPIIRedactor(BaseImagePIIRedactor):
         cls,
         image_data: bytes,
         image_format: str,
-        regions: List[Dict[str, Any]],
-        fill_color: Tuple[int, int, int] = DEFAULT_FILL_COLOR,
+        regions: list[dict[str, Any]],
+        fill_color: tuple[int, int, int] = DEFAULT_FILL_COLOR,
     ) -> bytes:
         """
         Apply solid fill to PII regions.

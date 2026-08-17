@@ -7,15 +7,15 @@ assertion. The base is not named ``Test*`` so pytest does not collect it.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import pytest
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.orchestrator.base import BaseOrchestratorConnector
 
 
@@ -26,7 +26,7 @@ class OrchestratorConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def connector_class(cls) -> Type[BaseOrchestratorConnector]:
+    def connector_class(cls) -> type[BaseOrchestratorConnector]:
         """Return the concrete ``BaseOrchestratorConnector`` subclass under test."""
 
     @classmethod
@@ -36,7 +36,7 @@ class OrchestratorConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def sample_corpus(cls) -> List[Dict[str, Any]]:
+    def sample_corpus(cls) -> list[dict[str, Any]]:
         """Return a corpus (``{doc_id, text}``) with one clearly relevant doc."""
 
     @classmethod
@@ -57,11 +57,11 @@ class OrchestratorConnectorContractBase(ABC):
     # -- Helpers --------------------------------------------------------------
 
     @classmethod
-    def _answer(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Dict[str, Any]:
+    def _answer(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> dict[str, Any]:
         return cls.connector_class()._answer(query, corpus, top_k)
 
     @classmethod
-    def _run_all(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Dict[str, Any]:
+    def _run_all(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> dict[str, Any]:
         connector = cls.connector_class()
         feature = Feature(
             connector.ROOT_FEATURE_NAME,
@@ -82,7 +82,7 @@ class OrchestratorConnectorContractBase(ABC):
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
-                    answer: Dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
+                    answer: dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
                     return answer
         raise AssertionError(f"run_all returned no '{connector.ROOT_FEATURE_NAME}' row: {result!r}")
 

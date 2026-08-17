@@ -12,17 +12,16 @@ directly (it has abstract adapters and no backend). Concrete subclasses named
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
 
 
@@ -33,7 +32,7 @@ class RetrieveConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def connector_class(cls) -> Type[BaseRetrieveConnector]:
+    def connector_class(cls) -> type[BaseRetrieveConnector]:
         """Return the concrete ``BaseRetrieveConnector`` subclass under test."""
 
     @classmethod
@@ -43,7 +42,7 @@ class RetrieveConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def sample_corpus(cls) -> List[Dict[str, Any]]:
+    def sample_corpus(cls) -> list[dict[str, Any]]:
         """Return a small corpus of ``{doc_id, text}`` dicts.
 
         Craft it so the query has one determinate best match. For a lexical
@@ -69,7 +68,7 @@ class RetrieveConnectorContractBase(ABC):
         return "zebra"
 
     @classmethod
-    def matching_corpus(cls) -> List[Dict[str, Any]]:
+    def matching_corpus(cls) -> list[dict[str, Any]]:
         """Return a corpus in which every doc positively matches
         :meth:`matching_query`.
 
@@ -85,14 +84,14 @@ class RetrieveConnectorContractBase(ABC):
     # -- Helpers --------------------------------------------------------------
 
     @classmethod
-    def _retrieve(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
+    def _retrieve(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
         return cls.connector_class()._retrieve(query, corpus, top_k)
 
     @classmethod
-    def _options(cls, query: str, corpus: List[Dict[str, Any]], top_k: Optional[int]) -> Options:
+    def _options(cls, query: str, corpus: list[dict[str, Any]], top_k: int | None) -> Options:
         """Build the family Options; ``top_k=None`` omits the key (default applies)."""
         connector = cls.connector_class()
-        context: Dict[str, Any] = {
+        context: dict[str, Any] = {
             connector.RETRIEVE_BACKEND: cls.backend_value(),
             connector.QUERY_TEXT: query,
             connector.CORPUS: corpus,
@@ -111,7 +110,7 @@ class RetrieveConnectorContractBase(ABC):
         return features
 
     @classmethod
-    def _run_all(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> List[Dict[str, Any]]:
+    def _run_all(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
         connector = cls.connector_class()
         feature = Feature(connector.ROOT_FEATURE_NAME, options=cls._options(query, corpus, top_k))
         result = mlodaAPI.run_all(
@@ -122,7 +121,7 @@ class RetrieveConnectorContractBase(ABC):
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
-                    passages: List[Dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
+                    passages: list[dict[str, Any]] = row[connector.ROOT_FEATURE_NAME]
                     return passages
         raise AssertionError(f"run_all returned no '{connector.ROOT_FEATURE_NAME}' row: {result!r}")
 

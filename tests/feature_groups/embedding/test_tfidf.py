@@ -1,7 +1,6 @@
 """Tests for TfidfEmbedder."""
 
 import math
-from typing import List, Type
 
 from rag_integration.feature_groups.rag_pipeline.embedding import TfidfEmbedder
 from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
@@ -12,11 +11,11 @@ class TestTfidfEmbedder(TextEmbeddingTestBase):
     """Tests for TfidfEmbedder."""
 
     @property
-    def embedder_class(self) -> Type[BaseEmbedder]:
+    def embedder_class(self) -> type[BaseEmbedder]:
         return TfidfEmbedder
 
     @property
-    def sample_texts(self) -> List[str]:
+    def sample_texts(self) -> list[str]:
         return ["Hello world test", "Different text here"]
 
     @property

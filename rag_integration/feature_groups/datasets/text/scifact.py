@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from mloda.user import Options
 
@@ -42,7 +42,7 @@ class ScifactDatasetSource(BaseTextDatasetSource):
     DATA_DIR = "data_dir"
 
     @classmethod
-    def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_dataset(cls, options: Options) -> list[dict[str, Any]]:
         """Load scifact corpus + queries + qrels using the beir GenericDataLoader."""
         data_dir = options.get(cls.DATA_DIR)
         if not data_dir:
@@ -59,7 +59,7 @@ class ScifactDatasetSource(BaseTextDatasetSource):
 
         corpus, queries, qrels = GenericDataLoader(data_folder=str(data_dir)).load(split="test")
 
-        rows: List[Dict[str, Any]] = []
+        rows: list[dict[str, Any]] = []
 
         # Add corpus rows
         for doc_id, doc in corpus.items():

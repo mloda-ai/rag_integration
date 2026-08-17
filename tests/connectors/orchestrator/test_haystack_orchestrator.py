@@ -6,7 +6,7 @@ Skips cleanly when the ``orchestrator`` extra is not installed.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import pytest
 
@@ -20,7 +20,7 @@ pytest.importorskip("haystack")
 
 class TestHaystackOrchestrator(OrchestratorConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseOrchestratorConnector]:
+    def connector_class(cls) -> type[BaseOrchestratorConnector]:
         return HaystackOrchestrator
 
     @classmethod
@@ -28,7 +28,7 @@ class TestHaystackOrchestrator(OrchestratorConnectorContractBase):
         return "haystack"
 
     @classmethod
-    def sample_corpus(cls) -> List[Dict[str, Any]]:
+    def sample_corpus(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "Cars need regular engine oil and maintenance."},
             {"doc_id": "d1", "text": "A cat is an independent and curious pet."},

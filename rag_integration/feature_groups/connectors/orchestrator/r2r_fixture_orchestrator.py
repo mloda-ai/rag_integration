@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -64,11 +64,11 @@ class R2RFixtureOrchestrator(BaseOrchestratorConnector):
         ),
     }
 
-    _responses: Dict[str, Any] | None = None
+    _responses: dict[str, Any] | None = None
     _cache_lock = threading.Lock()
 
     @classmethod
-    def _get_responses(cls) -> Dict[str, Any]:
+    def _get_responses(cls) -> dict[str, Any]:
         """Load and cache the canned-response table from the bundled fixture.
 
         The returned table is the shared cache and must be treated as read-only;
@@ -91,7 +91,7 @@ class R2RFixtureOrchestrator(BaseOrchestratorConnector):
             return cls._responses
 
     @classmethod
-    def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
+    def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
         effective_k = min(top_k, len(corpus))
         if not query.strip() or effective_k <= 0:
             return "", []
@@ -106,7 +106,7 @@ class R2RFixtureOrchestrator(BaseOrchestratorConnector):
         # Narrowing: keep only canned doc_ids that are in the ingested corpus,
         # surfacing the corpus's own text (never the fixture's), so a surfaced
         # document is always grounded in what was actually supplied.
-        documents: List[Dict[str, Any]] = []
+        documents: list[dict[str, Any]] = []
         for entry in response.get("documents", []):
             doc_id = str(entry.get("doc_id"))
             if doc_id in text_by_doc_id:

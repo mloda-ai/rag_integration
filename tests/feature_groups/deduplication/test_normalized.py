@@ -1,7 +1,5 @@
 """Tests for NormalizedDeduplicator."""
 
-from typing import List, Optional, Type
-
 from rag_integration.feature_groups.rag_pipeline.deduplication import NormalizedDeduplicator
 from rag_integration.feature_groups.rag_pipeline.deduplication.base import BaseDeduplicator
 from tests.feature_groups.deduplication.text_dedup_test_base import TextDeduplicationTestBase
@@ -11,19 +9,19 @@ class TestNormalizedDeduplicator(TextDeduplicationTestBase):
     """Tests for NormalizedDeduplicator."""
 
     @property
-    def deduplicator_class(self) -> Type[BaseDeduplicator]:
+    def deduplicator_class(self) -> type[BaseDeduplicator]:
         return NormalizedDeduplicator
 
     @property
-    def duplicate_texts(self) -> List[str]:
+    def duplicate_texts(self) -> list[str]:
         return ["hello world", "hello  world", "hello   world"]
 
     @property
-    def duplicate_expected_indices(self) -> List[Optional[int]]:
+    def duplicate_expected_indices(self) -> list[int | None]:
         return [None, 0, 0]
 
     @property
-    def unique_texts(self) -> List[str]:
+    def unique_texts(self) -> list[str]:
         return ["Hello", "World", "Test"]
 
     @property

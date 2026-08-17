@@ -1,7 +1,6 @@
 """Tests for NormalizePreprocessor."""
 
 import io
-from typing import List, Type
 
 import pytest
 
@@ -19,11 +18,11 @@ class TestNormalizePreprocessor(ImagePreprocessingTestBase):
     """Tests for NormalizePreprocessor."""
 
     @property
-    def preprocessor_class(self) -> Type[BaseImagePreprocessor]:
+    def preprocessor_class(self) -> type[BaseImagePreprocessor]:
         return NormalizePreprocessor
 
     @property
-    def target_size(self) -> List[int]:
+    def target_size(self) -> list[int]:
         return [64, 64]
 
     @property

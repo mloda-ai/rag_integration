@@ -9,7 +9,7 @@ same inputs, so a drift in either implementation fails loudly here.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 
@@ -19,7 +19,7 @@ from rag_integration.feature_groups.connectors.graph_rag.networkx_graph_rag impo
 # Clean skip (not an error) when the `graph` extra is not installed.
 pytest.importorskip("networkx")
 
-_NODES: List[Dict[str, Any]] = [
+_NODES: list[dict[str, Any]] = [
     {"doc_id": "rel", "text": "Photosynthesis lets plants make energy from sunlight."},
     {"doc_id": "ctx", "text": "It happens inside the chloroplast organelle."},
     {"doc_id": "alt", "text": "Plants also respire and grow at night."},
@@ -29,7 +29,7 @@ _NODES: List[Dict[str, Any]] = [
 _QUERY = "photosynthesis plants"
 
 
-def _assert_parity(query: str, nodes: List[Dict[str, Any]], edges: List[Tuple[str, str]], top_k: int) -> None:
+def _assert_parity(query: str, nodes: list[dict[str, Any]], edges: list[tuple[str, str]], top_k: int) -> None:
     networkx_passages = NetworkxGraphRag._retrieve(query, nodes, edges, top_k)
     adjacency_passages = AdjacencyGraphRag._retrieve(query, nodes, edges, top_k)
     assert networkx_passages == adjacency_passages

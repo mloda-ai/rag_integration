@@ -9,7 +9,7 @@ engine-free adjacency implementation too.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.graph_rag.adjacency_graph_rag import AdjacencyGraphRag
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
@@ -18,7 +18,7 @@ from tests.connectors.graph_rag.graph_rag_contract import GraphRagConnectorContr
 
 class TestAdjacencyGraphRag(GraphRagConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseGraphRagConnector]:
+    def connector_class(cls) -> type[BaseGraphRagConnector]:
         return AdjacencyGraphRag
 
     @classmethod
@@ -26,7 +26,7 @@ class TestAdjacencyGraphRag(GraphRagConnectorContractBase):
         return "adjacency"
 
     @classmethod
-    def sample_nodes(cls) -> List[Dict[str, Any]]:
+    def sample_nodes(cls) -> list[dict[str, Any]]:
         return [
             # Relevant: shares "photosynthesis" and "plants" with the query.
             {"doc_id": "rel", "text": "Photosynthesis lets plants make energy from sunlight."},
@@ -37,7 +37,7 @@ class TestAdjacencyGraphRag(GraphRagConnectorContractBase):
         ]
 
     @classmethod
-    def sample_edges(cls) -> List[List[str]]:
+    def sample_edges(cls) -> list[list[str]]:
         return [["rel", "ctx"]]
 
     @classmethod

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import List, Set
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -42,7 +41,7 @@ class SimplePIIRedactor(BasePIIRedactor):
     }
 
     # Common first names (subset for demonstration)
-    COMMON_FIRST_NAMES: Set[str] = {
+    COMMON_FIRST_NAMES: set[str] = {
         "james",
         "john",
         "robert",
@@ -76,7 +75,7 @@ class SimplePIIRedactor(BasePIIRedactor):
     }
 
     # Common last names (subset for demonstration)
-    COMMON_LAST_NAMES: Set[str] = {
+    COMMON_LAST_NAMES: set[str] = {
         "smith",
         "johnson",
         "williams",
@@ -145,10 +144,10 @@ class SimplePIIRedactor(BasePIIRedactor):
     @classmethod
     def _redact_pii(
         cls,
-        texts: List[str],
-        pii_types: List[str],
+        texts: list[str],
+        pii_types: list[str],
         replacement_strategy: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Redact PII using word lists and simple patterns.
 

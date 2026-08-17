@@ -9,13 +9,13 @@ and deterministic ordering on a zero-overlap query.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 
 from rag_integration.feature_groups.connectors.graph_rag.adjacency_graph_rag import AdjacencyGraphRag
 
-_NODES: List[Dict[str, Any]] = [
+_NODES: list[dict[str, Any]] = [
     {"doc_id": "rel", "text": "Photosynthesis lets plants make energy from sunlight."},
     {"doc_id": "ctx", "text": "It happens inside the chloroplast organelle."},
     {"doc_id": "iso", "text": "The stock market fell sharply on Tuesday."},
@@ -24,11 +24,11 @@ _NODES: List[Dict[str, Any]] = [
 _QUERY = "photosynthesis plants"
 
 
-def _resolve(raw_edges: Any) -> List[Tuple[str, str]]:
+def _resolve(raw_edges: Any) -> list[tuple[str, str]]:
     return AdjacencyGraphRag._resolve_edges(raw_edges)
 
 
-def _passages(edges: List[Tuple[str, str]], query: str = _QUERY) -> List[Dict[str, Any]]:
+def _passages(edges: list[tuple[str, str]], query: str = _QUERY) -> list[dict[str, Any]]:
     return AdjacencyGraphRag._retrieve(query, _NODES, edges, len(_NODES))
 
 
@@ -72,7 +72,7 @@ def test_unknown_doc_id_edges_skipped() -> None:
 
 
 def test_duplicate_doc_ids_rejected_even_after_str_coercion() -> None:
-    nodes: List[Dict[str, Any]] = [{"doc_id": 1, "text": "first"}, {"doc_id": "1", "text": "second"}]
+    nodes: list[dict[str, Any]] = [{"doc_id": 1, "text": "first"}, {"doc_id": "1", "text": "second"}]
     with pytest.raises(ValueError, match="duplicate doc_id"):
         AdjacencyGraphRag._retrieve(_QUERY, nodes, [], len(nodes))
 

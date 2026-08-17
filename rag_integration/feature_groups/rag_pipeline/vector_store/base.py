@@ -3,17 +3,23 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import BaseArtifact, ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    BaseArtifact,
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
@@ -62,11 +68,11 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @staticmethod
-    def artifact() -> Optional[Type[BaseArtifact]]:
+    def artifact() -> type[BaseArtifact] | None:
         """Return VectorStoreArtifact for persisting FAISS indices."""
         return VectorStoreArtifact
 
@@ -78,7 +84,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
 
     @classmethod
     @abstractmethod
-    def _build_index(cls, embeddings: List[List[float]], dimension: int) -> Any:
+    def _build_index(cls, embeddings: list[list[float]], dimension: int) -> Any:
         """
         Build a FAISS index from embedding vectors.
 
@@ -98,7 +104,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Build FAISS index from embeddings, save via artifact, attach row metadata."""
         artifact_cls = cls.artifact()
 
@@ -125,9 +131,9 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                 index_size = index.ntotal
             else:
                 # Extract embeddings from rows
-                embeddings: List[List[float]] = []
-                texts: List[str] = []
-                doc_ids: List[str] = []
+                embeddings: list[list[float]] = []
+                texts: list[str] = []
+                doc_ids: list[str] = []
 
                 for row in rows:
                     embedding = row.get(source_feature)

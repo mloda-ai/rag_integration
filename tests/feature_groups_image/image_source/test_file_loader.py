@@ -2,7 +2,6 @@
 
 import tempfile
 from pathlib import Path
-from typing import Type
 
 import pytest
 from mloda.user import Options
@@ -16,7 +15,7 @@ class TestFileImageSource(ImageSourceTestBase):
     """Tests for FileImageSource."""
 
     @property
-    def source_class(self) -> Type[BaseImageSource]:
+    def source_class(self) -> type[BaseImageSource]:
         return FileImageSource
 
     def test_load_from_file_paths(self) -> None:

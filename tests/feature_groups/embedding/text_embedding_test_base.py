@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from typing import List, Type
 
 from mloda.user import Options
 
@@ -16,11 +15,11 @@ class TextEmbeddingTestBase(ABC):
 
     @property
     @abstractmethod
-    def embedder_class(self) -> Type[BaseEmbedder]: ...
+    def embedder_class(self) -> type[BaseEmbedder]: ...
 
     @property
     @abstractmethod
-    def sample_texts(self) -> List[str]: ...
+    def sample_texts(self) -> list[str]: ...
 
     @property
     @abstractmethod

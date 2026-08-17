@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mloda.user import Feature
 
-from mloda.provider import BaseArtifact, property_spec
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import BaseArtifact, DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
 from rag_integration.feature_groups.rag_pipeline.embedding.embedding_artifact import EmbeddingArtifact
@@ -62,16 +61,16 @@ class SentenceTransformerEmbedder(BaseEmbedder):
     # Cached as a single (model_name, model) tuple so the lock-free fast path
     # reads it atomically (one attribute load) instead of two fields that could
     # be observed mid-update.
-    _model_cache: Optional[Tuple[str, object]] = None
+    _model_cache: tuple[str, object] | None = None
     _model_lock = threading.Lock()
 
     @staticmethod
-    def artifact() -> Optional[Type[BaseArtifact]]:
+    def artifact() -> type[BaseArtifact] | None:
         """Return EmbeddingArtifact for persisting sentence transformer embeddings."""
         return EmbeddingArtifact
 
     @classmethod
-    def _get_model_name(cls, feature: "Feature") -> str:
+    def _get_model_name(cls, feature: Feature) -> str:
         """Get model name from feature options, defaulting to all-MiniLM-L6-v2."""
         name = feature.options.get(cls.MODEL_NAME)
         return str(name) if name is not None else cls.DEFAULT_MODEL
@@ -105,10 +104,10 @@ class SentenceTransformerEmbedder(BaseEmbedder):
     @classmethod
     def _embed_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding_dim: int,
         model_name: str,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         """
         Generate embeddings using Sentence Transformers.
 

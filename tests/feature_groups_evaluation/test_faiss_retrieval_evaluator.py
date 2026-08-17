@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import (
     homogenize_rows,
     rows_to_columnar,
@@ -18,7 +17,7 @@ pytest.importorskip("numpy")
 pytest.importorskip("faiss")
 
 
-def _columnar(rows: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
+def _columnar(rows: list[dict[str, Any]]) -> dict[str, list[Any]]:
     """Pivot test rows to the columnar shape the framework delivers."""
     return rows_to_columnar(homogenize_rows(rows))
 
@@ -42,7 +41,7 @@ def _make_features(indexed_feature: str = _INDEXED_FEATURE) -> Any:
     return features
 
 
-def _embed(values: List[float]) -> List[float]:
+def _embed(values: list[float]) -> list[float]:
     """Return a unit-normalised vector."""
     import numpy as np
 
@@ -50,7 +49,7 @@ def _embed(values: List[float]) -> List[float]:
     return list(v / np.linalg.norm(v))
 
 
-def _make_data(emb_feature: str = _EMBEDDING_FEATURE) -> Dict[str, List[Any]]:
+def _make_data(emb_feature: str = _EMBEDDING_FEATURE) -> dict[str, list[Any]]:
     """Two corpus docs, two queries; query i matches corpus i exactly."""
     return _columnar(
         [

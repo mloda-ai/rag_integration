@@ -9,7 +9,7 @@ CI contract suite; LLM-backed generators are pedigree backends for later.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -51,7 +51,7 @@ class ExtractiveResponder(BaseGenerateConnector):
     }
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         query_tokens = tokenize(query)
 
         best_score = 0

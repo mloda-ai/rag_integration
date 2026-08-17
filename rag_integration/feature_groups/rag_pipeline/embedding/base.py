@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import BaseArtifact, ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    BaseArtifact,
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -83,7 +88,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -105,7 +110,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
         return str(name) if name is not None else "default"
 
     @staticmethod
-    def artifact() -> Optional[Type[BaseArtifact]]:
+    def artifact() -> type[BaseArtifact] | None:
         """
         Return the artifact class for this embedder.
 
@@ -118,10 +123,10 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
     @abstractmethod
     def _embed_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding_dim: int,
         model_name: str,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         """
         Generate embeddings for a list of texts.
 
@@ -136,7 +141,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Generate embeddings for the source feature, with optional artifact support."""
         artifact_cls = cls.artifact()
 
@@ -153,7 +158,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
             artifact_key = feature_name
 
             # Try to load from artifact if available
-            embeddings: Optional[List[List[float]]] = None
+            embeddings: list[list[float]] | None = None
             if artifact_cls is not None:
                 try:
                     loaded = artifact_cls.load_embedding_artifact(features, artifact_key)  # type: ignore[attr-defined]

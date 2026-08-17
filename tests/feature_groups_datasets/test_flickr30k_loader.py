@@ -6,9 +6,9 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from mloda.user import Options
 
 from rag_integration.feature_groups.datasets.image.flickr30k import Flickr30kDatasetSource
-from mloda.user import Options
 
 
 def _make_options(data_dir: str, max_samples: int = 2) -> Options:

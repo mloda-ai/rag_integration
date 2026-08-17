@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Type
 
 from mloda.user import Options
 
@@ -15,7 +14,7 @@ class TextPIIRedactionTestBase(ABC):
 
     @property
     @abstractmethod
-    def redactor_class(self) -> Type[BasePIIRedactor]: ...
+    def redactor_class(self) -> type[BasePIIRedactor]: ...
 
     def test_redact_email(self) -> None:
         """Should redact email addresses."""

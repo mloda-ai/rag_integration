@@ -22,10 +22,10 @@ requested feature, so the ranked-passage list is the whole contract.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -76,7 +76,7 @@ class BaseRetrieveConnector(
     # Filled per concrete: {backend_value: human-readable description}. The base
     # stays empty so it never matches a feature. Values must be disjoint across
     # backends (see the class docstring).
-    RETRIEVE_BACKENDS: Dict[str, str] = {}
+    RETRIEVE_BACKENDS: dict[str, str] = {}
 
     # Declarative option documentation only. These root connector groups select
     # by ``match_feature_group_criteria`` (not the FeatureChainParser), so the
@@ -93,7 +93,7 @@ class BaseRetrieveConnector(
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -103,7 +103,7 @@ class BaseRetrieveConnector(
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -121,11 +121,11 @@ class BaseRetrieveConnector(
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features."""
-        return None
+        return
 
     @classmethod
     @abstractmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         """Rank ``texts`` against ``query``.
 
         Returns at most ``top_k`` ``(corpus_index, score)`` pairs, ordered
@@ -143,7 +143,7 @@ class BaseRetrieveConnector(
         ...
 
     @classmethod
-    def _validate_ranking(cls, ranked: List[Tuple[int, float]], corpus_size: int, top_k: int) -> None:
+    def _validate_ranking(cls, ranked: list[tuple[int, float]], corpus_size: int, top_k: int) -> None:
         """Enforce the four :meth:`_rank` requirements (count is retrieve-specific; rest shared)."""
         if len(ranked) > top_k:
             raise RankingContractError(f"{cls.__name__}._rank returned {len(ranked)} pairs for top_k={top_k}.")
@@ -153,9 +153,9 @@ class BaseRetrieveConnector(
     def _retrieve(
         cls,
         query: str,
-        corpus: List[Dict[str, Any]],
+        corpus: list[dict[str, Any]],
         top_k: int,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Assemble the ranked-passage contract around the backend's :meth:`_rank`.
 
         Owns the cross-backend invariants: empty corpus and non-positive
@@ -197,7 +197,7 @@ class BaseRetrieveConnector(
         ranked = cls._rank(query, texts, effective_k)
         cls._validate_ranking(ranked, len(corpus), effective_k)
 
-        passages: List[Dict[str, Any]] = []
+        passages: list[dict[str, Any]] = []
         for rank, (corpus_idx, score) in enumerate(ranked):
             passages.append(
                 {
@@ -210,7 +210,7 @@ class BaseRetrieveConnector(
         return passages
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Rank the corpus against the query, return ranked passages."""
         cls._assert_single_feature(features)
         for feature in features.features:

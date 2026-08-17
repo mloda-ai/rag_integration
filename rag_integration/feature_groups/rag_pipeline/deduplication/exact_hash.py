@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Dict, List, Optional
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -44,9 +43,9 @@ class ExactHashDeduplicator(BaseDeduplicator):
     @classmethod
     def _find_duplicates(
         cls,
-        texts: List[str],
+        texts: list[str],
         threshold: float,
-    ) -> List[Optional[int]]:
+    ) -> list[int | None]:
         """
         Find exact duplicates using MD5 hashing.
 
@@ -59,8 +58,8 @@ class ExactHashDeduplicator(BaseDeduplicator):
             or the index of the first occurrence it duplicates.
         """
         # Map hash -> first index
-        hash_to_index: Dict[str, int] = {}
-        result: List[Optional[int]] = []
+        hash_to_index: dict[str, int] = {}
+        result: list[int | None] = []
 
         for i, text in enumerate(texts):
             # Compute hash

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Type
-
 import numpy as np
 
 from rag_integration.feature_groups.rag_pipeline.vector_store import FaissFlatIndexer
@@ -15,11 +13,11 @@ class TestFaissFlatIndexer(VectorStoreTestBase):
     """Tests for FaissFlatIndexer."""
 
     @property
-    def indexer_class(self) -> Type[BaseVectorStore]:
+    def indexer_class(self) -> type[BaseVectorStore]:
         return FaissFlatIndexer
 
     @property
-    def test_embeddings(self) -> List[List[float]]:
+    def test_embeddings(self) -> list[list[float]]:
         return [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
     @property

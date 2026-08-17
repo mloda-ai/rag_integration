@@ -9,7 +9,6 @@ anchors the CI contract suite with no model, network, or third-party library.
 from __future__ import annotations
 
 import re
-from typing import List, Tuple
 
 from mloda.provider import property_spec
 
@@ -46,7 +45,7 @@ class LexicalReranker(BaseRerankConnector):
         return set(_TOKEN_RE.findall(text.lower()))
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         query_tokens = cls._tokenize(query)
         scored = [(idx, float(len(query_tokens & cls._tokenize(text)))) for idx, text in enumerate(texts)]
         # Best score first; ties broken by original index for a stable order.

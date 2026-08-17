@@ -12,7 +12,8 @@ shared here.
 
 from __future__ import annotations
 
-from typing import Dict, Hashable, List, Sequence, Tuple, TypeVar
+from collections.abc import Hashable, Sequence
+from typing import TypeVar
 
 from rag_integration.feature_groups.connectors.errors import InvalidOptionError, RankingContractError
 
@@ -22,7 +23,7 @@ K = TypeVar("K", bound=Hashable)
 DEFAULT_RRF_K = 60
 
 
-def rrf_fuse(rankings: Sequence[Sequence[K]], top_k: int, k: int = DEFAULT_RRF_K) -> List[Tuple[K, float]]:
+def rrf_fuse(rankings: Sequence[Sequence[K]], top_k: int, k: int = DEFAULT_RRF_K) -> list[tuple[K, float]]:
     """Fuse best-first key rankings by reciprocal-rank fusion.
 
     ``score(key) = sum(1 / (k + position + 1))`` over every ranking that
@@ -39,8 +40,8 @@ def rrf_fuse(rankings: Sequence[Sequence[K]], top_k: int, k: int = DEFAULT_RRF_K
     if top_k <= 0:
         return []
 
-    scores: Dict[K, float] = {}
-    first_seen: Dict[K, int] = {}
+    scores: dict[K, float] = {}
+    first_seen: dict[K, int] = {}
     order = 0
     for ranking in rankings:
         seen_here: set[K] = set()

@@ -1,7 +1,5 @@
 """Tests for DifferenceHashImageDeduplicator."""
 
-from typing import List, Optional, Type
-
 import pytest
 
 from rag_integration.feature_groups.image_pipeline.deduplication import DifferenceHashImageDeduplicator
@@ -14,20 +12,20 @@ class TestDifferenceHashImageDeduplicator(ImageDeduplicationTestBase):
     """Tests for DifferenceHashImageDeduplicator."""
 
     @property
-    def deduplicator_class(self) -> Type[BaseImageDeduplicator]:
+    def deduplicator_class(self) -> type[BaseImageDeduplicator]:
         return DifferenceHashImageDeduplicator
 
     @property
-    def duplicate_images(self) -> List[bytes]:
+    def duplicate_images(self) -> list[bytes]:
         img = self.create_test_image((255, 0, 0))
         return [img, img]
 
     @property
-    def duplicate_expected_indices(self) -> List[Optional[int]]:
+    def duplicate_expected_indices(self) -> list[int | None]:
         return [None, 0]
 
     @property
-    def unique_images(self) -> List[bytes]:
+    def unique_images(self) -> list[bytes]:
         return [
             self.create_patterned_image("left_half"),
             self.create_patterned_image("top_half"),

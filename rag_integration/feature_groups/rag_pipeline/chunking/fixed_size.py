@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
@@ -42,7 +40,7 @@ class FixedSizeChunker(BaseChunker):
         text: str,
         chunk_size: int,
         chunk_overlap: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Split text into fixed-size chunks.
 
