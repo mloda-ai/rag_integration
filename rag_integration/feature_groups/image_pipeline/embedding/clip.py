@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import os
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -44,9 +45,14 @@ class CLIPImageEmbedder(BaseImageEmbedder):
 
     Config-based matching:
         image_embedding_method="clip"
+
+    Note: Caches (model, processor) pairs per resolved path at class level.
+    Initialization is guarded by a lock so concurrent callers do not build the
+    same model twice.
     """
 
     _model_cache: dict[str, Any] = {}
+    _model_lock = threading.Lock()
 
     # Matches the PROPERTY_MAPPING default below; used when a caller invokes
     # calculate_feature directly and skips mloda's option-default materialization.
@@ -82,6 +88,30 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         return model_name
 
     @classmethod
+    def _get_model_and_processor(cls, resolved: str) -> tuple[Any, Any]:
+        """Get or create the (model, processor) pair for a resolved path (thread-safe)."""
+        cached = cls._model_cache.get(resolved)
+        if cached is not None:
+            return cached  # type: ignore[no-any-return]
+
+        with cls._model_lock:
+            cached = cls._model_cache.get(resolved)
+            if cached is None:
+                try:
+                    from transformers import CLIPModel, CLIPProcessor
+                except ImportError as e:
+                    raise ImportError(
+                        "transformers is required for CLIPImageEmbedder. Install with: pip install transformers"
+                    ) from e
+
+                cached = (
+                    CLIPModel.from_pretrained(resolved),  # nosec B615
+                    CLIPProcessor.from_pretrained(resolved),  # nosec B615
+                )
+                cls._model_cache[resolved] = cached
+            return cached
+
+    @classmethod
     def _embed_image(
         cls,
         image_data: bytes,
@@ -102,11 +132,9 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         try:
             import torch
             from PIL import Image
-            from transformers import CLIPModel, CLIPProcessor
         except ImportError:
             raise ImportError(
-                "transformers, torch, and Pillow are required for CLIPImageEmbedder. "
-                "Install with: pip install transformers torch Pillow"
+                "torch and Pillow are required for CLIPImageEmbedder. Install with: pip install torch Pillow"
             )
 
         import io
@@ -117,12 +145,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         img = Image.open(io.BytesIO(image_data)).convert("RGB")
 
         resolved = cls._resolve_model_path(model_name)
-        if resolved not in cls._model_cache:
-            cls._model_cache[resolved] = (
-                CLIPModel.from_pretrained(resolved),  # nosec B615
-                CLIPProcessor.from_pretrained(resolved),  # nosec B615
-            )
-        model, processor = cls._model_cache[resolved]
+        model, processor = cls._get_model_and_processor(resolved)
 
         inputs = processor(images=img, return_tensors="pt")
 
@@ -162,23 +185,14 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         """
         try:
             import torch
-            from transformers import CLIPModel, CLIPProcessor
         except ImportError:
-            raise ImportError(
-                "transformers and torch are required for CLIPImageEmbedder. "
-                "Install with: pip install transformers torch"
-            )
+            raise ImportError("torch is required for CLIPImageEmbedder. Install with: pip install torch")
 
         if not text:
             return [0.0] * embedding_dim
 
         resolved = cls._resolve_model_path(model_name)
-        if resolved not in cls._model_cache:
-            cls._model_cache[resolved] = (
-                CLIPModel.from_pretrained(resolved),  # nosec B615
-                CLIPProcessor.from_pretrained(resolved),  # nosec B615
-            )
-        model, processor = cls._model_cache[resolved]
+        model, processor = cls._get_model_and_processor(resolved)
 
         inputs = processor(text=[text], return_tensors="pt", padding=True, truncation=True)
 
