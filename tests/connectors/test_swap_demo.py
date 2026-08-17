@@ -11,16 +11,16 @@ site, chose the backend, and an unknown value claims nothing.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
 from cli.swap_demo import CONNECTORS, CORPUS, QUERY, SHARED_INPUTS, TOP_K, run_connector
 
-PASSAGES: List[Dict[str, str]] = [{"doc_id": doc["doc_id"], "text": doc["text"]} for doc in CORPUS]
+PASSAGES: list[dict[str, str]] = [{"doc_id": doc["doc_id"], "text": doc["text"]} for doc in CORPUS]
 
 
-def _assert_passage_shape(passages: List[Dict[str, Any]]) -> None:
+def _assert_passage_shape(passages: list[dict[str, Any]]) -> None:
     assert passages, "expected a non-empty ranking for the shape assertions to mean anything"
     for rank, passage in enumerate(passages):
         assert set(passage) == {"doc_id", "text", "score", "rank"}

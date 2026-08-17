@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -39,7 +38,7 @@ class SentenceChunker(BaseChunker):
     SENTENCE_PATTERN = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
 
     @classmethod
-    def _split_sentences(cls, text: str) -> List[str]:
+    def _split_sentences(cls, text: str) -> list[str]:
         """Split text into sentences."""
         # Simple sentence splitting
         sentences = cls.SENTENCE_PATTERN.split(text)
@@ -51,7 +50,7 @@ class SentenceChunker(BaseChunker):
         text: str,
         chunk_size: int,
         chunk_overlap: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Split text into chunks at sentence boundaries.
 
@@ -76,7 +75,7 @@ class SentenceChunker(BaseChunker):
         chunk_overlap = max(0, min(chunk_overlap, chunk_size - 1))
 
         chunks = []
-        current_chunk: List[str] = []
+        current_chunk: list[str] = []
         current_length = 0
 
         for sentence in sentences:
@@ -107,7 +106,7 @@ class SentenceChunker(BaseChunker):
         return chunks if chunks else [""]
 
     @classmethod
-    def _overlap_sentences(cls, sentences: List[str], chunk_overlap: int) -> List[str]:
+    def _overlap_sentences(cls, sentences: list[str], chunk_overlap: int) -> list[str]:
         """
         Return the trailing sentences whose joined length stays within chunk_overlap characters.
 
@@ -118,7 +117,7 @@ class SentenceChunker(BaseChunker):
         """
         if chunk_overlap <= 0:
             return []
-        overlap: List[str] = []
+        overlap: list[str] = []
         length = 0
         for sentence in reversed(sentences):
             added = len(sentence) + (1 if overlap else 0)

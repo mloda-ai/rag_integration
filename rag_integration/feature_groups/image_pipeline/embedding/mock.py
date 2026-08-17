@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import math
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -42,7 +41,7 @@ class MockImageEmbedder(BaseImageEmbedder):
         image_data: bytes,
         embedding_dim: int,
         model_name: str,
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Generate mock embedding based on image data hash.
 
@@ -57,7 +56,7 @@ class MockImageEmbedder(BaseImageEmbedder):
         return cls._generate_mock_embedding(image_data, embedding_dim)
 
     @classmethod
-    def _generate_mock_embedding(cls, image_data: bytes, dim: int) -> List[float]:
+    def _generate_mock_embedding(cls, image_data: bytes, dim: int) -> list[float]:
         """
         Generate a deterministic mock embedding for image data.
 

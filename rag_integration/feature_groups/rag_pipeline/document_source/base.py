@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type, Union
+from typing import Any
 
-from mloda.provider import FeatureGroup, ComputeFramework, FeatureSet
-from mloda.user import Options, FeatureName
+from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import homogenize_rows
 
 
@@ -32,13 +31,13 @@ class BaseDocumentSource(FeatureGroup):
     """
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -47,11 +46,11 @@ class BaseDocumentSource(FeatureGroup):
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature - no input features."""
-        return None
+        return
 
     @classmethod
     @abstractmethod
-    def _load_documents(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_documents(cls, options: Options) -> list[dict[str, Any]]:
         """
         Load documents from the source.
 
@@ -64,7 +63,7 @@ class BaseDocumentSource(FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Load and return documents with a uniform key schema."""
         for feature in features.features:
             return homogenize_rows(cls._load_documents(feature.options))

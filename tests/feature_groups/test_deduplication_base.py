@@ -10,11 +10,10 @@ untested. These tests pin that behavior down directly on the shared base.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
 from mloda.user import Feature
 
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
@@ -26,13 +25,13 @@ class _LenDeduplicator(BaseRowDeduplicator):
     """
 
     @classmethod
-    def _extract_items(cls, data: List[Dict[str, Any]], feature: Feature) -> List[Any]:
+    def _extract_items(cls, data: list[dict[str, Any]], feature: Feature) -> list[Any]:
         return [row["item"] for row in data]
 
     @classmethod
-    def _find_duplicates(cls, items: List[Any], threshold: float) -> List[Optional[int]]:
-        first_seen: Dict[Any, int] = {}
-        result: List[Optional[int]] = []
+    def _find_duplicates(cls, items: list[Any], threshold: float) -> list[int | None]:
+        first_seen: dict[Any, int] = {}
+        result: list[int | None] = []
         for index, item in enumerate(items):
             key = item[:1]
             if key in first_seen:

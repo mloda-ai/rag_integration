@@ -8,7 +8,7 @@ distractors.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
 from rag_integration.feature_groups.connectors.retrieve.faiss_retriever import FaissDenseRetriever
@@ -17,7 +17,7 @@ from tests.connectors.retrieve.retrieve_contract import RetrieveConnectorContrac
 
 class TestFaissDenseRetriever(RetrieveConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseRetrieveConnector]:
+    def connector_class(cls) -> type[BaseRetrieveConnector]:
         return FaissDenseRetriever
 
     @classmethod
@@ -25,7 +25,7 @@ class TestFaissDenseRetriever(RetrieveConnectorContractBase):
         return "faiss"
 
     @classmethod
-    def sample_corpus(cls) -> List[Dict[str, Any]]:
+    def sample_corpus(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "the mat lay flat on the floor by the window"},
             {"doc_id": "d1", "text": "a dog can be a loyal and energetic pet"},

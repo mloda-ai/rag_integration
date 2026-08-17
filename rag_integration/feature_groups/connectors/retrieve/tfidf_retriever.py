@@ -11,8 +11,6 @@ dependency (it reuses the existing TF-IDF embedder).
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
@@ -52,13 +50,13 @@ class TfidfRetriever(BaseRetrieveConnector):
     }
 
     @staticmethod
-    def _cosine(query_vector: List[float], doc_vector: List[float]) -> float:
+    def _cosine(query_vector: list[float], doc_vector: list[float]) -> float:
         # Both vectors are L2-normalized by the embedder, so the dot product is
         # already the cosine similarity.
         return sum(q * d for q, d in zip(query_vector, doc_vector))
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         # ``_embed_texts`` is the embedder's deterministic raw-text vectorization
         # entry point; embedding the corpus and query in one batch shares a
         # single IDF/vocabulary so the query and documents live in one space.

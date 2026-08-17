@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
-from mloda.user import Feature, FeatureName, Options
 from mloda.provider import DefaultOptionKeys, property_spec
+from mloda.user import Feature, FeatureName, Options
 
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
 
@@ -103,9 +103,9 @@ class BaseImageDeduplicator(BaseRowDeduplicator):
             return False
 
     @classmethod
-    def _extract_items(cls, data: List[Dict[str, Any]], feature: Feature) -> List[Any]:
+    def _extract_items(cls, data: list[dict[str, Any]], feature: Feature) -> list[Any]:
         """Extract image bytes from each row's 'image_data' field."""
-        items: List[Any] = []
+        items: list[Any] = []
         for row in data:
             image_data = row.get("image_data", b"")
             if not isinstance(image_data, bytes):

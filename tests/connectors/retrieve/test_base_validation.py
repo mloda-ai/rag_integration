@@ -12,30 +12,29 @@ so they live outside the inheritable contract suite.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
 from mloda.user import Options
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
 
 
-def _stub_returning(pairs: List[Tuple[int, float]]) -> Type[BaseRetrieveConnector]:
+def _stub_returning(pairs: list[tuple[int, float]]) -> type[BaseRetrieveConnector]:
     """Build a stub backend whose ``_rank`` returns ``pairs`` verbatim."""
 
     class _MisbehavingRetriever(BaseRetrieveConnector):
         RETRIEVE_BACKENDS = {"misbehaving_stub": "Deliberately misbehaving _rank for validation tests"}
 
         @classmethod
-        def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+        def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
             return pairs
 
     return _MisbehavingRetriever
 
 
-def _corpus() -> List[Dict[str, Any]]:
+def _corpus() -> list[dict[str, Any]]:
     return [
         {"doc_id": "d0", "text": "alpha"},
         {"doc_id": "d1", "text": "beta"},
@@ -72,7 +71,7 @@ class TestCorpusValidation:
 
     def test_non_dict_corpus_entry_raises(self) -> None:
         stub = _stub_returning([(0, 1.0)])
-        corpus: List[Any] = [{"doc_id": "d0", "text": "alpha"}, "not-a-dict"]
+        corpus: list[Any] = [{"doc_id": "d0", "text": "alpha"}, "not-a-dict"]
         with pytest.raises(ValueError, match="not a dict"):
             stub._retrieve("alpha", corpus, top_k=1)
 
@@ -80,7 +79,7 @@ class TestCorpusValidation:
         # "1" collides with the positional-index fallback of the second entry,
         # which has no doc_id and sits at index 1.
         stub = _stub_returning([(0, 1.0)])
-        corpus: List[Dict[str, Any]] = [{"doc_id": "1", "text": "alpha"}, {"text": "beta"}]
+        corpus: list[dict[str, Any]] = [{"doc_id": "1", "text": "alpha"}, {"text": "beta"}]
         with pytest.raises(ValueError, match="duplicate doc_id"):
             stub._retrieve("alpha", corpus, top_k=1)
 

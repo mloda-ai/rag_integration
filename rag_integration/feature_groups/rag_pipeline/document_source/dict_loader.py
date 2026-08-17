@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from mloda.user import Options
 
@@ -31,7 +31,7 @@ class DictDocumentSource(BaseDocumentSource):
     """
 
     @classmethod
-    def _load_documents(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_documents(cls, options: Options) -> list[dict[str, Any]]:
         """
         Load documents from Options.
 

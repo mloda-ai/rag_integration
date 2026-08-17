@@ -8,26 +8,24 @@ with multiple features per call for efficiency.
 from __future__ import annotations
 
 import math
+from typing import Any
 
-from typing import Any, Dict, List, Set, Type
-
-from mloda.user import mlodaAPI, PluginCollector, Domain, Feature, Options
 from mloda.provider import DataCreator, FeatureGroup
+from mloda.user import Domain, Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from tests.integration.helpers import flatten_result, get_results_by_feature
 
 from rag_integration.feature_groups.image_pipeline import (
-    SolidFillPIIRedactor,
-    ResizePreprocessor,
-    NormalizePreprocessor,
-    ThumbnailPreprocessor,
     ExactHashImageDeduplicator,
-    MockImageEmbedder,
     HashImageEmbedder,
+    MockImageEmbedder,
+    NormalizePreprocessor,
+    ResizePreprocessor,
+    SolidFillPIIRedactor,
+    ThumbnailPreprocessor,
 )
-
+from tests.integration.helpers import flatten_result, get_results_by_feature
 
 # =============================================================================
 # Test Data
@@ -91,11 +89,11 @@ class MockImageDataCreator(FeatureGroup):
         return str(feature_name) == "image_docs"
 
     @classmethod
-    def compute_framework_rule(cls) -> Set[Type[Any]]:
+    def compute_framework_rule(cls) -> set[type[Any]]:
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
         return [
             {
                 "image_docs": img["image_data"],
@@ -107,7 +105,7 @@ class MockImageDataCreator(FeatureGroup):
         ]
 
 
-def get_test_providers() -> Set[Type[FeatureGroup]]:
+def get_test_providers() -> set[type[FeatureGroup]]:
     return {
         MockImageDataCreator,
         SolidFillPIIRedactor,
@@ -195,7 +193,7 @@ def make_image_domain_providers(
     preprocessor: type,
     deduplicator: type,
     embedder: type,
-) -> Set[Type[FeatureGroup]]:
+) -> set[type[FeatureGroup]]:
     """Factory to create a complete image provider set with a specific domain."""
 
     class DomainDataCreator(MockImageDataCreator):

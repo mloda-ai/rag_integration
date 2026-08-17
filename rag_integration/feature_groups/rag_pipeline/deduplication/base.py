@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
-from mloda.user import Feature
 from mloda.provider import DefaultOptionKeys, property_spec
+from mloda.user import Feature
 
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
 
@@ -87,10 +87,10 @@ class BaseDeduplicator(BaseRowDeduplicator):
     }
 
     @classmethod
-    def _extract_items(cls, data: List[Dict[str, Any]], feature: Feature) -> List[Any]:
+    def _extract_items(cls, data: list[dict[str, Any]], feature: Feature) -> list[Any]:
         """Extract text from each row's source feature, falling back to the 'text' field."""
         source_feature = cls._get_source_feature_name(feature)
-        items: List[Any] = []
+        items: list[Any] = []
         for row in data:
             if source_feature in row:
                 items.append(str(row[source_feature]))

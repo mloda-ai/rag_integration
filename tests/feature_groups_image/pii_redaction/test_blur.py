@@ -1,6 +1,5 @@
 """Tests for BlurPIIRedactor."""
 
-from typing import Type
 from unittest.mock import patch
 
 import pytest
@@ -20,7 +19,7 @@ class TestBlurPIIRedactor(ImagePIIRedactionTestBase):
     """Tests for BlurPIIRedactor."""
 
     @property
-    def redactor_class(self) -> Type[BaseImagePIIRedactor]:
+    def redactor_class(self) -> type[BaseImagePIIRedactor]:
         return BlurPIIRedactor
 
 

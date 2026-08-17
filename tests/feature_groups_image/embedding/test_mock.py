@@ -1,7 +1,5 @@
 """Tests for MockImageEmbedder."""
 
-from typing import Type
-
 from rag_integration.feature_groups.image_pipeline.embedding import MockImageEmbedder
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 from tests.feature_groups_image.embedding.image_embedding_test_base import ImageEmbeddingTestBase
@@ -11,7 +9,7 @@ class TestMockImageEmbedder(ImageEmbeddingTestBase):
     """Tests for MockImageEmbedder."""
 
     @property
-    def embedder_class(self) -> Type[BaseImageEmbedder]:
+    def embedder_class(self) -> type[BaseImageEmbedder]:
         return MockImageEmbedder
 
     @property

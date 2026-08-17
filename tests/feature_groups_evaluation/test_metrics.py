@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from rag_integration.feature_groups.evaluation.metrics import recall_at_k, mean_recall_at_k
+from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k, recall_at_k
 
 
 class TestRecallAtK:

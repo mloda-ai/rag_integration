@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast
 import io
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mloda.user import Options
 
@@ -53,7 +53,7 @@ class Flickr30kDatasetSource(BaseImageDatasetSource):
     MAX_SAMPLES = "max_samples"
 
     @classmethod
-    def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_dataset(cls, options: Options) -> list[dict[str, Any]]:
         """Load Flickr30K test split from local CSV + image files."""
         data_dir = options.get(cls.DATA_DIR)
         if not data_dir:
@@ -71,7 +71,7 @@ class Flickr30kDatasetSource(BaseImageDatasetSource):
         except ImportError as e:
             raise ImportError("The 'Pillow' package is required. Install with: pip install Pillow") from e
 
-        max_samples: Optional[int] = options.get(cls.MAX_SAMPLES)
+        max_samples: int | None = options.get(cls.MAX_SAMPLES)
 
         data_path = Path(str(data_dir))
         csv_path = data_path / "flickr_annotations_30k.csv"
@@ -90,16 +90,16 @@ class Flickr30kDatasetSource(BaseImageDatasetSource):
         if max_samples is not None:
             test_df = test_df.head(int(max_samples))
 
-        rows: List[Dict[str, Any]] = []
+        rows: list[dict[str, Any]] = []
 
         for _, row in test_df.iterrows():
             filename = str(row["filename"])
             img_id = str(row["img_id"])
-            captions: List[str] = ast.literal_eval(str(row["raw"]))
+            captions: list[str] = ast.literal_eval(str(row["raw"]))
 
             # Load image bytes
             img_path = images_dir / filename
-            image_data: Optional[bytes] = None
+            image_data: bytes | None = None
             img_format = "jpeg"
             if img_path.exists():
                 with Image.open(img_path) as img:

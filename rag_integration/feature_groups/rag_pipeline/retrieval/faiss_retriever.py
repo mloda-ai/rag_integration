@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from mloda.provider import property_spec
@@ -48,8 +48,8 @@ class FaissRetriever(BaseRetriever):
     # Class-level caches, each stored as a single (path, value) tuple so the
     # lock-free fast path reads it atomically (one attribute load) instead of two
     # fields that could be observed mid-update.
-    _index_cache: Optional[Tuple[str, Any]] = None
-    _metadata_cache: Optional[Tuple[str, Dict[str, Any]]] = None
+    _index_cache: tuple[str, Any] | None = None
+    _metadata_cache: tuple[str, dict[str, Any]] | None = None
     _cache_lock = threading.Lock()
 
     @classmethod
@@ -73,7 +73,7 @@ class FaissRetriever(BaseRetriever):
             return index
 
     @classmethod
-    def _load_metadata(cls, metadata_path: str) -> Dict[str, Any]:
+    def _load_metadata(cls, metadata_path: str) -> dict[str, Any]:
         """Load metadata from JSON sidecar, with caching (thread-safe)."""
         # Fast path: single atomic read of the (path, metadata) cache.
         cache = cls._metadata_cache
@@ -87,17 +87,17 @@ class FaissRetriever(BaseRetriever):
                 return cache[1]
 
             with open(metadata_path, encoding="utf-8") as f:
-                metadata: Dict[str, Any] = json.load(f)
+                metadata: dict[str, Any] = json.load(f)
             cls._metadata_cache = (metadata_path, metadata)
             return metadata
 
     @classmethod
     def _search(
         cls,
-        query_vector: List[float],
+        query_vector: list[float],
         top_k: int,
         options: Options,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search the FAISS index for nearest neighbors.
 
@@ -123,8 +123,8 @@ class FaissRetriever(BaseRetriever):
         result_distances = distances[0].tolist()
 
         # Load metadata if available
-        result_texts: List[str] = []
-        result_doc_ids: List[str] = []
+        result_texts: list[str] = []
+        result_doc_ids: list[str] = []
 
         if metadata_path is not None:
             metadata = cls._load_metadata(str(metadata_path))

@@ -7,7 +7,7 @@ document (doc_id not in the corpus) and a non-empty answer with no documents.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 
@@ -20,7 +20,7 @@ class _FabricatingBackend(BaseOrchestratorConnector):
     ORCHESTRATOR_BACKENDS = {"_fabricating_stub": "test-only stub"}
 
     @classmethod
-    def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
+    def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
         return "answer", [{"doc_id": "not_in_corpus", "text": "fabricated", "score": 1.0}]
 
 
@@ -28,7 +28,7 @@ class _AnswerWithoutDocumentsBackend(BaseOrchestratorConnector):
     ORCHESTRATOR_BACKENDS = {"_answer_no_docs_stub": "test-only stub"}
 
     @classmethod
-    def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
+    def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
         return "an ungrounded answer", []
 
 

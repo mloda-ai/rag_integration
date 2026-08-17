@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Type
 
 from mloda.user import Options
 
@@ -15,11 +14,11 @@ class VectorStoreTestBase(ABC):
 
     @property
     @abstractmethod
-    def indexer_class(self) -> Type[BaseVectorStore]: ...
+    def indexer_class(self) -> type[BaseVectorStore]: ...
 
     @property
     @abstractmethod
-    def test_embeddings(self) -> List[List[float]]: ...
+    def test_embeddings(self) -> list[list[float]]: ...
 
     @property
     @abstractmethod

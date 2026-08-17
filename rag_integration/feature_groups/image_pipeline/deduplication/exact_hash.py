@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Dict, List, Optional
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -42,9 +41,9 @@ class ExactHashImageDeduplicator(BaseImageDeduplicator):
     @classmethod
     def _find_duplicates(
         cls,
-        image_data_list: List[bytes],
+        image_data_list: list[bytes],
         threshold: float,
-    ) -> List[Optional[int]]:
+    ) -> list[int | None]:
         """
         Find exact duplicates using MD5 hashing.
 
@@ -56,8 +55,8 @@ class ExactHashImageDeduplicator(BaseImageDeduplicator):
             List where each element is either None (first occurrence)
             or the index of the first occurrence it duplicates.
         """
-        hash_to_index: Dict[str, int] = {}
-        result: List[Optional[int]] = []
+        hash_to_index: dict[str, int] = {}
+        result: list[int | None] = []
 
         for i, image_data in enumerate(image_data_list):
             data_hash = hashlib.md5(image_data, usedforsecurity=False).hexdigest()

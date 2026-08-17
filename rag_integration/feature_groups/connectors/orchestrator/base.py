@@ -25,10 +25,10 @@ backend implements only :meth:`_run` (driving its framework's pipeline).
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -58,7 +58,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
     QUERY_TEXT = "query_text"
     CORPUS = "corpus"
 
-    ORCHESTRATOR_BACKENDS: Dict[str, str] = {}
+    ORCHESTRATOR_BACKENDS: dict[str, str] = {}
 
     PROPERTY_MAPPING = {
         ORCHESTRATOR_BACKEND: property_spec("Which orchestrator (external framework) backend to use", context=False),
@@ -70,7 +70,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -80,7 +80,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -92,11 +92,11 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (the corpus arrives via Options)."""
-        return None
+        return
 
     @classmethod
     @abstractmethod
-    def _run(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Tuple[str, List[Dict[str, Any]]]:
+    def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
         """Run the framework's pipeline for ``query`` over ``corpus``.
 
         Returns ``(answer, documents)`` where ``documents`` is a list of
@@ -109,7 +109,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
         ...
 
     @classmethod
-    def _validate_unique_doc_ids(cls, corpus: List[Dict[str, Any]]) -> None:
+    def _validate_unique_doc_ids(cls, corpus: list[dict[str, Any]]) -> None:
         """Reject duplicate effective doc_ids, uniformly across backends.
 
         An entry without ``doc_id`` defaults to its positional index, so an
@@ -121,7 +121,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
             raise DuplicateDocIdError(f"{cls.__name__}: duplicate doc_id {duplicate!r} in corpus; ids must be unique.")
 
     @classmethod
-    def _validate_documents(cls, documents: List[Dict[str, Any]], corpus: List[Dict[str, Any]]) -> None:
+    def _validate_documents(cls, documents: list[dict[str, Any]], corpus: list[dict[str, Any]]) -> None:
         """Reject any surfaced document whose doc_id is not in the supplied corpus."""
         known = cls._known_doc_ids(corpus)
         for document in documents:
@@ -132,7 +132,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
                 )
 
     @classmethod
-    def _answer(cls, query: str, corpus: List[Dict[str, Any]], top_k: int) -> Dict[str, Any]:
+    def _answer(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> dict[str, Any]:
         """Assemble the answer contract around the backend's :meth:`_run`."""
         if not corpus:
             return {"answer": "", "documents": []}
@@ -147,7 +147,7 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
         return {"answer": answer, "documents": documents}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Run the framework pipeline, return the answer object."""
         cls._assert_single_feature(features)
         for feature in features.features:

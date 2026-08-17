@@ -5,10 +5,8 @@ Pure Python implementation — no external dependencies required.
 
 from __future__ import annotations
 
-from typing import Dict, List, Set
 
-
-def recall_at_k(relevant_ids: Set[str], ranked_ids: List[str], k: int) -> float:
+def recall_at_k(relevant_ids: set[str], ranked_ids: list[str], k: int) -> float:
     """Compute Recall@K for a single query.
 
     Args:
@@ -32,8 +30,8 @@ def recall_at_k(relevant_ids: Set[str], ranked_ids: List[str], k: int) -> float:
 
 
 def mean_recall_at_k(
-    query_relevant: Dict[str, Set[str]],
-    query_ranked: Dict[str, List[str]],
+    query_relevant: dict[str, set[str]],
+    query_ranked: dict[str, list[str]],
     k: int,
 ) -> float:
     """Compute mean Recall@K across all queries.

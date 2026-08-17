@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
-from typing import List, Type
 
 from mloda.user import Options
 
@@ -43,11 +42,11 @@ class ImagePreprocessingTestBase(ABC):
 
     @property
     @abstractmethod
-    def preprocessor_class(self) -> Type[BaseImagePreprocessor]: ...
+    def preprocessor_class(self) -> type[BaseImagePreprocessor]: ...
 
     @property
     @abstractmethod
-    def target_size(self) -> List[int]: ...
+    def target_size(self) -> list[int]: ...
 
     @property
     @abstractmethod

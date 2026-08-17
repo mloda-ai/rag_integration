@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -108,7 +112,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
             return False
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -118,7 +122,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         return source_features[0]
 
     @classmethod
-    def _get_pii_regions(cls, feature: Feature) -> List[Dict[str, Any]]:
+    def _get_pii_regions(cls, feature: Feature) -> list[dict[str, Any]]:
         """Get PII regions from feature options."""
         regions = feature.options.get(cls.PII_REGIONS)
         if regions is None:
@@ -133,7 +137,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         cls,
         image_data: bytes,
         image_format: str,
-        regions: List[Dict[str, Any]],
+        regions: list[dict[str, Any]],
     ) -> bytes:
         """
         Redact PII regions in an image.
@@ -153,7 +157,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         cls,
         image_data: bytes,
         image_format: str,
-        regions: List[Dict[str, Any]],
+        regions: list[dict[str, Any]],
         feature: Feature,
     ) -> bytes:
         """
@@ -166,7 +170,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         return cls._redact_region(image_data, image_format, regions)
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Perform PII redaction on images, processing row by row for memory efficiency."""
         # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         rows = columnar_to_rows(data)

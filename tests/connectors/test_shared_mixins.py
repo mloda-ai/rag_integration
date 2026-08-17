@@ -3,10 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Type
-
 import pytest
-
 from mloda.user import Options
 
 from rag_integration.feature_groups.connectors.errors import (
@@ -40,7 +37,7 @@ class TestErrorHierarchy:
             SqlSafetyError,
         ],
     )
-    def test_subclasses_value_error(self, error_cls: Type[Exception]) -> None:
+    def test_subclasses_value_error(self, error_cls: type[Exception]) -> None:
         assert issubclass(error_cls, ValueError)
 
 
@@ -51,13 +48,13 @@ class TestSharedTopK:
     """``TopKMixin._get_top_k`` parses uniformly across every family that mixes it in."""
 
     @pytest.mark.parametrize("base", _TOPK_FAMILIES)
-    def test_garbage_top_k_raises_naming_key_and_value(self, base: Type[TopKMixin]) -> None:
+    def test_garbage_top_k_raises_naming_key_and_value(self, base: type[TopKMixin]) -> None:
         options = Options(context={base.TOP_K: "not-an-int"})
         with pytest.raises(InvalidOptionError, match="top_k.*not-an-int"):
             base._get_top_k(options)
 
     @pytest.mark.parametrize("base", _TOPK_FAMILIES)
-    def test_non_coercible_type_raises_value_error(self, base: Type[TopKMixin]) -> None:
+    def test_non_coercible_type_raises_value_error(self, base: type[TopKMixin]) -> None:
         # A list cannot become an int; before the refactor the non-validating
         # families surfaced a bare TypeError here, now it is a loud ValueError.
         options = Options(context={base.TOP_K: [1, 2]})
@@ -65,9 +62,9 @@ class TestSharedTopK:
             base._get_top_k(options)
 
     @pytest.mark.parametrize("base", _TOPK_FAMILIES)
-    def test_absent_top_k_falls_back_to_default(self, base: Type[TopKMixin]) -> None:
+    def test_absent_top_k_falls_back_to_default(self, base: type[TopKMixin]) -> None:
         assert base._get_top_k(Options(context={})) == base.DEFAULT_TOP_K
 
     @pytest.mark.parametrize("base", _TOPK_FAMILIES)
-    def test_string_integer_is_coerced(self, base: Type[TopKMixin]) -> None:
+    def test_string_integer_is_coerced(self, base: type[TopKMixin]) -> None:
         assert base._get_top_k(Options(context={base.TOP_K: "3"})) == 3

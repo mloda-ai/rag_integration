@@ -11,15 +11,15 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
-from mloda.provider import FeatureSet, property_spec
-from mloda.provider import DefaultOptionKeys
+from mloda.provider import DefaultOptionKeys, FeatureSet, property_spec
 
 if TYPE_CHECKING:
     from mloda.user import Feature
 
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.image_pipeline.embedding.base import BaseImageEmbedder
 
 # Default local model path: looks two levels above the git repo root (mloda/models/)
@@ -67,7 +67,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
     }
 
     @classmethod
-    def _get_model_name(cls, feature: "Feature") -> str:
+    def _get_model_name(cls, feature: Feature) -> str:
         """Get model name from feature options, defaulting to the HuggingFace CLIP model ID."""
         name = feature.options.get(cls.MODEL_NAME)
         return str(name) if name is not None else cls.DEFAULT_MODEL
@@ -87,7 +87,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         image_data: bytes,
         embedding_dim: int,
         model_name: str,
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Generate CLIP embedding for an image.
 
@@ -100,9 +100,9 @@ class CLIPImageEmbedder(BaseImageEmbedder):
             CLIP embedding vector, normalized to unit length
         """
         try:
-            from transformers import CLIPProcessor, CLIPModel
-            from PIL import Image
             import torch
+            from PIL import Image
+            from transformers import CLIPModel, CLIPProcessor
         except ImportError:
             raise ImportError(
                 "transformers, torch, and Pillow are required for CLIPImageEmbedder. "
@@ -145,7 +145,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         text: str,
         embedding_dim: int,
         model_name: str,
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Generate CLIP embedding for a text string using the text encoder.
 
@@ -161,8 +161,8 @@ class CLIPImageEmbedder(BaseImageEmbedder):
             Unit-normalised CLIP text embedding vector
         """
         try:
-            from transformers import CLIPProcessor, CLIPModel
             import torch
+            from transformers import CLIPModel, CLIPProcessor
         except ImportError:
             raise ImportError(
                 "transformers and torch are required for CLIPImageEmbedder. "
@@ -196,7 +196,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         return embedding  # type: ignore[no-any-return]
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """
         Embed each row using CLIP's vision or text encoder based on row content.
 

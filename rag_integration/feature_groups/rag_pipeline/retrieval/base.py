@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type, Union
-
-from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
+
+from rag_integration.feature_groups.rag_pipeline.embedding.base import BaseEmbedder
 
 
 class BaseRetriever(FeatureGroup):
@@ -22,7 +22,7 @@ class BaseRetriever(FeatureGroup):
     and produces search results from a pre-built vector index.
 
     Accepts EITHER:
-        - query_embedding: Pre-embedded query vector (List[float])
+        - query_embedding: Pre-embedded query vector (list[float])
         - query_text + embedding_method: Raw text to embed at query time
 
     Configuration via Options:
@@ -50,7 +50,7 @@ class BaseRetriever(FeatureGroup):
     METADATA_PATH = "metadata_path"
     RETRIEVAL_METHOD = "retrieval_method"
 
-    RETRIEVAL_METHODS: Dict[str, str] = {}
+    RETRIEVAL_METHODS: dict[str, str] = {}
 
     PROPERTY_MAPPING = {
         RETRIEVAL_METHOD: property_spec("Which retriever implementation to use"),
@@ -61,7 +61,7 @@ class BaseRetriever(FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -71,7 +71,7 @@ class BaseRetriever(FeatureGroup):
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -93,7 +93,7 @@ class BaseRetriever(FeatureGroup):
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features."""
-        return None
+        return
 
     @classmethod
     def _get_top_k(cls, options: Options) -> int:
@@ -102,17 +102,17 @@ class BaseRetriever(FeatureGroup):
         return int(val) if val is not None else 5
 
     @classmethod
-    def _embed_query(cls, query_text: str, embedding_method: str) -> List[float]:
+    def _embed_query(cls, query_text: str, embedding_method: str) -> list[float]:
         """
         Embed a query text string using the specified embedding method.
 
         Delegates to the existing embedder implementations.
         """
-        from rag_integration.feature_groups.rag_pipeline.embedding.mock import MockEmbedder
         from rag_integration.feature_groups.rag_pipeline.embedding.hash_embed import HashEmbedder
+        from rag_integration.feature_groups.rag_pipeline.embedding.mock import MockEmbedder
         from rag_integration.feature_groups.rag_pipeline.embedding.tfidf import TfidfEmbedder
 
-        embedders: Dict[str, Type[BaseEmbedder]] = {
+        embedders: dict[str, type[BaseEmbedder]] = {
             "mock": MockEmbedder,
             "hash": HashEmbedder,
             "tfidf": TfidfEmbedder,
@@ -131,10 +131,10 @@ class BaseRetriever(FeatureGroup):
     @abstractmethod
     def _search(
         cls,
-        query_vector: List[float],
+        query_vector: list[float],
         top_k: int,
         options: Options,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Perform similarity search.
 
@@ -152,7 +152,7 @@ class BaseRetriever(FeatureGroup):
     _SCORE_EPSILON = 1e-6
 
     @classmethod
-    def _to_passages(cls, results: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _to_passages(cls, results: dict[str, Any]) -> list[dict[str, Any]]:
         """Convert a :meth:`_search` result into the retrieve family's contract.
 
         ``[{doc_id, text, score, rank}]``, best first, only positive scores.
@@ -166,7 +166,7 @@ class BaseRetriever(FeatureGroup):
         texts = results.get("texts", [])
         doc_ids = results.get("doc_ids", [])
 
-        passages: List[Dict[str, Any]] = []
+        passages: list[dict[str, Any]] = []
         for i, distance in enumerate(distances):
             score = 1.0 - float(distance) / 2.0
             if score <= cls._SCORE_EPSILON:
@@ -188,14 +188,14 @@ class BaseRetriever(FeatureGroup):
         return passages
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Run retrieval: embed query if needed, search index, return results."""
         for feature in features.features:
             options = feature.options
 
             # Get query vector (pre-embedded or embed from text)
             query_embedding_raw = options.get(cls.QUERY_EMBEDDING)
-            query_vector: Optional[List[float]] = None
+            query_vector: list[float] | None = None
 
             if query_embedding_raw is not None:
                 query_vector = list(query_embedding_raw)

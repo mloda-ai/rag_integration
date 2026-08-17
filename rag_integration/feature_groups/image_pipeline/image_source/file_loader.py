@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from mloda.user import Options
 
 from rag_integration.feature_groups.image_pipeline.image_source.base import BaseImageSource
-
 
 # Supported image extensions
 SUPPORTED_FORMATS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".webp"}
@@ -34,7 +33,7 @@ class FileImageSource(BaseImageSource):
     """
 
     @classmethod
-    def _load_images(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_images(cls, options: Options) -> list[dict[str, Any]]:
         """
         Load images from files.
 
@@ -52,7 +51,7 @@ class FileImageSource(BaseImageSource):
         recursive = options.get("recursive") if options else None
         recursive = bool(recursive) if recursive is not None else False
 
-        paths: List[Path] = []
+        paths: list[Path] = []
 
         if file_paths:
             if not isinstance(file_paths, list):

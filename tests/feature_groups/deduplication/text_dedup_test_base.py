@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type
 
 from mloda.user import Options
 
@@ -15,19 +14,19 @@ class TextDeduplicationTestBase(ABC):
 
     @property
     @abstractmethod
-    def deduplicator_class(self) -> Type[BaseDeduplicator]: ...
+    def deduplicator_class(self) -> type[BaseDeduplicator]: ...
 
     @property
     @abstractmethod
-    def duplicate_texts(self) -> List[str]: ...
+    def duplicate_texts(self) -> list[str]: ...
 
     @property
     @abstractmethod
-    def duplicate_expected_indices(self) -> List[Optional[int]]: ...
+    def duplicate_expected_indices(self) -> list[int | None]: ...
 
     @property
     @abstractmethod
-    def unique_texts(self) -> List[str]: ...
+    def unique_texts(self) -> list[str]: ...
 
     @property
     @abstractmethod

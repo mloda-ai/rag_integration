@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -47,7 +47,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
     }
 
     @classmethod
-    def _get_pixel_size(cls, feature: "Feature") -> int:
+    def _get_pixel_size(cls, feature: Feature) -> int:
         """Get the pixel block size from feature options."""
         value = feature.options.get(cls.PIXEL_SIZE)
         return int(value) if value is not None else cls.DEFAULT_PIXEL_SIZE
@@ -57,8 +57,8 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
         cls,
         image_data: bytes,
         image_format: str,
-        regions: List[Dict[str, Any]],
-        feature: "Feature",
+        regions: list[dict[str, Any]],
+        feature: Feature,
     ) -> bytes:
         """Apply pixelation using the per-feature pixel size."""
         return cls._redact_region(image_data, image_format, regions, pixel_size=cls._get_pixel_size(feature))
@@ -68,7 +68,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
         cls,
         image_data: bytes,
         image_format: str,
-        regions: List[Dict[str, Any]],
+        regions: list[dict[str, Any]],
         pixel_size: int = DEFAULT_PIXEL_SIZE,
     ) -> bytes:
         """

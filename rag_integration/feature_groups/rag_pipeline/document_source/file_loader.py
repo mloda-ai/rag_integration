@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from mloda.user import Options
 
@@ -31,7 +31,7 @@ class FileDocumentSource(BaseDocumentSource):
     """
 
     @classmethod
-    def _load_documents(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_documents(cls, options: Options) -> list[dict[str, Any]]:
         """
         Load documents from a JSON file.
 

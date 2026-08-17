@@ -11,7 +11,7 @@ its contract test is skipped on CI (network) but runs locally; the zero-download
 from __future__ import annotations
 
 import threading
-from typing import Any, List, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -64,7 +64,7 @@ class FlashRankReranker(BaseRerankConnector):
             return cls._ranker
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         from flashrank import RerankRequest
 
         ranker = cls._get_ranker()

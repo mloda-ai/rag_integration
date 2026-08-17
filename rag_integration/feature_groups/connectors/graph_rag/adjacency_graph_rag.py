@@ -11,7 +11,6 @@ behaviour.
 from __future__ import annotations
 
 import re
-from typing import List, Tuple
 
 from mloda.provider import property_spec
 
@@ -60,7 +59,7 @@ class AdjacencyGraphRag(BaseGraphRagConnector):
         return set(_TOKEN_RE.findall(text.lower()))
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], edges: List[Tuple[int, int]], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], edges: list[tuple[int, int]], top_k: int) -> list[tuple[int, float]]:
         # Build an undirected adjacency map from the resolved (index, index)
         # edges; the base has already dropped self-loops and unknown ids.
         adjacency: dict[int, set[int]] = {node: set() for node in range(len(texts))}
@@ -72,7 +71,7 @@ class AdjacencyGraphRag(BaseGraphRagConnector):
         overlap = [len(query_tokens & cls._tokenize(text)) for text in texts]
         seeds = {i for i, count in enumerate(overlap) if count > 0}
 
-        scored: List[Tuple[int, float]] = []
+        scored: list[tuple[int, float]] = []
         for node in range(len(texts)):
             relevant_neighbours = sum(1 for neighbour in adjacency[node] if neighbour in seeds)
             score = float(overlap[node]) + _NEIGHBOUR_BONUS * relevant_neighbours

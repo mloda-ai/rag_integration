@@ -10,7 +10,7 @@ term. This is the distinguishing value of graph RAG over plain retrieval.
 from __future__ import annotations
 
 import re
-from typing import Any, List, Tuple
+from typing import Any
 
 from mloda.provider import property_spec
 
@@ -55,7 +55,7 @@ class NetworkxGraphRag(BaseGraphRagConnector):
         return set(_TOKEN_RE.findall(text.lower()))
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], edges: List[Tuple[int, int]], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], edges: list[tuple[int, int]], top_k: int) -> list[tuple[int, float]]:
         import networkx as nx
 
         graph: Any = nx.Graph()
@@ -66,7 +66,7 @@ class NetworkxGraphRag(BaseGraphRagConnector):
         overlap = [len(query_tokens & cls._tokenize(text)) for text in texts]
         seeds = {i for i, count in enumerate(overlap) if count > 0}
 
-        scored: List[Tuple[int, float]] = []
+        scored: list[tuple[int, float]] = []
         for node in range(len(texts)):
             relevant_neighbours = sum(1 for nb in graph.neighbors(node) if nb in seeds)
             score = float(overlap[node]) + _NEIGHBOUR_BONUS * relevant_neighbours

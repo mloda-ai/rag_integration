@@ -5,7 +5,6 @@ from __future__ import annotations
 import io
 import math
 from abc import ABC, abstractmethod
-from typing import Type
 
 from mloda.user import Options
 
@@ -37,7 +36,7 @@ class ImageEmbeddingTestBase(ABC):
 
     @property
     @abstractmethod
-    def embedder_class(self) -> Type[BaseImageEmbedder]: ...
+    def embedder_class(self) -> type[BaseImageEmbedder]: ...
 
     @property
     @abstractmethod

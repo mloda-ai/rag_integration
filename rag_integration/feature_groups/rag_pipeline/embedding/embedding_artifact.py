@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from mloda.provider import BaseArtifact, FeatureSet
 
@@ -62,7 +62,7 @@ class EmbeddingArtifact(BaseArtifact):
         return storage_dir / filename
 
     @classmethod
-    def custom_saver(cls, features: FeatureSet, artifact: Any) -> Optional[Any]:
+    def custom_saver(cls, features: FeatureSet, artifact: Any) -> Any | None:
         """
         Save embedding artifacts to file(s).
 
@@ -95,7 +95,7 @@ class EmbeddingArtifact(BaseArtifact):
         return saved_paths
 
     @classmethod
-    def custom_loader(cls, features: FeatureSet) -> Optional[Any]:
+    def custom_loader(cls, features: FeatureSet) -> Any | None:
         """
         Load embedding artifacts from file(s).
 
@@ -152,7 +152,7 @@ class EmbeddingArtifact(BaseArtifact):
             return None
 
     @classmethod
-    def load_embedding_artifact(cls, features: FeatureSet, artifact_key: str) -> Optional[Dict[str, Any]]:
+    def load_embedding_artifact(cls, features: FeatureSet, artifact_key: str) -> dict[str, Any] | None:
         """
         Helper method to load a specific embedding artifact by key.
 
@@ -175,7 +175,7 @@ class EmbeddingArtifact(BaseArtifact):
         return None
 
     @classmethod
-    def save_embedding_artifact(cls, features: FeatureSet, artifact_key: str, artifact_data: Dict[str, Any]) -> None:
+    def save_embedding_artifact(cls, features: FeatureSet, artifact_key: str, artifact_data: dict[str, Any]) -> None:
         """
         Helper method to save an embedding artifact with the proper multiple artifact format.
 

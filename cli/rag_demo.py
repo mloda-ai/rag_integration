@@ -9,32 +9,32 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Set, Type, Union
+from typing import Any
 
-from mloda.user import mlodaAPI, PluginCollector, Feature, Options
 from mloda.provider import FeatureGroup
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.rag_pipeline import (
     DictDocumentSource,
-    FixedSizeChunker,
-    SentenceChunker,
-    ParagraphChunker,
-    SemanticChunker,
-    MockEmbedder,
-    HashEmbedder,
-    TfidfEmbedder,
-    SentenceTransformerEmbedder,
     ExactHashDeduplicator,
-    NormalizedDeduplicator,
+    FixedSizeChunker,
+    HashEmbedder,
+    MockEmbedder,
     NGramDeduplicator,
-    RegexPIIRedactor,
-    SimplePIIRedactor,
+    NormalizedDeduplicator,
+    ParagraphChunker,
     PatternPIIRedactor,
     PresidioPIIRedactor,
+    RegexPIIRedactor,
+    SemanticChunker,
+    SentenceChunker,
+    SentenceTransformerEmbedder,
+    SimplePIIRedactor,
+    TfidfEmbedder,
 )
 
 # ANSI color codes
@@ -76,7 +76,7 @@ COMPONENTS = {
 
 
 # Mapping from CLI method names to provider classes
-PROVIDER_CLASSES: Dict[str, Dict[str, Type[FeatureGroup]]] = {
+PROVIDER_CLASSES: dict[str, dict[str, type[FeatureGroup]]] = {
     "chunking": {
         "fixed_size": FixedSizeChunker,
         "sentence": SentenceChunker,
@@ -103,9 +103,9 @@ PROVIDER_CLASSES: Dict[str, Dict[str, Type[FeatureGroup]]] = {
 }
 
 
-def get_providers(args: argparse.Namespace) -> Set[Type[FeatureGroup]]:
+def get_providers(args: argparse.Namespace) -> set[type[FeatureGroup]]:
     """Get the set of FeatureGroup providers needed for the pipeline based on CLI args."""
-    providers: Set[Type[FeatureGroup]] = {
+    providers: set[type[FeatureGroup]] = {
         DictDocumentSource,
         PROVIDER_CLASSES["chunking"][args.chunking],
         PROVIDER_CLASSES["dedup"][args.dedup],
@@ -116,7 +116,7 @@ def get_providers(args: argparse.Namespace) -> Set[Type[FeatureGroup]]:
     return providers
 
 
-def build_pipeline_feature(docs: List[Dict[str, Any]], args: argparse.Namespace) -> Feature:
+def build_pipeline_feature(docs: list[dict[str, Any]], args: argparse.Namespace) -> Feature:
     """
     Build the mloda Feature chain for the RAG pipeline.
 
@@ -211,7 +211,7 @@ def cmd_list(args: argparse.Namespace) -> None:
 def cmd_run(args: argparse.Namespace) -> None:
     """Run the RAG pipeline using mlodaAPI."""
     # Load documents
-    docs: List[Dict[str, Any]] = []
+    docs: list[dict[str, Any]] = []
     if args.docs:
         docs = json.loads(args.docs)
     elif args.input:
@@ -253,7 +253,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     # Also request the deduped chunk feature: mloda 0.9.0 returns only the
     # requested feature's column, so chunk text is not present on embedded rows.
     chunk_feature = final_feature.options.get("in_features")
-    features: List[Union[Feature, str]] = [final_feature]
+    features: list[Feature | str] = [final_feature]
     if isinstance(chunk_feature, Feature):
         features.append(chunk_feature)
     raw_result = mlodaAPI.run_all(

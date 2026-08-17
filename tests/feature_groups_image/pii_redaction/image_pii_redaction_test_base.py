@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
-from typing import Type
 
 from mloda.user import Options
 
@@ -39,7 +38,7 @@ class ImagePIIRedactionTestBase(ABC):
 
     @property
     @abstractmethod
-    def redactor_class(self) -> Type[BaseImagePIIRedactor]: ...
+    def redactor_class(self) -> type[BaseImagePIIRedactor]: ...
 
     def test_redact_single_region(self) -> None:
         """Should redact a single region."""

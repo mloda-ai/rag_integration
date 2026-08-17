@@ -8,7 +8,7 @@ count/filter-only sibling cannot answer.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Set, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.structured.aggregate_sql import AggregateSql
 from rag_integration.feature_groups.connectors.structured.base import BaseStructuredConnector
@@ -17,7 +17,7 @@ from tests.connectors.structured.structured_contract import StructuredConnectorC
 
 class TestAggregateSql(StructuredConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseStructuredConnector]:
+    def connector_class(cls) -> type[BaseStructuredConnector]:
         return AggregateSql
 
     @classmethod
@@ -29,11 +29,11 @@ class TestAggregateSql(StructuredConnectorContractBase):
         return "pets"
 
     @classmethod
-    def columns(cls) -> List[str]:
+    def columns(cls) -> list[str]:
         return ["name", "species", "age"]
 
     @classmethod
-    def rows(cls) -> List[Dict[str, Any]]:
+    def rows(cls) -> list[dict[str, Any]]:
         return [
             {"name": "Whiskers", "species": "cat", "age": 2},
             {"name": "Rex", "species": "dog", "age": 3},
@@ -54,7 +54,7 @@ class TestAggregateSql(StructuredConnectorContractBase):
         return "which pets have species cat"
 
     @classmethod
-    def expected_filter_keys(cls) -> Set[str]:
+    def expected_filter_keys(cls) -> set[str]:
         return {"Whiskers", "Felix", "Tom"}
 
     @classmethod

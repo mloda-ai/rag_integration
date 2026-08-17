@@ -6,16 +6,21 @@ brute-force cosine similarity. No external vector index required.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
 
 
@@ -64,11 +69,11 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Compute Recall@K over the embedded corpus and query rows."""
         try:
             import numpy as np
@@ -86,7 +91,7 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
             query_rows = [r for r in rows if r.get("row_type") == "query"]
 
             if not corpus_rows or not query_rows:
-                metrics: Dict[str, Any] = {
+                metrics: dict[str, Any] = {
                     "recall@1": 0.0,
                     "recall@5": 0.0,
                     "recall@10": 0.0,
@@ -109,8 +114,8 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
             corpus_ids = [cls._get_id(r) for r in corpus_rows]
 
             # Ground-truth: query_id → set of relevant corpus ids
-            query_relevant: Dict[str, Set[str]] = {}
-            query_ranked: Dict[str, List[str]] = {}
+            query_relevant: dict[str, set[str]] = {}
+            query_ranked: dict[str, list[str]] = {}
 
             for q_idx, q_row in enumerate(query_rows):
                 q_id = cls._get_id(q_row)
@@ -139,6 +144,6 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
         return []
 
     @staticmethod
-    def _get_id(row: Dict[str, Any]) -> str:
+    def _get_id(row: dict[str, Any]) -> str:
         """Return the identifier field for a row (doc_id or image_id)."""
         return str(row.get("doc_id") or row.get("image_id") or "")

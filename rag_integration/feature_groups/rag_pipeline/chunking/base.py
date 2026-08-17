@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -85,7 +89,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -113,7 +117,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         text: str,
         chunk_size: int,
         chunk_overlap: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Split a single text into chunks.
 
@@ -128,7 +132,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def _chunk_text_for_feature(cls, text: str, feature: Feature) -> List[str]:
+    def _chunk_text_for_feature(cls, text: str, feature: Feature) -> list[str]:
         """
         Chunk a single text using the options of the given feature.
 
@@ -139,7 +143,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
         return cls._chunk_text(text, cls._get_chunk_size(feature), cls._get_chunk_overlap(feature))
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Perform chunking on the source feature."""
         result = []
 

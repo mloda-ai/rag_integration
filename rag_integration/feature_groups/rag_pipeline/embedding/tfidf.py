@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 from collections import Counter
-from typing import Dict, List, Set
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -37,7 +36,7 @@ class TfidfEmbedder(BaseEmbedder):
     }
 
     @classmethod
-    def _tokenize(cls, text: str) -> List[str]:
+    def _tokenize(cls, text: str) -> list[str]:
         """Simple tokenization."""
         # Lowercase and split on non-alphanumeric
         import re
@@ -47,14 +46,14 @@ class TfidfEmbedder(BaseEmbedder):
         return [w for w in words if len(w) > 2]
 
     @classmethod
-    def _compute_tf(cls, tokens: List[str]) -> Dict[str, float]:
+    def _compute_tf(cls, tokens: list[str]) -> dict[str, float]:
         """Compute term frequency."""
         counter = Counter(tokens)
         total = len(tokens) if tokens else 1
         return {word: count / total for word, count in counter.items()}
 
     @classmethod
-    def _compute_idf(cls, documents: List[List[str]], vocab: Set[str]) -> Dict[str, float]:
+    def _compute_idf(cls, documents: list[list[str]], vocab: set[str]) -> dict[str, float]:
         """Compute inverse document frequency."""
         n_docs = len(documents)
         idf = {}
@@ -68,10 +67,10 @@ class TfidfEmbedder(BaseEmbedder):
     @classmethod
     def _embed_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding_dim: int,
         model_name: str,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         """
         Generate TF-IDF embeddings.
 
@@ -90,7 +89,7 @@ class TfidfEmbedder(BaseEmbedder):
         tokenized = [cls._tokenize(text) for text in texts]
 
         # Build vocabulary
-        vocab: Set[str] = set()
+        vocab: set[str] = set()
         for tokens in tokenized:
             vocab.update(tokens)
 
@@ -106,7 +105,7 @@ class TfidfEmbedder(BaseEmbedder):
         return embeddings
 
     @classmethod
-    def _tfidf_embed(cls, tokens: List[str], idf: Dict[str, float], dim: int) -> List[float]:
+    def _tfidf_embed(cls, tokens: list[str], idf: dict[str, float], dim: int) -> list[float]:
         """
         Generate TF-IDF embedding for a single document.
 

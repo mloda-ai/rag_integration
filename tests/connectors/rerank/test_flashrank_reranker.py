@@ -7,7 +7,7 @@ zero-download ``LexicalReranker`` is the always-on CI anchor for this family.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import pytest
 
@@ -23,7 +23,7 @@ pytest.importorskip("flashrank")
 @requires_flashrank_model
 class TestFlashRankReranker(RerankConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseRerankConnector]:
+    def connector_class(cls) -> type[BaseRerankConnector]:
         return FlashRankReranker
 
     @classmethod
@@ -31,7 +31,7 @@ class TestFlashRankReranker(RerankConnectorContractBase):
         return "flashrank"
 
     @classmethod
-    def sample_candidates(cls) -> List[Dict[str, Any]]:
+    def sample_candidates(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "Cars need regular engine oil and maintenance."},
             {"doc_id": "d1", "text": "Cats need fresh water, a clean litter box, and regular vet visits."},

@@ -10,7 +10,8 @@ ahead of ``FeatureGroup`` in a base, so mloda discovery still sees only the
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from mloda.user import Options
 
@@ -74,21 +75,21 @@ class DocCollectionMixin:
     """
 
     @staticmethod
-    def _effective_doc_id(item: Dict[str, Any], index: int) -> str:
+    def _effective_doc_id(item: dict[str, Any], index: int) -> str:
         return str(item.get("doc_id", str(index)))
 
     @classmethod
-    def _effective_doc_ids(cls, items: Sequence[Dict[str, Any]]) -> List[str]:
+    def _effective_doc_ids(cls, items: Sequence[dict[str, Any]]) -> list[str]:
         return [cls._effective_doc_id(item, i) for i, item in enumerate(items)]
 
     @classmethod
-    def _known_doc_ids(cls, items: Sequence[Dict[str, Any]]) -> Set[str]:
+    def _known_doc_ids(cls, items: Sequence[dict[str, Any]]) -> set[str]:
         return set(cls._effective_doc_ids(items))
 
     @classmethod
-    def _find_duplicate_doc_id(cls, items: Sequence[Dict[str, Any]]) -> Optional[str]:
+    def _find_duplicate_doc_id(cls, items: Sequence[dict[str, Any]]) -> str | None:
         """Return the first repeated effective ``doc_id``, or ``None``."""
-        seen: Set[str] = set()
+        seen: set[str] = set()
         for i, item in enumerate(items):
             doc_id = cls._effective_doc_id(item, i)
             if doc_id in seen:
@@ -97,7 +98,7 @@ class DocCollectionMixin:
         return None
 
     @classmethod
-    def _require_doc_list(cls, options: Options, key: str) -> List[Dict[str, Any]]:
+    def _require_doc_list(cls, options: Options, key: str) -> list[dict[str, Any]]:
         value = options.get(key)
         if value is None:
             raise MissingOptionError(f"{cls.__name__} requires '{key}' in options: a list of {{doc_id, text}} dicts.")
@@ -110,7 +111,7 @@ class RankingValidationMixin:
     @classmethod
     def _validate_rank_indices(
         cls,
-        ranked: List[Tuple[int, float]],
+        ranked: list[tuple[int, float]],
         count: int,
         extent: str,
         *,
@@ -121,8 +122,8 @@ class RankingValidationMixin:
         ``extent`` is the population label used in the out-of-range message
         (e.g. ``"3 candidates"``).
         """
-        seen: Set[int] = set()
-        previous_score: Optional[float] = None
+        seen: set[int] = set()
+        previous_score: float | None = None
         for idx, score in ranked:
             if not 0 <= idx < count:
                 raise RankingContractError(f"{cls.__name__}._rank returned out-of-range index {idx} for {extent}.")

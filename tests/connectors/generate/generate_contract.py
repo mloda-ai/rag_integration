@@ -7,14 +7,14 @@ assertion. The base is not named ``Test*`` so pytest does not collect it.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Type
+from typing import Any
 
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
 
 
@@ -25,7 +25,7 @@ class GenerateConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def connector_class(cls) -> Type[BaseGenerateConnector]:
+    def connector_class(cls) -> type[BaseGenerateConnector]:
         """Return the concrete ``BaseGenerateConnector`` subclass under test."""
 
     @classmethod
@@ -35,7 +35,7 @@ class GenerateConnectorContractBase(ABC):
 
     @classmethod
     @abstractmethod
-    def sample_passages(cls) -> List[Dict[str, Any]]:
+    def sample_passages(cls) -> list[dict[str, Any]]:
         """Return supporting passages (``{doc_id, text}``) with at least one clearly relevant doc.
 
         ``expected_citation_doc_id`` names the one that must be cited; a backend
@@ -64,11 +64,11 @@ class GenerateConnectorContractBase(ABC):
     # -- Helpers --------------------------------------------------------------
 
     @classmethod
-    def _answer(cls, query: str, passages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _answer(cls, query: str, passages: list[dict[str, Any]]) -> dict[str, Any]:
         return cls.connector_class()._answer(query, passages)
 
     @classmethod
-    def _run_all(cls, query: str, passages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _run_all(cls, query: str, passages: list[dict[str, Any]]) -> dict[str, Any]:
         connector = cls.connector_class()
         feature = Feature(
             connector.ROOT_FEATURE_NAME,
@@ -88,7 +88,7 @@ class GenerateConnectorContractBase(ABC):
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
-                    answer: Dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
+                    answer: dict[str, Any] = row[connector.ROOT_FEATURE_NAME]
                     return answer
         raise AssertionError(f"run_all returned no '{connector.ROOT_FEATURE_NAME}' row: {result!r}")
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -39,7 +38,7 @@ class ParagraphChunker(BaseChunker):
     PARAGRAPH_PATTERN = re.compile(r"\n\s*\n")
 
     @classmethod
-    def _split_paragraphs(cls, text: str) -> List[str]:
+    def _split_paragraphs(cls, text: str) -> list[str]:
         """Split text into paragraphs."""
         paragraphs = cls.PARAGRAPH_PATTERN.split(text)
         return [p.strip() for p in paragraphs if p.strip()]
@@ -50,7 +49,7 @@ class ParagraphChunker(BaseChunker):
         text: str,
         chunk_size: int,
         chunk_overlap: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Split text into chunks at paragraph boundaries.
 
@@ -80,7 +79,7 @@ class ParagraphChunker(BaseChunker):
             return cls._split_long_paragraph(paragraphs[0], chunk_size, chunk_overlap)
 
         chunks = []
-        current_chunk: List[str] = []
+        current_chunk: list[str] = []
         current_length = 0
 
         for para in paragraphs:
@@ -113,7 +112,7 @@ class ParagraphChunker(BaseChunker):
         return chunks if chunks else [""]
 
     @classmethod
-    def _overlap_paragraphs(cls, paragraphs: List[str], chunk_overlap: int) -> List[str]:
+    def _overlap_paragraphs(cls, paragraphs: list[str], chunk_overlap: int) -> list[str]:
         """
         Return the trailing paragraphs whose joined length stays within chunk_overlap characters.
 
@@ -124,7 +123,7 @@ class ParagraphChunker(BaseChunker):
         """
         if chunk_overlap <= 0:
             return []
-        overlap: List[str] = []
+        overlap: list[str] = []
         length = 0
         for paragraph in reversed(paragraphs):
             added = len(paragraph) + (2 if overlap else 0)
@@ -135,7 +134,7 @@ class ParagraphChunker(BaseChunker):
         return overlap
 
     @classmethod
-    def _split_long_paragraph(cls, text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
+    def _split_long_paragraph(cls, text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
         """Split a long paragraph into smaller chunks."""
         chunks = []
         step = max(1, chunk_size - chunk_overlap)

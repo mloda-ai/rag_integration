@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import List
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -61,10 +60,10 @@ class RegexPIIRedactor(BasePIIRedactor):
     @classmethod
     def _redact_pii(
         cls,
-        texts: List[str],
-        pii_types: List[str],
+        texts: list[str],
+        pii_types: list[str],
         replacement_strategy: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Redact PII using regex patterns.
 

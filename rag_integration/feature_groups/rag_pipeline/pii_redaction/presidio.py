@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -76,17 +76,17 @@ class PresidioPIIRedactor(BasePIIRedactor):
     # All Presidio entities we support
     ALL_ENTITIES = list(PII_TYPE_MAPPING.values())
 
-    _analyzer: Optional[object] = None
+    _analyzer: object | None = None
     _analyzer_lock = threading.Lock()
 
     @classmethod
-    def _get_language(cls, feature: "Feature") -> str:
+    def _get_language(cls, feature: Feature) -> str:
         """Get the analyzer language from feature options."""
         value = feature.options.get(cls.LANGUAGE)
         return str(value) if value is not None else cls.DEFAULT_LANGUAGE
 
     @classmethod
-    def _redact_texts_for_feature(cls, texts: List[str], feature: "Feature") -> List[str]:
+    def _redact_texts_for_feature(cls, texts: list[str], feature: Feature) -> list[str]:
         """Redact texts using the per-feature language option."""
         return cls._redact_pii(
             texts,
@@ -117,7 +117,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
             return cls._analyzer
 
     @classmethod
-    def _get_presidio_entities(cls, pii_types: List[str]) -> List[str]:
+    def _get_presidio_entities(cls, pii_types: list[str]) -> list[str]:
         """Convert our PII types to Presidio entity types."""
         if "ALL" in pii_types:
             return cls.ALL_ENTITIES
@@ -142,11 +142,11 @@ class PresidioPIIRedactor(BasePIIRedactor):
     @classmethod
     def _redact_pii(
         cls,
-        texts: List[str],
-        pii_types: List[str],
+        texts: list[str],
+        pii_types: list[str],
         replacement_strategy: str,
         language: str = DEFAULT_LANGUAGE,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Redact PII using Presidio Analyzer.
 
@@ -162,7 +162,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
         analyzer = cls._get_analyzer()
         entities = cls._get_presidio_entities(pii_types)
 
-        result: List[str] = []
+        result: list[str] = []
         for text in texts:
             if not text:
                 result.append(text)

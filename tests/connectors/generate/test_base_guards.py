@@ -9,16 +9,15 @@ missing ``passages``, duplicate passage doc_ids) are exercised directly.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
 from mloda.user import Options
 
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
 
-_PASSAGES: List[Dict[str, Any]] = [
+_PASSAGES: list[dict[str, Any]] = [
     {"doc_id": "d0", "text": "Alpha fact."},
     {"doc_id": "d1", "text": "Beta fact."},
 ]
@@ -28,7 +27,7 @@ class _UnknownCitationStub(BaseGenerateConnector):
     """Misbehaving backend: cites a doc_id that was never supplied."""
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return "Alpha fact.", ["not_a_supplied_doc"]
 
 
@@ -36,7 +35,7 @@ class _UncitedAnswerStub(BaseGenerateConnector):
     """Misbehaving backend: non-empty answer with no citations."""
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return "Alpha fact.", []
 
 
@@ -44,7 +43,7 @@ class _CitationsWithoutAnswerStub(BaseGenerateConnector):
     """Misbehaving backend: citations attached to a whitespace-only answer."""
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return "   ", ["d0"]
 
 
@@ -52,7 +51,7 @@ class _DuplicateCitationsStub(BaseGenerateConnector):
     """Misbehaving backend: cites the same passage twice."""
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return "Alpha fact.", ["d0", "d0"]
 
 
@@ -60,7 +59,7 @@ class _WhitespaceAnswerStub(BaseGenerateConnector):
     """Degenerate but legal backend: whitespace-only answer, no citations."""
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return " \n\t ", []
 
 
@@ -68,11 +67,11 @@ class _WellBehavedStub(BaseGenerateConnector):
     """Minimal correct backend, used to exercise the option guards."""
 
     @classmethod
-    def _generate(cls, query: str, passages: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
         return "Alpha fact.", ["d0"]
 
 
-def _feature_set(context: Dict[str, Any]) -> Any:
+def _feature_set(context: dict[str, Any]) -> Any:
     """Build a minimal FeatureSet stand-in with a single feature and the given options."""
     feature = MagicMock()
     feature.options = Options(context=context)

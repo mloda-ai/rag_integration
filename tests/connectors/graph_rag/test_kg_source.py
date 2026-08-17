@@ -7,29 +7,28 @@ surface, and the standalone end-to-end run.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
-
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
+
 from rag_integration.feature_groups.connectors.graph_rag.kg_source import (
     BaseKnowledgeGraphSource,
     TriplesKnowledgeGraph,
 )
 
-_TRIPLES: List[List[str]] = [
+_TRIPLES: list[list[str]] = [
     ["chloroplast", "hosts", "photosynthesis"],
     ["photosynthesis", "produces", "glucose"],
     ["mitochondria", "consumes", "glucose"],
 ]
 
 
-def _build(triples: Any) -> Dict[str, Any]:
+def _build(triples: Any) -> dict[str, Any]:
     options = Options(context={TriplesKnowledgeGraph.TRIPLES: triples})
     return TriplesKnowledgeGraph._build_graph(options)
 

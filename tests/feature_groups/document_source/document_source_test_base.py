@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Type
 
 from mloda.user import Options
 
@@ -15,7 +14,7 @@ class DocumentSourceTestBase(ABC):
 
     @property
     @abstractmethod
-    def source_class(self) -> Type[BaseDocumentSource]: ...
+    def source_class(self) -> type[BaseDocumentSource]: ...
 
     def test_feature_matching_pattern(self) -> None:
         """Should match document source features."""

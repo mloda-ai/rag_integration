@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type
 
 from mloda.user import Options
 
@@ -26,19 +25,19 @@ class ImageDeduplicationTestBase(ABC):
 
     @property
     @abstractmethod
-    def deduplicator_class(self) -> Type[BaseImageDeduplicator]: ...
+    def deduplicator_class(self) -> type[BaseImageDeduplicator]: ...
 
     @property
     @abstractmethod
-    def duplicate_images(self) -> List[bytes]: ...
+    def duplicate_images(self) -> list[bytes]: ...
 
     @property
     @abstractmethod
-    def duplicate_expected_indices(self) -> List[Optional[int]]: ...
+    def duplicate_expected_indices(self) -> list[int | None]: ...
 
     @property
     @abstractmethod
-    def unique_images(self) -> List[bytes]: ...
+    def unique_images(self) -> list[bytes]: ...
 
     @property
     @abstractmethod

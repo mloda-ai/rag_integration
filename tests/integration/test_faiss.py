@@ -11,21 +11,21 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Set, Type
+from typing import Any
 
-from mloda.user import mloda, mlodaAPI, PluginCollector, Domain, Feature, Options
 from mloda.provider import DataCreator, FeatureGroup
+from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
 from rag_integration.feature_groups.rag_pipeline import (
-    RegexPIIRedactor,
-    FixedSizeChunker,
     ExactHashDeduplicator,
-    MockEmbedder,
     FaissFlatIndexer,
     FaissRetriever,
+    FixedSizeChunker,
+    MockEmbedder,
+    RegexPIIRedactor,
 )
 from tests.integration.helpers import flatten_result
 
@@ -50,7 +50,7 @@ class MockDocumentDataCreator(FeatureGroup):
         return str(feature_name) == "docs"
 
     @classmethod
-    def compute_framework_rule(cls) -> Set[Type[Any]]:
+    def compute_framework_rule(cls) -> set[type[Any]]:
         return {PythonDictFramework}
 
     @classmethod
@@ -58,7 +58,7 @@ class MockDocumentDataCreator(FeatureGroup):
         return [{"docs": doc["text"], "doc_id": doc["doc_id"]} for doc in SAMPLE_DOCUMENTS]
 
 
-def get_test_providers() -> Set[Type[FeatureGroup]]:
+def get_test_providers() -> set[type[FeatureGroup]]:
     return {
         MockDocumentDataCreator,
         RegexPIIRedactor,
@@ -126,7 +126,7 @@ class TestVectorStorePipeline:
 # =============================================================================
 
 
-def make_domain_providers(domain_name: str) -> Set[Type[FeatureGroup]]:
+def make_domain_providers(domain_name: str) -> set[type[FeatureGroup]]:
     """Create a provider set with a specific domain for artifact isolation."""
 
     class DomainDataCreator(MockDocumentDataCreator):
@@ -175,7 +175,7 @@ class TestVectorStoreArtifactPersistence:
             providers = make_domain_providers("vs_artifact_test")
             feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
 
-            feature_options: Dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
+            feature_options: dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
 
             # Run 1: compute and save
             feature1 = Feature(feature_name, options=Options(feature_options), domain="vs_artifact_test")

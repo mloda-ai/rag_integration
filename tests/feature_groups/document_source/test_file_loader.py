@@ -1,7 +1,6 @@
 """Tests for FileDocumentSource."""
 
 from pathlib import Path
-from typing import Type
 
 import pytest
 from mloda.user import Options
@@ -15,7 +14,7 @@ class TestFileDocumentSource(DocumentSourceTestBase):
     """Tests for FileDocumentSource."""
 
     @property
-    def source_class(self) -> Type[BaseDocumentSource]:
+    def source_class(self) -> type[BaseDocumentSource]:
         return FileDocumentSource
 
     def test_load_from_json_file(self, tmp_path: Path) -> None:

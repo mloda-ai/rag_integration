@@ -10,14 +10,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import faiss
 import numpy as np
 import pytest
-
-from mloda.user import mlodaAPI, Feature, Options, PluginCollector
 from mloda.provider import FeatureGroup
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -99,7 +98,7 @@ def _build_stage_index(tmp_path: Path) -> tuple[str, str]:
     return index_path, metadata_path
 
 
-def _assert_passage_shape(passages: List[Dict[str, Any]]) -> None:
+def _assert_passage_shape(passages: list[dict[str, Any]]) -> None:
     assert isinstance(passages, list)
     assert passages, "no passages came back; parity assertions would be vacuous"
     for rank, passage in enumerate(passages):

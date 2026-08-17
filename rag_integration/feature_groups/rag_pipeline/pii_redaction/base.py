@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet, property_spec
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import (
+    ComputeFramework,
+    DefaultOptionKeys,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    FeatureSet,
+    property_spec,
+)
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda.provider import DefaultOptionKeys
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -116,7 +120,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -126,7 +130,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         return source_features[0]
 
     @classmethod
-    def _get_pii_types(cls, feature: Feature) -> List[str]:
+    def _get_pii_types(cls, feature: Feature) -> list[str]:
         """Get PII types to redact from feature options."""
         pii_types = feature.options.get(cls.PII_TYPES)
         if pii_types is None:
@@ -145,10 +149,10 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     @abstractmethod
     def _redact_pii(
         cls,
-        texts: List[str],
-        pii_types: List[str],
+        texts: list[str],
+        pii_types: list[str],
         replacement_strategy: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Redact PII from a list of texts.
 
@@ -163,7 +167,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         ...
 
     @classmethod
-    def _redact_texts_for_feature(cls, texts: List[str], feature: Feature) -> List[str]:
+    def _redact_texts_for_feature(cls, texts: list[str], feature: Feature) -> list[str]:
         """
         Redact a batch of texts using the options of the given feature.
 
@@ -178,7 +182,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
         )
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Perform PII redaction on the source feature."""
         # mloda 0.9.0 delivers columnar data; read it row-wise.
         rows = columnar_to_rows(data)

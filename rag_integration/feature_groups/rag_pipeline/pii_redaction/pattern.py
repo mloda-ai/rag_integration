@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Pattern
+from re import Pattern
+from typing import Any
 
-from mloda.user import Feature
 from mloda.provider import DefaultOptionKeys, property_spec
+from mloda.user import Feature
 
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
 
@@ -53,7 +54,7 @@ class PatternPIIRedactor(BasePIIRedactor):
     }
 
     # Default patterns (can be extended via options)
-    DEFAULT_PATTERNS: Dict[str, str] = {
+    DEFAULT_PATTERNS: dict[str, str] = {
         "EMAIL": BasePIIRedactor.EMAIL_REGEX,
         "PHONE": BasePIIRedactor.PHONE_REGEX,
         "SSN": BasePIIRedactor.SSN_REGEX,
@@ -61,12 +62,12 @@ class PatternPIIRedactor(BasePIIRedactor):
         "IP_ADDRESS": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
     }
 
-    _active_patterns: Dict[str, Pattern[str]] | None = None
+    _active_patterns: dict[str, Pattern[str]] | None = None
 
     @classmethod
-    def _get_patterns(cls, feature: Feature) -> Dict[str, Pattern[str]]:
+    def _get_patterns(cls, feature: Feature) -> dict[str, Pattern[str]]:
         """Get compiled patterns including custom ones from feature options."""
-        patterns: Dict[str, Pattern[str]] = {}
+        patterns: dict[str, Pattern[str]] = {}
 
         for name, pattern_str in cls.DEFAULT_PATTERNS.items():
             patterns[name] = re.compile(pattern_str)
@@ -80,7 +81,7 @@ class PatternPIIRedactor(BasePIIRedactor):
         return patterns
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: Any) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
         """Extract custom patterns from feature options before redacting."""
         for feature in features.features:
             cls._active_patterns = cls._get_patterns(feature)
@@ -89,10 +90,10 @@ class PatternPIIRedactor(BasePIIRedactor):
     @classmethod
     def _redact_pii(
         cls,
-        texts: List[str],
-        pii_types: List[str],
+        texts: list[str],
+        pii_types: list[str],
         replacement_strategy: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """Redact PII using configurable patterns (default + custom)."""
         if cls._active_patterns is not None:
             patterns = cls._active_patterns

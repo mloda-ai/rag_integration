@@ -9,7 +9,7 @@ surfaced.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from rag_integration.feature_groups.connectors.orchestrator.base import BaseOrchestratorConnector
 from rag_integration.feature_groups.connectors.orchestrator.r2r_fixture_orchestrator import R2RFixtureOrchestrator
@@ -18,7 +18,7 @@ from tests.connectors.orchestrator.orchestrator_contract import OrchestratorConn
 
 class TestR2RFixtureOrchestrator(OrchestratorConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseOrchestratorConnector]:
+    def connector_class(cls) -> type[BaseOrchestratorConnector]:
         return R2RFixtureOrchestrator
 
     @classmethod
@@ -26,7 +26,7 @@ class TestR2RFixtureOrchestrator(OrchestratorConnectorContractBase):
         return "r2r"
 
     @classmethod
-    def sample_corpus(cls) -> List[Dict[str, Any]]:
+    def sample_corpus(cls) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "Cars need regular engine oil and maintenance."},
             {"doc_id": "d1", "text": "A cat is an independent and curious pet."},

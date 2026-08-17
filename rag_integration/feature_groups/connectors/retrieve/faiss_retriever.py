@@ -9,10 +9,7 @@ Row-shape parity with the stage is pinned by
 
 from __future__ import annotations
 
-from typing import List, Tuple
-
 import numpy as np
-
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
@@ -44,7 +41,7 @@ class FaissDenseRetriever(BaseRetrieveConnector):
     }
 
     @classmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         import faiss
 
         vectors = HashEmbedder._embed_texts(list(texts) + [query], cls._EMBED_DIM, "default")

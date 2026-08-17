@@ -1,6 +1,5 @@
 """Tests for DictDocumentSource."""
 
-from typing import Type
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,7 +14,7 @@ class TestDictDocumentSource(DocumentSourceTestBase):
     """Tests for DictDocumentSource."""
 
     @property
-    def source_class(self) -> Type[BaseDocumentSource]:
+    def source_class(self) -> type[BaseDocumentSource]:
         return DictDocumentSource
 
     def test_load_from_dict_list(self) -> None:

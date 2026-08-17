@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -41,7 +41,7 @@ class BaseLLMResponse(FeatureGroup):
     SYSTEM_PROMPT = "system_prompt"
     LLM_METHOD = "llm_method"
 
-    LLM_METHODS: Dict[str, str] = {}
+    LLM_METHODS: dict[str, str] = {}
 
     PROPERTY_MAPPING = {
         LLM_METHOD: property_spec("Which LLM implementation to use"),
@@ -51,7 +51,7 @@ class BaseLLMResponse(FeatureGroup):
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -61,7 +61,7 @@ class BaseLLMResponse(FeatureGroup):
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -83,7 +83,7 @@ class BaseLLMResponse(FeatureGroup):
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features."""
-        return None
+        return
 
     @classmethod
     def _get_query(cls, options: Options) -> str:
@@ -129,7 +129,7 @@ class BaseLLMResponse(FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Run LLM generation: extract options, delegate to _generate, return result."""
         for feature in features.features:
             options = feature.options

@@ -1,7 +1,5 @@
 """Tests for SimplePIIRedactor."""
 
-from typing import Type
-
 from rag_integration.feature_groups.rag_pipeline.pii_redaction import SimplePIIRedactor
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
 from tests.feature_groups.pii_redaction.text_pii_redaction_test_base import TextPIIRedactionTestBase
@@ -11,7 +9,7 @@ class TestSimplePIIRedactor(TextPIIRedactionTestBase):
     """Tests for SimplePIIRedactor."""
 
     @property
-    def redactor_class(self) -> Type[BasePIIRedactor]:
+    def redactor_class(self) -> type[BasePIIRedactor]:
         return SimplePIIRedactor
 
     def test_redact_common_first_name(self) -> None:

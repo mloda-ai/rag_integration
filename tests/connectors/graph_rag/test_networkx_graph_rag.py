@@ -7,7 +7,7 @@ anchor.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 import pytest
 
@@ -21,7 +21,7 @@ pytest.importorskip("networkx")
 
 class TestNetworkxGraphRag(GraphRagConnectorContractBase):
     @classmethod
-    def connector_class(cls) -> Type[BaseGraphRagConnector]:
+    def connector_class(cls) -> type[BaseGraphRagConnector]:
         return NetworkxGraphRag
 
     @classmethod
@@ -29,7 +29,7 @@ class TestNetworkxGraphRag(GraphRagConnectorContractBase):
         return "networkx"
 
     @classmethod
-    def sample_nodes(cls) -> List[Dict[str, Any]]:
+    def sample_nodes(cls) -> list[dict[str, Any]]:
         return [
             # Relevant: shares "photosynthesis" and "plants" with the query.
             {"doc_id": "rel", "text": "Photosynthesis lets plants make energy from sunlight."},
@@ -40,7 +40,7 @@ class TestNetworkxGraphRag(GraphRagConnectorContractBase):
         ]
 
     @classmethod
-    def sample_edges(cls) -> List[List[str]]:
+    def sample_edges(cls) -> list[list[str]]:
         return [["rel", "ctx"]]
 
     @classmethod

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List
-
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.preprocessing.base import BaseImagePreprocessor
@@ -41,7 +39,7 @@ class ResizePreprocessor(BaseImagePreprocessor):
         cls,
         image_data: bytes,
         image_format: str,
-        target_size: List[int],
+        target_size: list[int],
     ) -> bytes:
         """
         Resize image to exact target dimensions.

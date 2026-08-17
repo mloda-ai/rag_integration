@@ -27,10 +27,10 @@ each evolve its own contract.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import Options, FeatureName
+from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -68,7 +68,7 @@ class BaseRerankConnector(
 
     # Filled per concrete: {backend_value: human-readable description}. Disjoint
     # across backends; empty on the base so it never matches.
-    RERANK_BACKENDS: Dict[str, str] = {}
+    RERANK_BACKENDS: dict[str, str] = {}
 
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
@@ -82,7 +82,7 @@ class BaseRerankConnector(
     }
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -92,7 +92,7 @@ class BaseRerankConnector(
     @classmethod
     def match_feature_group_criteria(
         cls,
-        feature_name: Union[FeatureName, str],
+        feature_name: FeatureName | str,
         options: Options,
         data_access_collection: Any = None,
     ) -> bool:
@@ -108,11 +108,11 @@ class BaseRerankConnector(
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (candidates arrive via Options)."""
-        return None
+        return
 
     @classmethod
     @abstractmethod
-    def _rank(cls, query: str, texts: List[str], top_k: int) -> List[Tuple[int, float]]:
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
         """Reorder ``texts`` by relevance to ``query``.
 
         Returns up to ``top_k`` ``(candidate_index, score)`` pairs, ordered
@@ -124,7 +124,7 @@ class BaseRerankConnector(
         ...
 
     @classmethod
-    def _validate_ranking(cls, ranked: List[Tuple[int, float]], n_candidates: int) -> None:
+    def _validate_ranking(cls, ranked: list[tuple[int, float]], n_candidates: int) -> None:
         """Reject out-of-range or duplicate indices from a backend's ``_rank``."""
         cls._validate_rank_indices(ranked, n_candidates, f"{n_candidates} candidates")
 
@@ -132,9 +132,9 @@ class BaseRerankConnector(
     def _rerank(
         cls,
         query: str,
-        candidates: List[Dict[str, Any]],
+        candidates: list[dict[str, Any]],
         top_k: int,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Assemble the reranked-passage contract around the backend's :meth:`_rank`."""
         if not candidates:
             return []
@@ -148,13 +148,13 @@ class BaseRerankConnector(
         ranked = cls._rank(query, texts, effective_k)
         cls._validate_ranking(ranked, len(candidates))
 
-        passages: List[Dict[str, Any]] = []
+        passages: list[dict[str, Any]] = []
         for rank, (idx, score) in enumerate(ranked):
             passages.append({"doc_id": doc_ids[idx], "text": texts[idx], "score": float(score), "rank": rank})
         return passages
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Rerank the candidates against the query, return reordered passages."""
         cls._assert_single_feature(features)
         for feature in features.features:

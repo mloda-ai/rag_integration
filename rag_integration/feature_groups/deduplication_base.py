@@ -14,15 +14,13 @@ loop, and group-representative selection). Subclasses provide the per-row item e
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet
-from mloda.provider import FeatureChainParserMixin
+from mloda.provider import ComputeFramework, FeatureChainParserMixin, FeatureGroup, FeatureSet
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 
@@ -41,7 +39,7 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
     MAX_IN_FEATURES = 1
 
     @classmethod
-    def compute_framework_rule(cls) -> Optional[Set[Type[ComputeFramework]]]:
+    def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
         return {PythonDictFramework}
 
     @classmethod
@@ -64,13 +62,13 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
 
     @classmethod
     @abstractmethod
-    def _extract_items(cls, data: List[Dict[str, Any]], feature: Feature) -> List[Any]:
+    def _extract_items(cls, data: list[dict[str, Any]], feature: Feature) -> list[Any]:
         """Extract the comparable item (text string or image bytes) from each row."""
         ...
 
     @classmethod
     @abstractmethod
-    def _find_duplicates(cls, items: List[Any], threshold: float) -> List[Optional[int]]:
+    def _find_duplicates(cls, items: list[Any], threshold: float) -> list[int | None]:
         """Find duplicates among items.
 
         Returns a list where each element is either None (not a duplicate) or the index
@@ -84,7 +82,7 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
         return len(item)
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> List[Dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Deduplicate rows: attach duplicate metadata and filter by keep strategy.
 
         Exactly one distinct feature is processed per call. Unlike column-adding feature
@@ -137,9 +135,9 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
         return result
 
     @classmethod
-    def _keep_largest_per_group(cls, data: List[Dict[str, Any]], items: List[Any]) -> List[Dict[str, Any]]:
+    def _keep_largest_per_group(cls, data: list[dict[str, Any]], items: list[Any]) -> list[dict[str, Any]]:
         """Keep only the largest item from each duplicate group."""
-        groups: Dict[int, List[int]] = {}
+        groups: dict[int, list[int]] = {}
         for i, row in enumerate(data):
             dup_of = row.get("duplicate_of")
             key = dup_of if dup_of is not None else i

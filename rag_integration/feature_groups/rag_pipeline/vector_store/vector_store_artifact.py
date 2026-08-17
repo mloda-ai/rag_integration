@@ -6,7 +6,7 @@ import hashlib
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from mloda.provider import BaseArtifact, FeatureSet
 
@@ -54,7 +54,7 @@ class VectorStoreArtifact(BaseArtifact):
         return index_path, metadata_path
 
     @classmethod
-    def custom_saver(cls, features: FeatureSet, artifact: Any) -> Optional[Any]:
+    def custom_saver(cls, features: FeatureSet, artifact: Any) -> Any | None:
         """
         Save FAISS index and metadata to files.
 
@@ -71,7 +71,7 @@ class VectorStoreArtifact(BaseArtifact):
         if not isinstance(artifact, dict):
             raise ValueError(f"Expected artifact to be a dictionary, got {type(artifact)}")
 
-        saved_paths: Dict[str, Dict[str, str]] = {}
+        saved_paths: dict[str, dict[str, str]] = {}
 
         for artifact_key, artifact_data in artifact.items():
             index_path, metadata_path = cls._get_artifact_file_paths(features, artifact_key)
@@ -92,7 +92,7 @@ class VectorStoreArtifact(BaseArtifact):
         return saved_paths
 
     @classmethod
-    def custom_loader(cls, features: FeatureSet) -> Optional[Any]:
+    def custom_loader(cls, features: FeatureSet) -> Any | None:
         """
         Load all FAISS index artifacts from the storage directory.
 
@@ -105,7 +105,7 @@ class VectorStoreArtifact(BaseArtifact):
         if not storage_dir.exists():
             return None
 
-        loaded_artifacts: Dict[str, Any] = {}
+        loaded_artifacts: dict[str, Any] = {}
 
         for index_path in storage_dir.glob("vector_store_*.faiss"):
             # Find the corresponding metadata file
@@ -114,7 +114,7 @@ class VectorStoreArtifact(BaseArtifact):
 
             index = faiss.read_index(str(index_path))
 
-            metadata: Dict[str, Any] = {}
+            metadata: dict[str, Any] = {}
             if metadata_path.exists():
                 with open(metadata_path, encoding="utf-8") as f:
                     metadata = json.load(f)
@@ -135,8 +135,8 @@ class VectorStoreArtifact(BaseArtifact):
         features: FeatureSet,
         artifact_key: str,
         index: Any,
-        texts: List[str],
-        doc_ids: List[str],
+        texts: list[str],
+        doc_ids: list[str],
     ) -> None:
         """
         Helper to queue a vector store artifact for saving.
@@ -164,7 +164,7 @@ class VectorStoreArtifact(BaseArtifact):
             }
 
     @classmethod
-    def load_vector_store_artifact(cls, features: FeatureSet, artifact_key: str) -> Optional[Dict[str, Any]]:
+    def load_vector_store_artifact(cls, features: FeatureSet, artifact_key: str) -> dict[str, Any] | None:
         """
         Helper to load a specific vector store artifact by key.
 

@@ -1,7 +1,5 @@
 """Tests for HashImageEmbedder."""
 
-from typing import Type
-
 import pytest
 
 from rag_integration.feature_groups.image_pipeline.embedding import HashImageEmbedder
@@ -18,7 +16,7 @@ class TestHashImageEmbedder(ImageEmbeddingTestBase):
     """Tests for HashImageEmbedder."""
 
     @property
-    def embedder_class(self) -> Type[BaseImageEmbedder]:
+    def embedder_class(self) -> type[BaseImageEmbedder]:
         return HashImageEmbedder
 
     @property

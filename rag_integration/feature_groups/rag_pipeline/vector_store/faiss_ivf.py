@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 import numpy as np
 from mloda.provider import DefaultOptionKeys, property_spec
@@ -46,7 +46,7 @@ class FaissIVFIndexer(BaseVectorStore):
         return "ivf_flat"
 
     @classmethod
-    def _build_index(cls, embeddings: List[List[float]], dimension: int) -> Any:
+    def _build_index(cls, embeddings: list[list[float]], dimension: int) -> Any:
         """Build a FAISS IndexIVFFlat from embeddings."""
         import faiss
 

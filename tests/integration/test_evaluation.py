@@ -11,20 +11,19 @@ Uses in-memory fixture data. No file system access, no network, no large dataset
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
-
-from mloda.user import mlodaAPI, PluginCollector, Feature, Options
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
-from rag_integration.feature_groups.datasets.text.base import BaseTextDatasetSource
 from rag_integration.feature_groups.datasets.image.base import BaseImageDatasetSource
+from rag_integration.feature_groups.datasets.text.base import BaseTextDatasetSource
 from rag_integration.feature_groups.evaluation.retrieval_evaluator import RetrievalEvaluator
-from rag_integration.feature_groups.rag_pipeline.embedding.mock import MockEmbedder
 from rag_integration.feature_groups.image_pipeline.embedding.mock import MockImageEmbedder
+from rag_integration.feature_groups.rag_pipeline.embedding.mock import MockEmbedder
 from tests.integration.helpers import get_metrics
 
 pytest.importorskip("numpy")
@@ -43,7 +42,7 @@ class FixtureTextDatasetSource(BaseTextDatasetSource):
     """
 
     @classmethod
-    def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_dataset(cls, options: Options) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "antigen regulates protein expression", "row_type": "corpus"},
             {"doc_id": "d1", "text": "cells divide through mitosis", "row_type": "corpus"},
@@ -66,7 +65,7 @@ class FixtureImageDatasetSource(BaseImageDatasetSource):
     """Tiny in-memory image corpus + caption queries."""
 
     @classmethod
-    def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_dataset(cls, options: Options) -> list[dict[str, Any]]:
         img0 = b"fixture_image_data_corpus_0" * 8
         img1 = b"fixture_image_data_corpus_1" * 8
         return [
@@ -234,7 +233,7 @@ class FixtureFaissTextDatasetSource(BaseTextDatasetSource):
     """
 
     @classmethod
-    def _load_dataset(cls, options: Options) -> List[Dict[str, Any]]:
+    def _load_dataset(cls, options: Options) -> list[dict[str, Any]]:
         return [
             {"doc_id": "d0", "text": "antigen regulates protein expression levels", "row_type": "corpus"},
             {"doc_id": "d1", "text": "neural networks learn from gradient descent", "row_type": "corpus"},
@@ -256,7 +255,7 @@ class FixtureFaissTextDatasetSource(BaseTextDatasetSource):
 class TestFaissEvaluationPipeline:
     """End-to-end: full ingestion pipeline through FAISS evaluation."""
 
-    def _run(self, options: Dict[str, Any]) -> Dict[str, Any]:
+    def _run(self, options: dict[str, Any]) -> dict[str, Any]:
         from rag_integration.feature_groups.evaluation.faiss_retrieval_evaluator import FaissRetrievalEvaluator
         from rag_integration.feature_groups.rag_pipeline.chunking.fixed_size import FixedSizeChunker
         from rag_integration.feature_groups.rag_pipeline.deduplication.exact_hash import ExactHashDeduplicator

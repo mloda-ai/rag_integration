@@ -1,7 +1,5 @@
 """Tests for ExactHashImageDeduplicator."""
 
-from typing import List, Optional, Type
-
 from rag_integration.feature_groups.image_pipeline.deduplication import ExactHashImageDeduplicator
 from rag_integration.feature_groups.image_pipeline.deduplication.base import BaseImageDeduplicator
 from tests.feature_groups_image.deduplication.image_dedup_test_base import ImageDeduplicationTestBase
@@ -11,19 +9,19 @@ class TestExactHashImageDeduplicator(ImageDeduplicationTestBase):
     """Tests for ExactHashImageDeduplicator."""
 
     @property
-    def deduplicator_class(self) -> Type[BaseImageDeduplicator]:
+    def deduplicator_class(self) -> type[BaseImageDeduplicator]:
         return ExactHashImageDeduplicator
 
     @property
-    def duplicate_images(self) -> List[bytes]:
+    def duplicate_images(self) -> list[bytes]:
         return [b"image_a", b"image_b", b"image_a", b"image_c"]
 
     @property
-    def duplicate_expected_indices(self) -> List[Optional[int]]:
+    def duplicate_expected_indices(self) -> list[int | None]:
         return [None, None, 0, None]
 
     @property
-    def unique_images(self) -> List[bytes]:
+    def unique_images(self) -> list[bytes]:
         return [b"img_1", b"img_2", b"img_3"]
 
     @property
