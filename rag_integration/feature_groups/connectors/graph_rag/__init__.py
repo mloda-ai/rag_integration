@@ -11,9 +11,9 @@ from rag_integration.feature_groups.connectors.graph_rag.kg_source import (
 from rag_integration.feature_groups.connectors.graph_rag.networkx_graph_rag import NetworkxGraphRag
 
 __all__ = [
+    "AdjacencyGraphRag",
     "BaseGraphRagConnector",
     "BaseKnowledgeGraphSource",
     "NetworkxGraphRag",
-    "AdjacencyGraphRag",
     "TriplesKnowledgeGraph",
 ]

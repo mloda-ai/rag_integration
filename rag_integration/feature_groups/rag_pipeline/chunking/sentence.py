@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -22,7 +23,7 @@ class SentenceChunker(BaseChunker):
         chunking_method="sentence"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseChunker.CHUNKING_METHOD: property_spec(
             "Strategy used to split documents into chunks",
             strict=True,

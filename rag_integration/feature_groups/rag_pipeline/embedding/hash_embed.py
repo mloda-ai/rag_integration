@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -24,7 +25,7 @@ class HashEmbedder(BaseEmbedder):
         embedding_method="hash"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseEmbedder.EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed text into vectors",
             strict=True,

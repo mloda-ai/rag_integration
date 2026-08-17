@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.deduplication.base import BaseDeduplicator
@@ -20,7 +22,7 @@ class NGramDeduplicator(BaseDeduplicator):
         deduplication_method="ngram"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseDeduplicator.DEDUPLICATION_METHOD: property_spec(
             "Algorithm used to detect duplicate texts",
             strict=True,

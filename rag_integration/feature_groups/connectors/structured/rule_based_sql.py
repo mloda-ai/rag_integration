@@ -10,7 +10,7 @@ right CI anchor; LLM-backed translators are pedigree backends for later.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -39,11 +39,11 @@ class RuleBasedSql(BaseStructuredConnector):
     filter values (the tokenizer drops the sign).
     """
 
-    STRUCTURED_BACKENDS = {
+    STRUCTURED_BACKENDS: ClassVar = {
         "rule_based": "Rule-based natural-language-to-SQL (no LLM)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseStructuredConnector.STRUCTURED_BACKEND: property_spec(
             "Use 'rule_based' for rule-based text-to-SQL", context=False
         ),

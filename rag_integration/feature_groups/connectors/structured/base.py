@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 import sqlite3
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -57,9 +57,9 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
     COLUMNS = "columns"
     ROWS = "rows"
 
-    STRUCTURED_BACKENDS: dict[str, str] = {}
+    STRUCTURED_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         STRUCTURED_BACKEND: property_spec("Which structured (text-to-SQL) backend to use", context=False),
         QUESTION: property_spec("Natural-language question to answer over the table", context=False),
         TABLE: property_spec("Table name (a simple SQL identifier)", context=False),

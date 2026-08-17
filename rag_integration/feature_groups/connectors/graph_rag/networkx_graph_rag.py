@@ -10,7 +10,7 @@ term. This is the distinguishing value of graph RAG over plain retrieval.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -30,11 +30,11 @@ class NetworkxGraphRag(BaseGraphRagConnector):
     node index, so the ranking is stable and deterministic.
     """
 
-    GRAPH_BACKENDS = {
+    GRAPH_BACKENDS: ClassVar = {
         "networkx": "Graph-expansion retrieval over networkx",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseGraphRagConnector.GRAPH_BACKEND: property_spec(
             "Use 'networkx' for graph-expansion retrieval", context=False
         ),

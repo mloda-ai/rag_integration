@@ -1,5 +1,7 @@
 """Tests for SentenceChunker."""
 
+from itertools import pairwise
+
 from rag_integration.feature_groups.rag_pipeline.chunking import SentenceChunker
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
 from tests.feature_groups.chunking.text_chunking_test_base import TextChunkingTestBase
@@ -52,7 +54,7 @@ class TestSentenceChunker(TextChunkingTestBase):
         chunks = SentenceChunker._chunk_text(text, 22, 12)
         assert len(chunks) >= 2
         # Each chunk must start by repeating the last sentence of the previous chunk.
-        for prev, nxt in zip(chunks, chunks[1:]):
+        for prev, nxt in pairwise(chunks):
             assert nxt.split(". ")[0].rstrip(".") == prev.split(". ")[-1].rstrip(".")
 
     def test_overlap_clamped_to_chunk_size(self) -> None:

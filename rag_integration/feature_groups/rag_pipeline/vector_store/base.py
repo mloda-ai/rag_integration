@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     BaseArtifact,
@@ -44,7 +44,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
 
     INDEX_METHOD = "index_method"
 
-    INDEX_METHODS = {
+    INDEX_METHODS: ClassVar = {
         "flat": "Exact search using IndexFlatL2",
     }
 
@@ -57,7 +57,7 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         INDEX_METHOD: property_spec(
             "FAISS index type backing the vector store",
             strict=True,

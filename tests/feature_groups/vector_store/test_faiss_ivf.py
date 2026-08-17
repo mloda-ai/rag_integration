@@ -39,5 +39,5 @@ class TestFaissIVFIndexer(VectorStoreTestBase):
         embeddings = [[float(i == j) for j in range(8)] for i in range(8)]
         index = FaissIVFIndexer._build_index(embeddings, 8)
         query = np.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], dtype=np.float32)
-        distances, indices = index.search(query, 1)
+        _distances, indices = index.search(query, 1)
         assert indices[0][0] == 0

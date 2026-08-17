@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 from mloda.provider import DefaultOptionKeys, property_spec
@@ -21,14 +21,14 @@ class FaissHNSWIndexer(BaseVectorStore):
         index_method="hnsw"
     """
 
-    INDEX_METHODS = {
+    INDEX_METHODS: ClassVar = {
         "hnsw": "Graph-based ANN using IndexHNSWFlat",
     }
 
     HNSW_M = "hnsw_m"
     HNSW_EF_CONSTRUCTION = "hnsw_ef_construction"
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseVectorStore.INDEX_METHOD: property_spec(
             "FAISS index type backing the vector store",
             strict=True,

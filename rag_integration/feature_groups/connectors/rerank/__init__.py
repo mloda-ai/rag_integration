@@ -6,4 +6,4 @@ from rag_integration.feature_groups.connectors.rerank.base import BaseRerankConn
 from rag_integration.feature_groups.connectors.rerank.flashrank_reranker import FlashRankReranker
 from rag_integration.feature_groups.connectors.rerank.lexical_reranker import LexicalReranker
 
-__all__ = ["BaseRerankConnector", "LexicalReranker", "FlashRankReranker"]
+__all__ = ["BaseRerankConnector", "FlashRankReranker", "LexicalReranker"]

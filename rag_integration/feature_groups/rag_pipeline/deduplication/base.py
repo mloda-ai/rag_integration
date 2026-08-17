@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 from mloda.user import Feature
@@ -50,14 +50,14 @@ class BaseDeduplicator(BaseRowDeduplicator):
     DEDUPLICATION_METHOD = "deduplication_method"
 
     # Supported deduplication methods (implementations must define which they handle)
-    DEDUPLICATION_METHODS = {
+    DEDUPLICATION_METHODS: ClassVar = {
         "exact_hash": "MD5 hash-based exact duplicate detection",
         "normalized": "Normalized text hash-based detection",
         "ngram": "N-gram Jaccard similarity based detection",
     }
 
     # Keep strategies
-    KEEP_STRATEGIES = {
+    KEEP_STRATEGIES: ClassVar = {
         "first": "Keep the first occurrence",
         "longest": "Keep the longest text",
         "all_unique": "Mark duplicates but keep all rows",
@@ -72,7 +72,7 @@ class BaseDeduplicator(BaseRowDeduplicator):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         DEDUPLICATION_METHOD: property_spec(
             "Algorithm used to detect duplicate texts",
             strict=True,

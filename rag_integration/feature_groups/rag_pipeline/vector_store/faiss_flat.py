@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 from mloda.provider import DefaultOptionKeys, property_spec
@@ -21,7 +21,7 @@ class FaissFlatIndexer(BaseVectorStore):
         index_method="flat"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseVectorStore.INDEX_METHOD: property_spec(
             "FAISS index type backing the vector store",
             strict=True,

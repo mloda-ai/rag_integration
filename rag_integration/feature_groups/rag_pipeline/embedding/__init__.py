@@ -9,9 +9,9 @@ from rag_integration.feature_groups.rag_pipeline.embedding.tfidf import TfidfEmb
 
 __all__ = [
     "BaseEmbedder",
-    "MockEmbedder",
-    "HashEmbedder",
-    "TfidfEmbedder",
-    "SentenceTransformerEmbedder",
     "EmbeddingArtifact",
+    "HashEmbedder",
+    "MockEmbedder",
+    "SentenceTransformerEmbedder",
+    "TfidfEmbedder",
 ]

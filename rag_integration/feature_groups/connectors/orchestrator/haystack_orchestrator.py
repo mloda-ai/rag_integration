@@ -12,7 +12,7 @@ offline and deterministic.
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -27,11 +27,11 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
     surfaced documents carry the pipeline's BM25 scores.
     """
 
-    ORCHESTRATOR_BACKENDS = {
+    ORCHESTRATOR_BACKENDS: ClassVar = {
         "haystack": "Haystack 2.x in-memory BM25 pipeline",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: property_spec(
             "Use 'haystack' for a Haystack BM25 pipeline", context=False
         ),

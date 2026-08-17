@@ -25,7 +25,7 @@ backend implements only :meth:`_run` (driving its framework's pipeline).
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -58,9 +58,9 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
     QUERY_TEXT = "query_text"
     CORPUS = "corpus"
 
-    ORCHESTRATOR_BACKENDS: dict[str, str] = {}
+    ORCHESTRATOR_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         ORCHESTRATOR_BACKEND: property_spec("Which orchestrator (external framework) backend to use", context=False),
         QUERY_TEXT: property_spec("The query to run through the framework pipeline", context=False),
         TopKMixin.TOP_K: property_spec(

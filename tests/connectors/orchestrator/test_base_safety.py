@@ -7,7 +7,7 @@ document (doc_id not in the corpus) and a non-empty answer with no documents.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
@@ -17,7 +17,7 @@ _CORPUS = [{"doc_id": "d0", "text": "a real document"}]
 
 
 class _FabricatingBackend(BaseOrchestratorConnector):
-    ORCHESTRATOR_BACKENDS = {"_fabricating_stub": "test-only stub"}
+    ORCHESTRATOR_BACKENDS: ClassVar = {"_fabricating_stub": "test-only stub"}
 
     @classmethod
     def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:
@@ -25,7 +25,7 @@ class _FabricatingBackend(BaseOrchestratorConnector):
 
 
 class _AnswerWithoutDocumentsBackend(BaseOrchestratorConnector):
-    ORCHESTRATOR_BACKENDS = {"_answer_no_docs_stub": "test-only stub"}
+    ORCHESTRATOR_BACKENDS: ClassVar = {"_answer_no_docs_stub": "test-only stub"}
 
     @classmethod
     def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:

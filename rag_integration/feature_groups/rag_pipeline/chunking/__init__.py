@@ -9,7 +9,7 @@ from rag_integration.feature_groups.rag_pipeline.chunking.sentence import Senten
 __all__ = [
     "BaseChunker",
     "FixedSizeChunker",
-    "SentenceChunker",
     "ParagraphChunker",
     "SemanticChunker",
+    "SentenceChunker",
 ]

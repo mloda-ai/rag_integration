@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -23,7 +24,7 @@ class TfidfEmbedder(BaseEmbedder):
         embedding_method="tfidf"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseEmbedder.EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed text into vectors",
             strict=True,

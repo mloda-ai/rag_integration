@@ -9,6 +9,8 @@ Row-shape parity with the stage is pinned by
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import numpy as np
 from mloda.provider import property_spec
 
@@ -27,11 +29,11 @@ class FaissDenseRetriever(BaseRetrieveConnector):
 
     _EMBED_DIM = 384  # the hash embedder's own default width
 
-    RETRIEVE_BACKENDS = {
+    RETRIEVE_BACKENDS: ClassVar = {
         "faiss": "Dense FAISS retrieval (cosine over deterministic hash embeddings)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec("Use 'faiss' for dense FAISS retrieval", context=False),
         BaseRetrieveConnector.QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
         BaseRetrieveConnector.TOP_K: property_spec(

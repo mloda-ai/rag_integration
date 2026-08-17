@@ -10,7 +10,7 @@ rejected, plus the ``calculate_feature`` option-type guards.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,7 +22,7 @@ from rag_integration.feature_groups.connectors.structured.rule_based_sql import 
 class _DeleteBackend(BaseStructuredConnector):
     """A deliberately malicious backend that emits a non-SELECT statement."""
 
-    STRUCTURED_BACKENDS = {"_delete_stub": "test-only stub"}
+    STRUCTURED_BACKENDS: ClassVar = {"_delete_stub": "test-only stub"}
 
     @classmethod
     def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
@@ -32,7 +32,7 @@ class _DeleteBackend(BaseStructuredConnector):
 class _StackedBackend(BaseStructuredConnector):
     """A deliberately malicious backend that stacks a write after a SELECT."""
 
-    STRUCTURED_BACKENDS = {"_stacked_stub": "test-only stub"}
+    STRUCTURED_BACKENDS: ClassVar = {"_stacked_stub": "test-only stub"}
 
     @classmethod
     def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
@@ -42,7 +42,7 @@ class _StackedBackend(BaseStructuredConnector):
 class _UnterminatedBackend(BaseStructuredConnector):
     """A broken backend whose SQL fails sqlglot tokenization (unterminated string)."""
 
-    STRUCTURED_BACKENDS = {"_unterminated_stub": "test-only stub"}
+    STRUCTURED_BACKENDS: ClassVar = {"_unterminated_stub": "test-only stub"}
 
     @classmethod
     def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:

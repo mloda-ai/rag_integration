@@ -1,5 +1,7 @@
 """Tests for FixedSizeChunker."""
 
+from itertools import pairwise
+
 from rag_integration.feature_groups.rag_pipeline.chunking import FixedSizeChunker
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
 from tests.feature_groups.chunking.text_chunking_test_base import TextChunkingTestBase
@@ -46,7 +48,7 @@ class TestFixedSizeChunker(TextChunkingTestBase):
         chunks = FixedSizeChunker._chunk_text(text, chunk_size, chunk_overlap)
         assert len(chunks) > 2
 
-        overlaps = [self._leading_overlap(a, b) for a, b in zip(chunks, chunks[1:])]
+        overlaps = [self._leading_overlap(a, b) for a, b in pairwise(chunks)]
         assert all(overlap >= chunk_overlap - 1 for overlap in overlaps), overlaps
 
     def test_no_source_text_dropped_after_word_boundary_trim(self) -> None:

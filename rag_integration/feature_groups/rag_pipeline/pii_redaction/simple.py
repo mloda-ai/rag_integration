@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -22,7 +23,7 @@ class SimplePIIRedactor(BasePIIRedactor):
         redaction_method="simple"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BasePIIRedactor.REDACTION_METHOD: property_spec(
             "Detector used to locate PII in text",
             strict=True,
@@ -41,7 +42,7 @@ class SimplePIIRedactor(BasePIIRedactor):
     }
 
     # Common first names (subset for demonstration)
-    COMMON_FIRST_NAMES: set[str] = {
+    COMMON_FIRST_NAMES: ClassVar[set[str]] = {
         "james",
         "john",
         "robert",
@@ -75,7 +76,7 @@ class SimplePIIRedactor(BasePIIRedactor):
     }
 
     # Common last names (subset for demonstration)
-    COMMON_LAST_NAMES: set[str] = {
+    COMMON_LAST_NAMES: ClassVar[set[str]] = {
         "smith",
         "johnson",
         "williams",

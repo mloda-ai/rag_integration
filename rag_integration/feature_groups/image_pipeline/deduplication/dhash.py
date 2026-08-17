@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.deduplication.base import BaseImageDeduplicator
@@ -26,7 +28,7 @@ class DifferenceHashImageDeduplicator(BaseImageDeduplicator):
         image_deduplication_method="dhash"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseImageDeduplicator.IMAGE_DEDUPLICATION_METHOD: property_spec(
             "Algorithm used to detect duplicate images",
             strict=True,
@@ -84,7 +86,7 @@ class DifferenceHashImageDeduplicator(BaseImageDeduplicator):
     @classmethod
     def _hamming_distance(cls, hash1: int, hash2: int) -> int:
         """Compute Hamming distance between two integer hashes."""
-        return bin(hash1 ^ hash2).count("1")
+        return (hash1 ^ hash2).bit_count()
 
     @classmethod
     def _find_duplicates(

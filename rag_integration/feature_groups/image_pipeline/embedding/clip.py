@@ -12,7 +12,7 @@ import math
 import os
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from mloda.provider import DefaultOptionKeys, FeatureSet, property_spec
 
@@ -51,14 +51,14 @@ class CLIPImageEmbedder(BaseImageEmbedder):
     same model twice.
     """
 
-    _model_cache: dict[str, Any] = {}
+    _model_cache: ClassVar[dict[str, Any]] = {}
     _model_lock = threading.Lock()
 
     # Matches the PROPERTY_MAPPING default below; used when a caller invokes
     # calculate_feature directly and skips mloda's option-default materialization.
     DEFAULT_MODEL = _HF_MODEL_ID
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed images into vectors",
             strict=True,

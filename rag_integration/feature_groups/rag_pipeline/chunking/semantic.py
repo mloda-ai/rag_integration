@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -45,7 +45,7 @@ class SemanticChunker(BaseChunker):
     DEFAULT_SIMILARITY_THRESHOLD = 0.5
     DEFAULT_MODEL = "all-MiniLM-L6-v2"
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseChunker.CHUNKING_METHOD: property_spec(
             "Strategy used to split documents into chunks",
             strict=True,

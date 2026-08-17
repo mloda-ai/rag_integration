@@ -9,6 +9,7 @@ anchors the CI contract suite with no model, network, or third-party library.
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
 from mloda.provider import property_spec
 
@@ -25,11 +26,11 @@ class LexicalReranker(BaseRerankConnector):
     deterministic.
     """
 
-    RERANK_BACKENDS = {
+    RERANK_BACKENDS: ClassVar = {
         "lexical": "Token-overlap lexical reranking (pure Python)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRerankConnector.RERANK_BACKEND: property_spec("Use 'lexical' for token-overlap reranking", context=False),
         BaseRerankConnector.QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
         BaseRerankConnector.TOP_K: property_spec(

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -32,7 +32,7 @@ class PixelPIIRedactor(BaseImagePIIRedactor):
     # Default pixel block size (kept in sync with PROPERTY_MAPPING).
     DEFAULT_PIXEL_SIZE = 10
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseImagePIIRedactor.IMAGE_REDACTION_METHOD: property_spec(
             "Technique used to obscure PII regions in images",
             strict=True,

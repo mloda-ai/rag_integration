@@ -110,9 +110,21 @@ target-version = "py310"
 # only: ruff format and any new rule under the E/F prefixes still arrive with
 # whatever version tox resolves. E4/E7/E9/F match the pre-0.16 default; the
 # rest are the mechanically-safe pyupgrade/isort additions this repo has
-# already adopted. RUF012 (mutable class defaults) and the smaller
-# judgment-needed rules ruff 0.16 also enables are deferred to a follow-up.
-select = ["E4", "E7", "E9", "F", "I001", "RET501", "UP006", "UP007", "UP035", "UP037", "UP045"]
+# already adopted, plus RUF012 (mutable class defaults, annotated with
+# ClassVar throughout) and the rules reviewed individually below.
+select = [
+    "BLE001", "C401", "E4", "E7", "E9", "EXE001", "F", "FURB161", "I001", "PLW1510", "RET501",
+    "RUF007", "RUF012", "RUF022", "RUF059", "SIM114", "SIM117", "TRY004", "UP006", "UP007",
+    "UP035", "UP037", "UP045",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# TRY004 (prefer TypeError for bad-type checks): these `raise ValueError` on a
+# failed isinstance(..., dict) check are an established public exception
+# contract for artifact validation; switching to TypeError would be a
+# breaking API change, not a style fix.
+"rag_integration/feature_groups/rag_pipeline/embedding/embedding_artifact.py" = ["TRY004"]
+"rag_integration/feature_groups/rag_pipeline/vector_store/vector_store_artifact.py" = ["TRY004"]
 
 [tool.mypy]
 strict = true

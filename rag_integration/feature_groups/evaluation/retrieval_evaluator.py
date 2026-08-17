@@ -6,7 +6,7 @@ brute-force cosine similarity. No external vector index required.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     ComputeFramework,
@@ -64,7 +64,7 @@ class RetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         DefaultOptionKeys.in_features: property_spec("Source feature containing embedded corpus + query rows"),
     }
 

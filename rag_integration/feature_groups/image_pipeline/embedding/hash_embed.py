@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -26,7 +27,7 @@ class HashImageEmbedder(BaseImageEmbedder):
         image_embedding_method="hash"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseImageEmbedder.IMAGE_EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed images into vectors",
             strict=True,

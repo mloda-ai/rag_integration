@@ -5,8 +5,8 @@ from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k, 
 from rag_integration.feature_groups.evaluation.retrieval_evaluator import RetrievalEvaluator
 
 __all__ = [
-    "RetrievalEvaluator",
     "FaissRetrievalEvaluator",
+    "RetrievalEvaluator",
     "mean_recall_at_k",
     "recall_at_k",
 ]

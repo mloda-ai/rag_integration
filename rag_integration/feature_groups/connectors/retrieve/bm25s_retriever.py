@@ -7,6 +7,8 @@ ranked indices with scores directly). MIT-licensed, numpy-only.
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
@@ -22,14 +24,14 @@ class Bm25sRetriever(BaseRetrieveConnector):
     all out-of-vocabulary) yields no passages.
     """
 
-    RETRIEVE_BACKENDS = {
+    RETRIEVE_BACKENDS: ClassVar = {
         "bm25s": "BM25 lexical retrieval (bm25s)",
     }
 
     # Declarative option documentation; selection is via
     # ``match_feature_group_criteria`` (see BaseRetrieveConnector). The allowed
     # backend value is the single key of RETRIEVE_BACKENDS above.
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec("Use 'bm25s' for BM25 lexical retrieval", context=False),
         BaseRetrieveConnector.QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
         BaseRetrieveConnector.TOP_K: property_spec(

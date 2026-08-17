@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Swap-backends demo (issue #34).
 
 The open-kgo promise applied to RAG: swapping one connector backend for another

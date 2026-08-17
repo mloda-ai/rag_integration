@@ -6,6 +6,6 @@ from rag_integration.feature_groups.rag_pipeline.document_source.file_loader imp
 
 __all__ = [
     "BaseDocumentSource",
-    "FileDocumentSource",
     "DictDocumentSource",
+    "FileDocumentSource",
 ]

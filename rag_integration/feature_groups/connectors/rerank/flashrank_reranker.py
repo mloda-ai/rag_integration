@@ -11,7 +11,7 @@ its contract test is skipped on CI (network) but runs locally; the zero-download
 from __future__ import annotations
 
 import threading
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -32,11 +32,11 @@ class FlashRankReranker(BaseRerankConnector):
     # future need arises, plumb it through `calculate_feature`, not here.
     DEFAULT_MODEL = "ms-marco-TinyBERT-L-2-v2"
 
-    RERANK_BACKENDS = {
+    RERANK_BACKENDS: ClassVar = {
         "flashrank": "Cross-encoder reranking (FlashRank, ONNX)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRerankConnector.RERANK_BACKEND: property_spec("Use 'flashrank' for cross-encoder reranking", context=False),
         BaseRerankConnector.QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
         BaseRerankConnector.TOP_K: property_spec(

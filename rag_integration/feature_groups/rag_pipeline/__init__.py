@@ -49,43 +49,35 @@ from rag_integration.feature_groups.rag_pipeline.vector_store import (
 )
 
 __all__ = [
-    # Document Source
+    "BaseChunker",
+    "BaseDeduplicator",
     "BaseDocumentSource",
-    "FileDocumentSource",
-    "DictDocumentSource",
-    # PII Redaction
+    "BaseEmbedder",
+    "BaseLLMResponse",
     "BasePIIRedactor",
-    "RegexPIIRedactor",
-    "SimplePIIRedactor",
+    "BaseRetriever",
+    "BaseVectorStore",
+    "ClaudeCliResponse",
+    "DictDocumentSource",
+    "ExactHashDeduplicator",
+    "FaissFlatIndexer",
+    "FaissHNSWIndexer",
+    "FaissIVFIndexer",
+    "FaissRetriever",
+    "FileDocumentSource",
+    "FixedSizeChunker",
+    "HashEmbedder",
+    "MockEmbedder",
+    "NGramDeduplicator",
+    "NormalizedDeduplicator",
+    "ParagraphChunker",
     "PatternPIIRedactor",
     "PresidioPIIRedactor",
-    # Chunking
-    "BaseChunker",
-    "FixedSizeChunker",
-    "SentenceChunker",
-    "ParagraphChunker",
+    "RegexPIIRedactor",
     "SemanticChunker",
-    # Deduplication
-    "BaseDeduplicator",
-    "ExactHashDeduplicator",
-    "NormalizedDeduplicator",
-    "NGramDeduplicator",
-    # Embedding
-    "BaseEmbedder",
-    "MockEmbedder",
-    "HashEmbedder",
-    "TfidfEmbedder",
+    "SentenceChunker",
     "SentenceTransformerEmbedder",
-    # Vector Store
-    "BaseVectorStore",
-    "FaissFlatIndexer",
-    "FaissIVFIndexer",
-    "FaissHNSWIndexer",
+    "SimplePIIRedactor",
+    "TfidfEmbedder",
     "VectorStoreArtifact",
-    # Retrieval
-    "BaseRetriever",
-    "FaissRetriever",
-    # LLM Response
-    "BaseLLMResponse",
-    "ClaudeCliResponse",
 ]

@@ -12,7 +12,7 @@ so they live outside the inheritable contract suite.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 from unittest.mock import MagicMock
 
 import pytest
@@ -25,7 +25,7 @@ def _stub_returning(pairs: list[tuple[int, float]]) -> type[BaseRetrieveConnecto
     """Build a stub backend whose ``_rank`` returns ``pairs`` verbatim."""
 
     class _MisbehavingRetriever(BaseRetrieveConnector):
-        RETRIEVE_BACKENDS = {"misbehaving_stub": "Deliberately misbehaving _rank for validation tests"}
+        RETRIEVE_BACKENDS: ClassVar = {"misbehaving_stub": "Deliberately misbehaving _rank for validation tests"}
 
         @classmethod
         def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:

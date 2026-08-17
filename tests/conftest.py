@@ -14,7 +14,7 @@ def _spacy_model_available(model_name: str) -> bool:
 
         spacy.load(model_name)
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001 - any failure means the model is unavailable
         return False
 
 

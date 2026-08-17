@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     ComputeFramework,
@@ -60,7 +60,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
     PREPROCESSING_METHOD = "preprocessing_method"
 
     # Supported preprocessing methods
-    PREPROCESSING_METHODS = {
+    PREPROCESSING_METHODS: ClassVar = {
         "resize": "Resize images to target dimensions",
         "normalize": "Normalize pixel values to [0, 1] range",
         "thumbnail": "Generate thumbnail preserving aspect ratio",
@@ -75,7 +75,7 @@ class BaseImagePreprocessor(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         PREPROCESSING_METHOD: property_spec(
             "Image preprocessing operation to apply",
             strict=True,

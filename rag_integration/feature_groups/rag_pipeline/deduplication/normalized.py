@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -23,7 +24,7 @@ class NormalizedDeduplicator(BaseDeduplicator):
         deduplication_method="normalized"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseDeduplicator.DEDUPLICATION_METHOD: property_spec(
             "Algorithm used to detect duplicate texts",
             strict=True,
