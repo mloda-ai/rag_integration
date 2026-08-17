@@ -5,23 +5,28 @@ description: mloda core library source code and documentation. Use when understa
 
 # mloda Core Library
 
-**Repository layout:**
-mloda and mloda-registry are sibling folders:
-```
-project/
-├── mloda/              # Core library
-├── mloda-registry/     # Plugin registry and guides
-└── rag_integration/    # This plugin repo
-```
-
 **Path detection:**
-- mloda: `../mloda/`
-- mloda-registry: `../mloda-registry/`
+!`echo ${MLODA_PATH:-$(find .. -maxdepth 2 -name "mloda" -type d ! -name "mloda-registry" 2>/dev/null | head -1)}`
+
+If path is empty, ask user to set `MLODA_PATH` environment variable or clone mloda repo.
 
 **Key locations (relative to mloda path):**
-- `src/mloda_core/` - Core implementation
-- `docs/` - Documentation source (same as mloda-ai.github.io/mloda/)
-- `tests/` - Test examples
+
+| Path | Purpose |
+|------|---------|
+| `mloda/` | Main source package |
+| `mloda/core/` | Core functionality (abstract plugins, API, filter, prepare, runtime) |
+| `mloda/provider/` | Data provider interfaces |
+| `mloda/steward/` | Data governance/stewardship |
+| `mloda/user/` | User-facing functionality |
+| `mloda_plugins/` | Built-in plugin implementations |
+| `mloda_plugins/compute_framework/` | Compute framework plugins |
+| `mloda_plugins/feature_group/` | Feature group plugins |
+| `mloda_plugins/function_extender/` | Function extender plugins |
+| `mloda_plugins/config/` | Plugin configuration |
+| `docs/docs/` | Documentation source (MkDocs, same as mloda-ai.github.io/mloda/) |
+| `docs/mkdocs.yml` | MkDocs configuration |
+| `tests/` | Test suite (1500+ tests) |
 
 **Online fallback:**
 - Docs: https://mloda-ai.github.io/mloda/
