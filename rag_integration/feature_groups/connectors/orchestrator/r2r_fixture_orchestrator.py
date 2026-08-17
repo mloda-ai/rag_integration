@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -45,11 +45,11 @@ class R2RFixtureOrchestrator(BaseOrchestratorConnector):
     read is deterministic, so repeated calls are idempotent.
     """
 
-    ORCHESTRATOR_BACKENDS = {
+    ORCHESTRATOR_BACKENDS: ClassVar = {
         "r2r": "R2R-shaped server stub over a static JSON fixture (honest-surface narrowing)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: property_spec(
             "Use 'r2r' for the R2R fixture-stub pipeline", context=False
         ),

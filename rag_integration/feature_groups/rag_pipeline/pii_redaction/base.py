@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     ComputeFramework,
@@ -65,14 +65,14 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     REDACTION_METHOD = "redaction_method"
 
     # Supported redaction methods (implementations must define which they handle)
-    REDACTION_METHODS = {
+    REDACTION_METHODS: ClassVar = {
         "regex": "Regex-based PII detection",
         "simple": "Simple word-list based detection",
         "pattern": "Custom pattern based detection",
     }
 
     # Supported PII types
-    SUPPORTED_PII_TYPES = {
+    SUPPORTED_PII_TYPES: ClassVar = {
         "EMAIL": "Email addresses",
         "PHONE": "Phone numbers",
         "SSN": "Social security numbers",
@@ -81,7 +81,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     }
 
     # Replacement strategies
-    REPLACEMENT_STRATEGIES = {
+    REPLACEMENT_STRATEGIES: ClassVar = {
         "mask": "Replace with [REDACTED]",
         "type_label": "Replace with [PII_TYPE]",
     }
@@ -108,7 +108,7 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         REDACTION_METHOD: property_spec(
             "Detector used to locate PII in text", strict=True, allowed_values=REDACTION_METHODS, deferred_binding=True
         ),

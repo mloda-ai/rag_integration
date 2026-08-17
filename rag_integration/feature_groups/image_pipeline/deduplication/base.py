@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 from mloda.user import Feature, FeatureName, Options
@@ -50,14 +50,14 @@ class BaseImageDeduplicator(BaseRowDeduplicator):
     IMAGE_DEDUPLICATION_METHOD = "image_deduplication_method"
 
     # Supported deduplication methods
-    DEDUPLICATION_METHODS = {
+    DEDUPLICATION_METHODS: ClassVar = {
         "exact_hash": "MD5 hash-based exact duplicate detection",
         "phash": "Perceptual hash-based near-duplicate detection",
         "dhash": "Difference hash-based near-duplicate detection",
     }
 
     # Keep strategies
-    KEEP_STRATEGIES = {
+    KEEP_STRATEGIES: ClassVar = {
         "first": "Keep the first occurrence",
         "largest": "Keep the largest file size",
         "all_unique": "Mark duplicates but keep all rows",
@@ -75,7 +75,7 @@ class BaseImageDeduplicator(BaseRowDeduplicator):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         IMAGE_DEDUPLICATION_METHOD: property_spec(
             "Algorithm used to detect duplicate images",
             strict=True,

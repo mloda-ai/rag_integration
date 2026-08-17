@@ -110,9 +110,27 @@ target-version = "py310"
 # only: ruff format and any new rule under the E/F prefixes still arrive with
 # whatever version tox resolves. E4/E7/E9/F match the pre-0.16 default; the
 # rest are the mechanically-safe pyupgrade/isort additions this repo has
-# already adopted. RUF012 (mutable class defaults) and the smaller
-# judgment-needed rules ruff 0.16 also enables are deferred to a follow-up.
-select = ["E4", "E7", "E9", "F", "I001", "RET501", "UP006", "UP007", "UP035", "UP037", "UP045"]
+# already adopted, plus RUF012 (mutable class defaults, annotated with
+# ClassVar throughout) and the small-count rules reviewed individually below.
+select = [
+    "E4", "E7", "E9", "F", "I001", "RET501", "UP006", "UP007", "UP035", "UP037", "UP045",
+    "RUF012", "RUF022", "RUF007", "TRY004", "BLE001", "EXE001", "FURB161", "SIM114", "C401",
+    "PLW1510", "RUF059", "SIM117",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# TRY004 (prefer TypeError for bad-type checks): these `raise ValueError` on a
+# failed isinstance(..., dict) check are an established public exception
+# contract for corpus/artifact validation; switching to TypeError would be a
+# breaking API change, not a style fix.
+"rag_integration/feature_groups/connectors/retrieve/base.py" = ["TRY004"]
+"rag_integration/feature_groups/rag_pipeline/embedding/embedding_artifact.py" = ["TRY004"]
+"rag_integration/feature_groups/rag_pipeline/vector_store/vector_store_artifact.py" = ["TRY004"]
+# BLE001 (no blind except Exception): both catches are intentional
+# availability/diagnostic probes where any failure, not just a specific
+# exception type, must be caught.
+"tests/conftest.py" = ["BLE001"]
+"tests/feature_groups/test_property_mapping_defaults.py" = ["BLE001"]
 
 [tool.mypy]
 strict = true

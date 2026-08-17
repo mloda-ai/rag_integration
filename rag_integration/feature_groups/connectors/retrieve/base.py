@@ -22,7 +22,7 @@ requested feature, so the ranked-passage list is the whole contract.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -76,14 +76,14 @@ class BaseRetrieveConnector(
     # Filled per concrete: {backend_value: human-readable description}. The base
     # stays empty so it never matches a feature. Values must be disjoint across
     # backends (see the class docstring).
-    RETRIEVE_BACKENDS: dict[str, str] = {}
+    RETRIEVE_BACKENDS: ClassVar[dict[str, str]] = {}
 
     # Declarative option documentation only. These root connector groups select
     # by ``match_feature_group_criteria`` (not the FeatureChainParser), so the
     # ``context``/``default``/``strict_validation`` flags that the parser would
     # consume are intentionally omitted here; defaulting and validation live in
     # the code below (``_get_top_k``) and in ``match_feature_group_criteria``.
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         RETRIEVE_BACKEND: property_spec("Which retrieve-connector backend to use", context=False),
         QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
         TopKMixin.TOP_K: property_spec(

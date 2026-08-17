@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 from mloda.provider import DefaultOptionKeys, property_spec
@@ -22,14 +22,14 @@ class FaissIVFIndexer(BaseVectorStore):
         index_method="ivf"
     """
 
-    INDEX_METHODS = {
+    INDEX_METHODS: ClassVar = {
         "ivf": "Approximate search using IndexIVFFlat",
     }
 
     NLIST = "nlist"
     NPROBE = "nprobe"
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseVectorStore.INDEX_METHOD: property_spec(
             "FAISS index type backing the vector store",
             strict=True,

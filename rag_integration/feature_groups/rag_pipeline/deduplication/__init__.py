@@ -8,6 +8,6 @@ from rag_integration.feature_groups.rag_pipeline.deduplication.normalized import
 __all__ = [
     "BaseDeduplicator",
     "ExactHashDeduplicator",
-    "NormalizedDeduplicator",
     "NGramDeduplicator",
+    "NormalizedDeduplicator",
 ]

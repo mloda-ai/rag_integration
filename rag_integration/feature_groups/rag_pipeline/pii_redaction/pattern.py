@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from re import Pattern
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 from mloda.user import Feature
@@ -35,7 +35,7 @@ class PatternPIIRedactor(BasePIIRedactor):
         redaction_method="pattern"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BasePIIRedactor.REDACTION_METHOD: property_spec(
             "Detector used to locate PII in text",
             strict=True,
@@ -54,7 +54,7 @@ class PatternPIIRedactor(BasePIIRedactor):
     }
 
     # Default patterns (can be extended via options)
-    DEFAULT_PATTERNS: dict[str, str] = {
+    DEFAULT_PATTERNS: ClassVar[dict[str, str]] = {
         "EMAIL": BasePIIRedactor.EMAIL_REGEX,
         "PHONE": BasePIIRedactor.PHONE_REGEX,
         "SSN": BasePIIRedactor.SSN_REGEX,

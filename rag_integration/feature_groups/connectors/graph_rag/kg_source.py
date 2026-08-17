@@ -12,7 +12,7 @@ connector family: it answers no query and returns no ranking.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -41,9 +41,9 @@ class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, FeatureGrou
     EDGES_KEY = "edges"
 
     # Filled per concrete; empty on the base so it never matches.
-    KG_BACKENDS: dict[str, str] = {}
+    KG_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         KG_BACKEND: property_spec("Which knowledge-graph source backend to use", context=False),
     }
 
@@ -102,11 +102,11 @@ class TriplesKnowledgeGraph(BaseKnowledgeGraphSource):
 
     TRIPLES = "triples"
 
-    KG_BACKENDS = {
+    KG_BACKENDS: ClassVar = {
         "triples": "Passage graph from subject-predicate-object triples (pure Python, zero-download)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseKnowledgeGraphSource.KG_BACKEND: property_spec(
             "Use 'triples' for a triple-built passage graph", context=False
         ),

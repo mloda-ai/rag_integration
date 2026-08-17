@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     BaseArtifact,
@@ -61,7 +61,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
     IMAGE_EMBEDDING_METHOD = "image_embedding_method"
 
     # Supported embedding methods
-    EMBEDDING_METHODS = {
+    EMBEDDING_METHODS: ClassVar = {
         "mock": "Deterministic mock image embeddings for testing",
         "hash": "Feature hashing based image embeddings",
         "clip": "CLIP model image embeddings",
@@ -76,7 +76,7 @@ class BaseImageEmbedder(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         IMAGE_EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed images into vectors",
             strict=True,

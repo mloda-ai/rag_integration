@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     ComputeFramework,
@@ -64,14 +64,14 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     IMAGE_REDACTION_METHOD = "image_redaction_method"
 
     # Supported redaction methods
-    REDACTION_METHODS = {
+    REDACTION_METHODS: ClassVar = {
         "blur": "Gaussian blur over PII regions",
         "pixel": "Pixelate PII regions",
         "solid": "Solid color fill over PII regions",
     }
 
     # Supported PII region types
-    SUPPORTED_PII_TYPES = {
+    SUPPORTED_PII_TYPES: ClassVar = {
         "FACE": "Human faces",
         "TEXT": "Text regions containing PII",
         "LICENSE_PLATE": "Vehicle license plates",
@@ -87,7 +87,7 @@ class BaseImagePIIRedactor(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         IMAGE_REDACTION_METHOD: property_spec(
             "Technique used to obscure PII regions in images",
             strict=True,

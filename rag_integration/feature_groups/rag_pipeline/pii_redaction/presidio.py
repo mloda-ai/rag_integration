@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -44,7 +44,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
     # Default language passed to the Presidio analyzer.
     DEFAULT_LANGUAGE = "en"
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BasePIIRedactor.REDACTION_METHOD: property_spec(
             "Detector used to locate PII in text",
             strict=True,
@@ -64,7 +64,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
     }
 
     # Map our PII types to Presidio entity types
-    PII_TYPE_MAPPING = {
+    PII_TYPE_MAPPING: ClassVar = {
         "EMAIL": "EMAIL_ADDRESS",
         "PHONE": "PHONE_NUMBER",
         "SSN": "US_SSN",
@@ -74,7 +74,7 @@ class PresidioPIIRedactor(BasePIIRedactor):
     }
 
     # All Presidio entities we support
-    ALL_ENTITIES = list(PII_TYPE_MAPPING.values())
+    ALL_ENTITIES: ClassVar = list(PII_TYPE_MAPPING.values())
 
     _analyzer: object | None = None
     _analyzer_lock = threading.Lock()

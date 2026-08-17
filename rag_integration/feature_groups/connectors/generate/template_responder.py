@@ -11,7 +11,7 @@ each contributing passage is cited.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -46,11 +46,11 @@ class TemplateResponder(BaseGenerateConnector):
     # surface multi-passage support while keeping the answer focused.
     MAX_SENTENCES = 3
 
-    GENERATE_BACKENDS = {
+    GENERATE_BACKENDS: ClassVar = {
         "template": "Top-N sentence templating with multi-passage citation (pure Python, no LLM)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseGenerateConnector.GENERATE_BACKEND: property_spec(
             "Use 'template' for multi-sentence templated answers", context=False
         ),

@@ -27,7 +27,7 @@ each evolve its own contract.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -68,11 +68,11 @@ class BaseRerankConnector(
 
     # Filled per concrete: {backend_value: human-readable description}. Disjoint
     # across backends; empty on the base so it never matches.
-    RERANK_BACKENDS: dict[str, str] = {}
+    RERANK_BACKENDS: ClassVar[dict[str, str]] = {}
 
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         RERANK_BACKEND: property_spec("Which rerank-connector backend to use", context=False),
         QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
         TopKMixin.TOP_K: property_spec(

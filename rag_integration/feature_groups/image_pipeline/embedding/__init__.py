@@ -7,7 +7,7 @@ from rag_integration.feature_groups.image_pipeline.embedding.mock import MockIma
 
 __all__ = [
     "BaseImageEmbedder",
-    "MockImageEmbedder",
-    "HashImageEmbedder",
     "CLIPImageEmbedder",
+    "HashImageEmbedder",
+    "MockImageEmbedder",
 ]

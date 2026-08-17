@@ -6,4 +6,4 @@ from rag_integration.feature_groups.connectors.structured.aggregate_sql import A
 from rag_integration.feature_groups.connectors.structured.base import BaseStructuredConnector
 from rag_integration.feature_groups.connectors.structured.rule_based_sql import RuleBasedSql
 
-__all__ = ["BaseStructuredConnector", "RuleBasedSql", "AggregateSql"]
+__all__ = ["AggregateSql", "BaseStructuredConnector", "RuleBasedSql"]

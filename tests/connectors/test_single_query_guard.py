@@ -9,7 +9,7 @@ that each one wires up ``_assert_single_feature`` in ``calculate_feature``.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 from unittest.mock import MagicMock
 
 import pytest
@@ -30,7 +30,7 @@ def _two_feature_set() -> Any:
 
 
 class _MinimalRetrieve(BaseRetrieveConnector):
-    RETRIEVE_BACKENDS = {"_stub": "test-only"}
+    RETRIEVE_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
@@ -38,7 +38,7 @@ class _MinimalRetrieve(BaseRetrieveConnector):
 
 
 class _MinimalRerank(BaseRerankConnector):
-    RERANK_BACKENDS = {"_stub": "test-only"}
+    RERANK_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
@@ -46,7 +46,7 @@ class _MinimalRerank(BaseRerankConnector):
 
 
 class _MinimalGenerate(BaseGenerateConnector):
-    GENERATE_BACKENDS = {"_stub": "test-only"}
+    GENERATE_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _generate(cls, query: str, passages: list[dict[str, Any]]) -> tuple[str, list[str]]:
@@ -54,7 +54,7 @@ class _MinimalGenerate(BaseGenerateConnector):
 
 
 class _MinimalGraphRag(BaseGraphRagConnector):
-    GRAPH_BACKENDS = {"_stub": "test-only"}
+    GRAPH_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _rank(cls, query: str, texts: list[str], edges: list[tuple[int, int]], top_k: int) -> list[tuple[int, float]]:
@@ -62,7 +62,7 @@ class _MinimalGraphRag(BaseGraphRagConnector):
 
 
 class _MinimalKgSource(BaseKnowledgeGraphSource):
-    KG_BACKENDS = {"_stub": "test-only"}
+    KG_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _build_graph(cls, options: Any) -> dict[str, Any]:
@@ -70,7 +70,7 @@ class _MinimalKgSource(BaseKnowledgeGraphSource):
 
 
 class _MinimalStructured(BaseStructuredConnector):
-    STRUCTURED_BACKENDS = {"_stub": "test-only"}
+    STRUCTURED_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _to_sql(cls, question: str, table: str, columns: list[str]) -> tuple[str, list[Any]]:
@@ -78,7 +78,7 @@ class _MinimalStructured(BaseStructuredConnector):
 
 
 class _MinimalOrchestrator(BaseOrchestratorConnector):
-    ORCHESTRATOR_BACKENDS = {"_stub": "test-only"}
+    ORCHESTRATOR_BACKENDS: ClassVar = {"_stub": "test-only"}
 
     @classmethod
     def _run(cls, query: str, corpus: list[dict[str, Any]], top_k: int) -> tuple[str, list[dict[str, Any]]]:

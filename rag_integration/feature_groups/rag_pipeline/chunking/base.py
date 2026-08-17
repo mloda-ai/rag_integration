@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     ComputeFramework,
@@ -61,7 +61,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     CHUNKING_METHOD = "chunking_method"
 
     # Supported chunking methods (implementations must define which they handle)
-    CHUNKING_METHODS = {
+    CHUNKING_METHODS: ClassVar = {
         "fixed_size": "Fixed character count chunks",
         "sentence": "Sentence-boundary aware chunks",
         "paragraph": "Paragraph-boundary aware chunks",
@@ -76,7 +76,7 @@ class BaseChunker(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         CHUNKING_METHOD: property_spec(
             "Strategy used to split documents into chunks",
             strict=True,

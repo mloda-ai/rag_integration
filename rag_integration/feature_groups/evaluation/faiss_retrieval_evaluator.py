@@ -22,7 +22,7 @@ chunk from the relevant document appears in the top-K results.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     ComputeFramework,
@@ -76,7 +76,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         DefaultOptionKeys.in_features: property_spec("Source feature containing FAISS-indexed corpus + query rows"),
     }
 
@@ -148,7 +148,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
             for q_idx, q_row in enumerate(query_rows):
                 q_id = str(q_row.get("doc_id", q_idx))
                 # `or []` guards the None that homogenize_rows backfills on absent keys.
-                relevant_ids = set(str(rid) for rid in q_row.get("relevant_doc_ids") or [])
+                relevant_ids = {str(rid) for rid in q_row.get("relevant_doc_ids") or []}
                 query_relevant[q_id] = relevant_ids
 
                 # Map FAISS result indices → doc_ids (dedup while preserving order)

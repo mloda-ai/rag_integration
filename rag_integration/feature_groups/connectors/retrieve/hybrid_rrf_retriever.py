@@ -10,6 +10,8 @@ Requires the ``faiss`` extra (the dense component).
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.fusion import rrf_fuse
@@ -31,11 +33,11 @@ class HybridRrfRetriever(BaseRetrieveConnector):
 
     _COMPONENTS: tuple[type[BaseRetrieveConnector], ...] = (Bm25sRetriever, FaissDenseRetriever)
 
-    RETRIEVE_BACKENDS = {
+    RETRIEVE_BACKENDS: ClassVar = {
         "hybrid_rrf": "Hybrid lexical (bm25s) + dense (faiss) retrieval fused with reciprocal-rank fusion",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec(
             "Use 'hybrid_rrf' for RRF-fused lexical + dense", context=False
         ),

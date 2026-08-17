@@ -11,6 +11,7 @@ behaviour.
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
 from mloda.provider import property_spec
 
@@ -34,11 +35,11 @@ class AdjacencyGraphRag(BaseGraphRagConnector):
     scoring as :class:`NetworkxGraphRag`; only the graph engine differs.
     """
 
-    GRAPH_BACKENDS = {
+    GRAPH_BACKENDS: ClassVar = {
         "adjacency": "Graph-expansion retrieval over a hand-built adjacency map (no networkx)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseGraphRagConnector.GRAPH_BACKEND: property_spec(
             "Use 'adjacency' for graph-expansion retrieval (no networkx)", context=False
         ),

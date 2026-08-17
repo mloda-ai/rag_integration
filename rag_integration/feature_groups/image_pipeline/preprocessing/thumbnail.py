@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.image_pipeline.preprocessing.base import BaseImagePreprocessor
@@ -22,7 +24,7 @@ class ThumbnailPreprocessor(BaseImagePreprocessor):
         preprocessing_method="thumbnail"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseImagePreprocessor.PREPROCESSING_METHOD: property_spec(
             "Image preprocessing operation to apply",
             strict=True,

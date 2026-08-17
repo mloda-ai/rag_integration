@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -26,7 +27,7 @@ class RegexPIIRedactor(BasePIIRedactor):
         redaction_method="regex"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BasePIIRedactor.REDACTION_METHOD: property_spec(
             "Detector used to locate PII in text",
             strict=True,
@@ -45,7 +46,7 @@ class RegexPIIRedactor(BasePIIRedactor):
     }
 
     # Regex patterns for different PII types
-    PATTERNS = {
+    PATTERNS: ClassVar = {
         "EMAIL": re.compile(BasePIIRedactor.EMAIL_REGEX),
         "PHONE": re.compile(BasePIIRedactor.PHONE_REGEX),
         "SSN": re.compile(BasePIIRedactor.SSN_REGEX),

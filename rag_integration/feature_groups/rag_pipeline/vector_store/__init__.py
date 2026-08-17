@@ -9,7 +9,7 @@ from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artif
 __all__ = [
     "BaseVectorStore",
     "FaissFlatIndexer",
-    "FaissIVFIndexer",
     "FaissHNSWIndexer",
+    "FaissIVFIndexer",
     "VectorStoreArtifact",
 ]

@@ -1,5 +1,7 @@
 """Tests for ParagraphChunker."""
 
+from itertools import pairwise
+
 from rag_integration.feature_groups.rag_pipeline.chunking import ParagraphChunker
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
 from tests.feature_groups.chunking.text_chunking_test_base import TextChunkingTestBase
@@ -57,7 +59,7 @@ class TestParagraphChunker(TextChunkingTestBase):
         chunks = ParagraphChunker._chunk_text(text, 90, 40)
         assert len(chunks) >= 2
         # Each chunk must start by repeating the last paragraph of the previous chunk.
-        for prev, nxt in zip(chunks, chunks[1:]):
+        for prev, nxt in pairwise(chunks):
             assert nxt.split("\n\n")[0] == prev.split("\n\n")[-1]
 
     def test_overlap_clamped_to_chunk_size(self) -> None:

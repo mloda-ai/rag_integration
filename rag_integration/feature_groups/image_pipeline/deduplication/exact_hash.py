@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
@@ -20,7 +21,7 @@ class ExactHashImageDeduplicator(BaseImageDeduplicator):
         image_deduplication_method="exact_hash"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseImageDeduplicator.IMAGE_DEDUPLICATION_METHOD: property_spec(
             "Algorithm used to detect duplicate images",
             strict=True,

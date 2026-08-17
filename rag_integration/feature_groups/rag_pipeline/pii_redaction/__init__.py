@@ -8,8 +8,8 @@ from rag_integration.feature_groups.rag_pipeline.pii_redaction.simple import Sim
 
 __all__ = [
     "BasePIIRedactor",
-    "RegexPIIRedactor",
-    "SimplePIIRedactor",
     "PatternPIIRedactor",
     "PresidioPIIRedactor",
+    "RegexPIIRedactor",
+    "SimplePIIRedactor",
 ]

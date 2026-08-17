@@ -11,6 +11,8 @@ dependency (it reuses the existing TF-IDF embedder).
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
@@ -34,11 +36,11 @@ class TfidfRetriever(BaseRetrieveConnector):
     # is ignored by the TF-IDF embedder, so the default is passed verbatim.
     _TFIDF_DIM = 384
 
-    RETRIEVE_BACKENDS = {
+    RETRIEVE_BACKENDS: ClassVar = {
         "tfidf": "Vector-space TF-IDF retrieval (cosine over hashed TF-IDF vectors)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec(
             "Use 'tfidf' for vector-space TF-IDF retrieval", context=False
         ),

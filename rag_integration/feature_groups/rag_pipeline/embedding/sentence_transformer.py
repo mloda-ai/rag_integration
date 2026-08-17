@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from mloda.user import Feature
@@ -39,7 +39,7 @@ class SentenceTransformerEmbedder(BaseEmbedder):
     guarded by a lock so concurrent callers do not build the model twice.
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseEmbedder.EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed text into vectors",
             strict=True,

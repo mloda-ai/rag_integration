@@ -56,9 +56,11 @@ class TestFlickr30kDatasetSource:
 
     def test_missing_csv_raises(self) -> None:
         pytest.importorskip("pandas")
-        with tempfile.TemporaryDirectory() as tmp:
-            with pytest.raises(FileNotFoundError, match="flickr_annotations_30k.csv"):
-                Flickr30kDatasetSource._load_dataset(_make_options(tmp))
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            pytest.raises(FileNotFoundError, match="flickr_annotations_30k.csv"),
+        ):
+            Flickr30kDatasetSource._load_dataset(_make_options(tmp))
 
     def test_loads_corpus_and_query_rows(self) -> None:
         pytest.importorskip("PIL")

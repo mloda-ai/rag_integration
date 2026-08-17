@@ -33,7 +33,7 @@ backend implements only :meth:`_rank`.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import Feature, FeatureName, Options
@@ -78,11 +78,11 @@ class BaseGraphRagConnector(
     FAMILY_OPTION_KEYS = frozenset({GRAPH_BACKEND, GRAPH_SOURCE, QUERY_TEXT, TopKMixin.TOP_K, NODES, EDGES})
 
     # Filled per concrete; empty on the base so it never matches.
-    GRAPH_BACKENDS: dict[str, str] = {}
+    GRAPH_BACKENDS: ClassVar[dict[str, str]] = {}
 
     # Declarative option documentation only; selection is via
     # ``match_feature_group_criteria`` (not the FeatureChainParser).
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         GRAPH_BACKEND: property_spec("Which graph-RAG backend to use", context=False),
         QUERY_TEXT: property_spec("Raw text query to search the graph", context=False),
         TopKMixin.TOP_K: property_spec(

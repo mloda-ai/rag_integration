@@ -31,28 +31,28 @@ from rag_integration.feature_groups.image_pipeline.preprocessing import (
 )
 
 __all__ = [
-    # Image Source
-    "BaseImageSource",
-    "DictImageSource",
-    "FileImageSource",
-    # PII Redaction
-    "BaseImagePIIRedactor",
-    "BlurPIIRedactor",
-    "PixelPIIRedactor",
-    "SolidFillPIIRedactor",
-    # Preprocessing
-    "BaseImagePreprocessor",
-    "ResizePreprocessor",
-    "NormalizePreprocessor",
-    "ThumbnailPreprocessor",
     # Deduplication
     "BaseImageDeduplicator",
-    "ExactHashImageDeduplicator",
-    "PerceptualHashImageDeduplicator",
-    "DifferenceHashImageDeduplicator",
     # Embedding
     "BaseImageEmbedder",
-    "MockImageEmbedder",
-    "HashImageEmbedder",
+    # PII Redaction
+    "BaseImagePIIRedactor",
+    # Preprocessing
+    "BaseImagePreprocessor",
+    # Image Source
+    "BaseImageSource",
+    "BlurPIIRedactor",
     "CLIPImageEmbedder",
+    "DictImageSource",
+    "DifferenceHashImageDeduplicator",
+    "ExactHashImageDeduplicator",
+    "FileImageSource",
+    "HashImageEmbedder",
+    "MockImageEmbedder",
+    "NormalizePreprocessor",
+    "PerceptualHashImageDeduplicator",
+    "PixelPIIRedactor",
+    "ResizePreprocessor",
+    "SolidFillPIIRedactor",
+    "ThumbnailPreprocessor",
 ]

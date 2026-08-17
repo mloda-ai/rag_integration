@@ -9,7 +9,7 @@ CI contract suite; LLM-backed generators are pedigree backends for later.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -36,11 +36,11 @@ class ExtractiveResponder(BaseGenerateConnector):
     higher-fidelity or multilingual responder would be a separate backend.
     """
 
-    GENERATE_BACKENDS = {
+    GENERATE_BACKENDS: ClassVar = {
         "extractive": "Extractive sentence selection (pure Python, no LLM)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseGenerateConnector.GENERATE_BACKEND: property_spec(
             "Use 'extractive' for no-LLM sentence extraction", context=False
         ),

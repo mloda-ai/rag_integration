@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.chunking.base import BaseChunker
@@ -22,7 +24,7 @@ class FixedSizeChunker(BaseChunker):
         chunking_method="fixed_size"
     """
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseChunker.CHUNKING_METHOD: property_spec(
             "Strategy used to split documents into chunks",
             strict=True,

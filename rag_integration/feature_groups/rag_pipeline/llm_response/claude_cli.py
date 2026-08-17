@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess  # nosec B404
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 from mloda.user import Options
@@ -31,11 +31,11 @@ class ClaudeCliResponse(BaseLLMResponse):
     MAX_TURNS = "max_turns"
     TIMEOUT = "timeout"
 
-    LLM_METHODS = {
+    LLM_METHODS: ClassVar = {
         "claude_cli": "Claude CLI (claude -p) response generation",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseLLMResponse.LLM_METHOD: property_spec(
             "Which LLM implementation to use",
             strict=True,
@@ -96,7 +96,9 @@ class ClaudeCliResponse(BaseLLMResponse):
         if allowed_tools:
             cmd.extend(["--allowedTools", allowed_tools])
 
-        result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=timeout)  # nosec B603
+        result = subprocess.run(  # nosec B603
+            cmd, input=prompt, capture_output=True, text=True, timeout=timeout, check=False
+        )
         if result.returncode != 0:
             raise ValueError(f"claude -p failed (exit {result.returncode}): {result.stderr}")
 

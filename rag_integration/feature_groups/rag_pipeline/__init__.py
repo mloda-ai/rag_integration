@@ -49,43 +49,43 @@ from rag_integration.feature_groups.rag_pipeline.vector_store import (
 )
 
 __all__ = [
-    # Document Source
-    "BaseDocumentSource",
-    "FileDocumentSource",
-    "DictDocumentSource",
-    # PII Redaction
-    "BasePIIRedactor",
-    "RegexPIIRedactor",
-    "SimplePIIRedactor",
-    "PatternPIIRedactor",
-    "PresidioPIIRedactor",
     # Chunking
     "BaseChunker",
-    "FixedSizeChunker",
-    "SentenceChunker",
-    "ParagraphChunker",
-    "SemanticChunker",
     # Deduplication
     "BaseDeduplicator",
-    "ExactHashDeduplicator",
-    "NormalizedDeduplicator",
-    "NGramDeduplicator",
+    # Document Source
+    "BaseDocumentSource",
     # Embedding
     "BaseEmbedder",
-    "MockEmbedder",
-    "HashEmbedder",
-    "TfidfEmbedder",
-    "SentenceTransformerEmbedder",
-    # Vector Store
-    "BaseVectorStore",
-    "FaissFlatIndexer",
-    "FaissIVFIndexer",
-    "FaissHNSWIndexer",
-    "VectorStoreArtifact",
-    # Retrieval
-    "BaseRetriever",
-    "FaissRetriever",
     # LLM Response
     "BaseLLMResponse",
+    # PII Redaction
+    "BasePIIRedactor",
+    # Retrieval
+    "BaseRetriever",
+    # Vector Store
+    "BaseVectorStore",
     "ClaudeCliResponse",
+    "DictDocumentSource",
+    "ExactHashDeduplicator",
+    "FaissFlatIndexer",
+    "FaissHNSWIndexer",
+    "FaissIVFIndexer",
+    "FaissRetriever",
+    "FileDocumentSource",
+    "FixedSizeChunker",
+    "HashEmbedder",
+    "MockEmbedder",
+    "NGramDeduplicator",
+    "NormalizedDeduplicator",
+    "ParagraphChunker",
+    "PatternPIIRedactor",
+    "PresidioPIIRedactor",
+    "RegexPIIRedactor",
+    "SemanticChunker",
+    "SentenceChunker",
+    "SentenceTransformerEmbedder",
+    "SimplePIIRedactor",
+    "TfidfEmbedder",
+    "VectorStoreArtifact",
 ]

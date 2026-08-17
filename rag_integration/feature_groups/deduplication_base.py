@@ -122,11 +122,12 @@ class BaseRowDeduplicator(FeatureChainParserMixin, FeatureGroup):
             new_row["duplicate_of"] = duplicate_of[i]
             new_row[feature_name] = items[i]
 
-            if keep_strategy == "all_unique":
-                result.append(new_row)
-            elif keep_strategy == "first" and duplicate_of[i] is None:
-                result.append(new_row)
-            elif keep_strategy == cls.KEEP_LARGEST_STRATEGY:
+            if (
+                keep_strategy == "all_unique"
+                or keep_strategy == "first"
+                and duplicate_of[i] is None
+                or keep_strategy == cls.KEEP_LARGEST_STRATEGY
+            ):
                 result.append(new_row)
 
         if keep_strategy == cls.KEEP_LARGEST_STRATEGY:

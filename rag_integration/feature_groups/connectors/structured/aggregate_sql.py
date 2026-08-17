@@ -15,7 +15,7 @@ satisfies the shared contract suite on its own.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -67,11 +67,11 @@ class AggregateSql(BaseStructuredConnector):
     tokenizer drops the sign).
     """
 
-    STRUCTURED_BACKENDS = {
+    STRUCTURED_BACKENDS: ClassVar = {
         "aggregate": "Aggregation-aware rule-based natural-language-to-SQL (no LLM)",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseStructuredConnector.STRUCTURED_BACKEND: property_spec(
             "Use 'aggregate' for aggregation-aware text-to-SQL", context=False
         ),

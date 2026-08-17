@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -50,9 +50,9 @@ class BaseRetriever(FeatureGroup):
     METADATA_PATH = "metadata_path"
     RETRIEVAL_METHOD = "retrieval_method"
 
-    RETRIEVAL_METHODS: dict[str, str] = {}
+    RETRIEVAL_METHODS: ClassVar[dict[str, str]] = {}
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         RETRIEVAL_METHOD: property_spec("Which retriever implementation to use"),
         TOP_K: property_spec("Number of results to return", default=5),
         QUERY_TEXT: property_spec("Raw text query to embed and search"),

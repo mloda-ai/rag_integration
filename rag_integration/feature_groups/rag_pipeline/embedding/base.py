@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import (
     BaseArtifact,
@@ -60,7 +60,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
     EMBEDDING_METHOD = "embedding_method"
 
     # Supported embedding methods (implementations must define which they handle)
-    EMBEDDING_METHODS = {
+    EMBEDDING_METHODS: ClassVar = {
         "mock": "Deterministic mock embeddings for testing",
         "hash": "Feature hashing based embeddings",
         "tfidf": "TF-IDF based embeddings",
@@ -75,7 +75,7 @@ class BaseEmbedder(FeatureChainParserMixin, FeatureGroup):
     MIN_IN_FEATURES = 1
     MAX_IN_FEATURES = 1
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         EMBEDDING_METHOD: property_spec(
             "Algorithm used to embed text into vectors",
             strict=True,

@@ -7,7 +7,7 @@ from rag_integration.feature_groups.image_pipeline.preprocessing.thumbnail impor
 
 __all__ = [
     "BaseImagePreprocessor",
-    "ResizePreprocessor",
     "NormalizePreprocessor",
+    "ResizePreprocessor",
     "ThumbnailPreprocessor",
 ]

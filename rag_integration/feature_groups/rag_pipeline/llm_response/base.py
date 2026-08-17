@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
@@ -41,9 +41,9 @@ class BaseLLMResponse(FeatureGroup):
     SYSTEM_PROMPT = "system_prompt"
     LLM_METHOD = "llm_method"
 
-    LLM_METHODS: dict[str, str] = {}
+    LLM_METHODS: ClassVar[dict[str, str]] = {}
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         LLM_METHOD: property_spec("Which LLM implementation to use"),
         QUERY: property_spec("The user question to answer"),
         CONTEXT: property_spec("Retrieved context to include in the prompt (list or string)"),

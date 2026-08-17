@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import faiss
 import numpy as np
@@ -47,7 +47,7 @@ EMBED_DIM = 384
 class _StubLLMResponse(BaseLLMResponse):
     """Deterministic offline stand-in for an LLM stage backend."""
 
-    LLM_METHODS = {"stub": "Deterministic stub for tests"}
+    LLM_METHODS: ClassVar = {"stub": "Deterministic stub for tests"}
 
     @classmethod
     def match_feature_group_criteria(

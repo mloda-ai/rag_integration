@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 from mloda.provider import property_spec
@@ -29,11 +29,11 @@ class FaissRetriever(BaseRetriever):
     a lock so concurrent callers do not read the same index/metadata twice.
     """
 
-    RETRIEVAL_METHODS = {
+    RETRIEVAL_METHODS: ClassVar = {
         "faiss": "FAISS-based similarity search",
     }
 
-    PROPERTY_MAPPING = {
+    PROPERTY_MAPPING: ClassVar = {
         BaseRetriever.RETRIEVAL_METHOD: property_spec(
             "Which retriever implementation to use",
             strict=True,

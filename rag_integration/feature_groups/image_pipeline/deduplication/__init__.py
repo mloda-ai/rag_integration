@@ -7,7 +7,7 @@ from rag_integration.feature_groups.image_pipeline.deduplication.phash import Pe
 
 __all__ = [
     "BaseImageDeduplicator",
+    "DifferenceHashImageDeduplicator",
     "ExactHashImageDeduplicator",
     "PerceptualHashImageDeduplicator",
-    "DifferenceHashImageDeduplicator",
 ]
