@@ -129,6 +129,6 @@ def test_clip_model_built_once() -> None:
             results = _run_concurrently(lambda: CLIPImageEmbedder._get_model_and_processor("some/path"))
         assert model_builder.calls == 1
         assert processor_builder.calls == 1
-        assert all(r == results[0] for r in results)
+        assert all(r is results[0] for r in results)
     finally:
         CLIPImageEmbedder._model_cache = {}

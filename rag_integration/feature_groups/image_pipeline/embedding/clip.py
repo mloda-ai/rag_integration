@@ -90,11 +90,13 @@ class CLIPImageEmbedder(BaseImageEmbedder):
     @classmethod
     def _get_model_and_processor(cls, resolved: str) -> tuple[Any, Any]:
         """Get or create the (model, processor) pair for a resolved path (thread-safe)."""
+        # Fast path: single atomic dict read.
         cached = cls._model_cache.get(resolved)
         if cached is not None:
             return cached  # type: ignore[no-any-return]
 
         with cls._model_lock:
+            # Re-check inside the lock: another thread may have built it.
             cached = cls._model_cache.get(resolved)
             if cached is None:
                 try:
