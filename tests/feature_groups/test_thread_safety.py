@@ -113,3 +113,22 @@ def test_faiss_index_loaded_once() -> None:
         assert all(r is results[0] for r in results)
     finally:
         FaissRetriever._index_cache = None
+
+
+def test_clip_model_built_once() -> None:
+    transformers = pytest.importorskip("transformers")
+    from rag_integration.feature_groups.image_pipeline.embedding.clip import CLIPImageEmbedder
+
+    CLIPImageEmbedder._model_cache = {}
+    model_builder = _CountingBuilder()
+    processor_builder = _CountingBuilder()
+    try:
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(transformers.CLIPModel, "from_pretrained", staticmethod(model_builder))
+            mp.setattr(transformers.CLIPProcessor, "from_pretrained", staticmethod(processor_builder))
+            results = _run_concurrently(lambda: CLIPImageEmbedder._get_model_and_processor("some/path"))
+        assert model_builder.calls == 1
+        assert processor_builder.calls == 1
+        assert all(r is results[0] for r in results)
+    finally:
+        CLIPImageEmbedder._model_cache = {}
