@@ -12,7 +12,7 @@ Dependency CVE scanning is left to GitHub's native Dependabot security alerts (e
 - Push to any branch
 - Pull request to `main`
 
-**Purpose:** Runs the full test suite using tox across multiple Python versions (3.10, 3.11, 3.12, 3.13). This includes pytest, ruff linting, mypy type checking, and bandit security analysis.
+**Purpose:** Runs the full test suite using tox across multiple Python versions (3.10, 3.11, 3.12, 3.13, 3.14). This includes pytest, ruff linting, mypy type checking, and bandit security analysis.
 
 **Requirements:** None. This workflow uses only public GitHub Actions and requires no secrets.
 
