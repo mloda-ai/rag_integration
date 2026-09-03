@@ -50,6 +50,10 @@ faiss = ["faiss-cpu>=1.7.0"]
 advanced = [
     "presidio-analyzer>=2.2.0",
     "sentence-transformers>=2.2.0",
+    # transformers>=5.10.2 fixes a save_pretrained path-traversal advisory (GHSA-xrqw-3rrv-vx5w,
+    # first_patched=5.10.0, yanked; 5.10.1 has a separate CLIP conversion bug fixed in 5.10.2).
+    # Pinned explicitly since sentence-transformers only requires >=5.0.0,<6.0.0.
+    "transformers>=5.10.2",
     "joblib>=1.0.0",
     "Pillow>=9.0.0",
     "faiss-cpu>=1.7.0",
