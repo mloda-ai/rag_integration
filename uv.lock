@@ -3131,7 +3131,6 @@ version = "0.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "mloda" },
-    { name = "mloda-testing" },
 ]
 
 [package.optional-dependencies]
@@ -3148,6 +3147,7 @@ connectors = [
 ]
 dev = [
     { name = "bandit" },
+    { name = "mloda-testing" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
@@ -3189,7 +3189,7 @@ requires-dist = [
     { name = "haystack-ai", marker = "extra == 'orchestrator'", specifier = ">=2.0" },
     { name = "joblib", marker = "extra == 'advanced'", specifier = ">=1.0.0" },
     { name = "mloda", specifier = ">=0.12.0" },
-    { name = "mloda-testing", specifier = ">=0.4.6" },
+    { name = "mloda-testing", marker = "extra == 'dev'", specifier = ">=0.4.6" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "networkx", marker = "extra == 'graph'", specifier = ">=3.0" },
     { name = "numpy", marker = "extra == 'eval'", specifier = ">=1.21.0" },
