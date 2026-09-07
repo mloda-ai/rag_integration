@@ -201,7 +201,7 @@ To install only specific extras, use `uv sync --extra <name>`:
 | `advanced` | Presidio, sentence-transformers, joblib, Pillow, FAISS|
 | `eval`     | BEIR benchmark datasets, pandas, numpy               |
 | `graph`    | networkx graph-RAG backend (`NetworkxGraphRag`)      |
-| `dev`      | tox, pytest, ruff, mypy, bandit                      |
+| `dev`      | tox, pytest, ruff, mypy, bandit, mloda-testing       |
 
 ## CLI
 

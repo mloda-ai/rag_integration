@@ -21,7 +21,7 @@ Other extras:
 | `faiss`    | FAISS vector indexing (`faiss-cpu`)                |
 | `advanced` | Presidio, sentence-transformers, joblib, Pillow, FAISS |
 | `eval`     | BEIR benchmark datasets, pandas, numpy            |
-| `dev`      | tox, pytest, ruff, mypy, bandit                   |
+| `dev`      | tox, pytest, ruff, mypy, bandit, mloda-testing    |
 
 ## Quick Start
 
