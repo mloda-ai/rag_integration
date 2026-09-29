@@ -10,8 +10,9 @@ import math
 import tempfile
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
-from mloda.provider import DataCreator, FeatureGroup
+from mloda.provider import BaseArtifact, DataCreator, FeatureGroup
 from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -30,6 +31,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     SentenceTransformerEmbedder,
     TfidfEmbedder,
 )
+from rag_integration.feature_groups.rag_pipeline.embedding import EmbeddingArtifact
 from tests.conftest import requires_sentence_transformer_model, requires_spacy_model
 from tests.integration.helpers import flatten_result, get_results_by_feature
 
@@ -236,8 +238,61 @@ class TestAlternativeProviders:
 # =============================================================================
 
 
+class ArtifactMockEmbedder(MockEmbedder):
+    """MockEmbedder with EmbeddingArtifact enabled, so the artifact lifecycle runs without a model download."""
+
+    @staticmethod
+    def artifact() -> type[BaseArtifact] | None:
+        return EmbeddingArtifact
+
+
 class TestEmbeddingArtifactIntegration:
     """Test embedding artifact save and load in a full pipeline."""
+
+    def test_embedding_artifact_save_and_load_without_model(self) -> None:
+        """
+        Same save/load round trip as below, but runs on CI: no sentence-transformers model needed.
+
+        Run 2 must load the embeddings from the artifact. Recomputing them would mean the
+        artifact never reached the feature group, so _embed_texts fails the run instead.
+        """
+        feature_name = "docs__pii_redacted__chunked__deduped__embedded"
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            artifact_path = Path(tmp_dir)
+            providers = make_domain_providers(
+                "mock_artifact_test", FixedSizeChunker, ExactHashDeduplicator, ArtifactMockEmbedder
+            )
+            feature_options: dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
+
+            # Run 1: compute and save
+            feature1 = Feature(feature_name, options=Options(feature_options), domain="mock_artifact_test")
+            api1 = mloda(
+                [feature1], {PythonDictFramework}, plugin_collector=PluginCollector.enabled_feature_groups(providers)
+            )
+            api1._batch_run()
+            rows1 = flatten_result(api1.get_result())
+            artifacts1 = api1.get_artifacts()
+
+            assert len(rows1) > 0, "Run 1 should produce results"
+            assert feature_name in artifacts1, f"Run 1 should save an artifact for {feature_name}, got {artifacts1}"
+            assert list(artifact_path.glob("embedding_artifact_*.joblib")), "Artifact files should be created"
+
+            # Run 2: load from artifact
+            combined_options = {**feature_options, **artifacts1}
+            feature2 = Feature(feature_name, options=Options(combined_options), domain="mock_artifact_test")
+            api2 = mloda(
+                [feature2], {PythonDictFramework}, plugin_collector=PluginCollector.enabled_feature_groups(providers)
+            )
+            with patch.object(
+                MockEmbedder,
+                "_embed_texts",
+                side_effect=AssertionError("Run 2 recomputed embeddings instead of loading"),
+            ):
+                api2._batch_run()
+            rows2 = flatten_result(api2.get_result())
+
+            assert rows1 == rows2, "Rows should match between runs"
 
     @requires_sentence_transformer_model
     def test_embedding_artifact_save_and_load(self) -> None:
