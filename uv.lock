@@ -1469,15 +1469,15 @@ wheels = [
 
 [[package]]
 name = "mloda"
-version = "0.13.0"
+version = "0.14.0"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/e8/e47ceae4da7ee3c320fe594ecc189877bcd8f916e19defad914157cdeea3/mloda-0.13.0-py3-none-any.whl", hash = "sha256:7046ee765b78d608b4f9379e1e008abb72a8551537a4e495462384ee06860401", size = 570613, upload-time = "2026-09-14T08:31:40.089Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/c3/cf2567d0c4f78ad7d3ea6c30efe67e5eb1e14e63e12d8009c6baa136f3ef/mloda-0.14.0-py3-none-any.whl", hash = "sha256:783313ed9cda0c25619085f4ce9e34eb3eec78425895963a6328ddf5d1045eb7", size = 599228, upload-time = "2026-09-24T11:20:23.5Z" },
 ]
 
 [[package]]
 name = "mloda-testing"
-version = "0.4.7"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mloda" },
@@ -1485,7 +1485,7 @@ dependencies = [
     { name = "pytest" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/61/56b91068b5af82cf301d468668d57c12e6aa1dd2e13795da749652faa863/mloda_testing-0.4.7-py3-none-any.whl", hash = "sha256:5c5ec25fe8f0db008b8e858a77457c9e9709d5668c00f5d25e4c7543e5091c41", size = 155022, upload-time = "2026-09-16T15:16:31.314Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/1e/150bdd3ecbb90e5c4f48dd6074a32e3c8362b0630c5a6fe9345466e8dcca/mloda_testing-0.5.0-py3-none-any.whl", hash = "sha256:6eb04ed39feb73bcb0ffac8e8d6b3b0b4e13b64b181306ccf3b35e8e3de02eb0", size = 179782, upload-time = "2026-09-29T09:37:56.561Z" },
 ]
 
 [[package]]
@@ -3192,8 +3192,8 @@ requires-dist = [
     { name = "flashrank", marker = "extra == 'rerank'", specifier = ">=0.2.0" },
     { name = "haystack-ai", marker = "extra == 'orchestrator'", specifier = ">=2.0" },
     { name = "joblib", marker = "extra == 'advanced'", specifier = ">=1.0.0" },
-    { name = "mloda", specifier = ">=0.13.0" },
-    { name = "mloda-testing", marker = "extra == 'dev'", specifier = ">=0.4.7" },
+    { name = "mloda", specifier = ">=0.14.0" },
+    { name = "mloda-testing", marker = "extra == 'dev'", specifier = ">=0.5.0" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "networkx", marker = "extra == 'graph'", specifier = ">=3.0" },
     { name = "numpy", marker = "extra == 'eval'", specifier = ">=1.21.0" },
