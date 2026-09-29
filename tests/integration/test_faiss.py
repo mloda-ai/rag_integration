@@ -12,6 +12,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 from mloda.provider import DataCreator, FeatureGroup
 from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
@@ -213,6 +214,48 @@ class TestVectorStoreArtifactPersistence:
             rows2 = flatten_result(results2)
             assert len(rows2) > 0, "Run 2 should produce results"
             assert len(rows1) == len(rows2), "Row count should match between runs"
+
+    def test_vector_store_artifact_load_skips_rebuild(self) -> None:
+        """
+        Run 2 must load the saved index, not rebuild it.
+
+        Rebuilding would mean the artifact never reached the feature group, so
+        _build_index fails the run instead of silently recomputing.
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            providers = make_domain_providers("vs_artifact_load_test")
+            feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
+            feature_options: dict[str, Any] = {"artifact_storage_path": tmp_dir}
+
+            # Run 1: compute and save
+            feature1 = Feature(feature_name, options=Options(feature_options), domain="vs_artifact_load_test")
+            api1 = mloda(
+                [feature1],
+                {PythonDictFramework},
+                plugin_collector=PluginCollector.enabled_feature_groups(providers),
+            )
+            api1._batch_run()
+            rows1 = flatten_result(api1.get_result())
+            artifacts1 = api1.get_artifacts()
+            assert feature_name in artifacts1, f"Run 1 should save an artifact for {feature_name}, got {artifacts1}"
+
+            # Run 2: load from artifact
+            combined_options = {**feature_options, **artifacts1}
+            feature2 = Feature(feature_name, options=Options(combined_options), domain="vs_artifact_load_test")
+            api2 = mloda(
+                [feature2],
+                {PythonDictFramework},
+                plugin_collector=PluginCollector.enabled_feature_groups(providers),
+            )
+            with patch.object(
+                FaissFlatIndexer,
+                "_build_index",
+                side_effect=AssertionError("Run 2 rebuilt the index instead of loading it"),
+            ):
+                api2._batch_run()
+            rows2 = flatten_result(api2.get_result())
+
+            assert rows1 == rows2, "Rows should match between runs"
 
 
 # =============================================================================
