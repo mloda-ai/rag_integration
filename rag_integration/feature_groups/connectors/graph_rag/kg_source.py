@@ -110,7 +110,9 @@ class TriplesKnowledgeGraph(BaseKnowledgeGraphSource):
         BaseKnowledgeGraphSource.KG_BACKEND: property_spec(
             "Use 'triples' for a triple-built passage graph", context=False
         ),
-        TRIPLES: property_spec("Knowledge-graph triples: a list of [subject, predicate, object]", context=False),
+        TRIPLES: property_spec(
+            "Knowledge-graph triples: a list of [subject, predicate, object]", context=False, default=None
+        ),
     }
 
     @classmethod

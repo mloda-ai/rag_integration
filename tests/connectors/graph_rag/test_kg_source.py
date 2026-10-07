@@ -141,7 +141,7 @@ def test_end_to_end_run_all() -> None:
     )
     result = mlodaAPI.run_all(
         [feature],
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups({TriplesKnowledgeGraph}),
     )
     for partition in result:

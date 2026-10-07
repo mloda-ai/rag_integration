@@ -90,7 +90,7 @@ def run_connector(root_feature: str, options: dict[str, Any]) -> Any:
     feature = Feature(root_feature, options=Options(context=dict(options)))
     result = mlodaAPI.run_all(
         [feature],
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups(CONNECTORS),
     )
     # Pivot the columnar partition (mloda 0.9.0) back to rows, matching the

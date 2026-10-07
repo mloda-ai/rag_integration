@@ -61,10 +61,10 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
 
     PROPERTY_MAPPING: ClassVar = {
         STRUCTURED_BACKEND: property_spec("Which structured (text-to-SQL) backend to use", context=False),
-        QUESTION: property_spec("Natural-language question to answer over the table", context=False),
-        TABLE: property_spec("Table name (a simple SQL identifier)", context=False),
-        COLUMNS: property_spec("Column names (simple SQL identifiers)", context=False),
-        ROWS: property_spec("Table rows: a list of {column: value} dicts", context=False),
+        QUESTION: property_spec("Natural-language question to answer over the table", context=False, default=None),
+        TABLE: property_spec("Table name (a simple SQL identifier)", context=False, default=None),
+        COLUMNS: property_spec("Column names (simple SQL identifiers)", context=False, default=None),
+        ROWS: property_spec("Table rows: a list of {column: value} dicts", context=False, default=None),
     }
 
     @classmethod

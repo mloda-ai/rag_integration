@@ -76,11 +76,17 @@ class AggregateSql(BaseStructuredConnector):
             "Use 'aggregate' for aggregation-aware text-to-SQL", context=False
         ),
         BaseStructuredConnector.QUESTION: property_spec(
-            "Natural-language question to answer over the table", context=False
+            "Natural-language question to answer over the table", context=False, default=None
         ),
-        BaseStructuredConnector.TABLE: property_spec("Table name (a simple SQL identifier)", context=False),
-        BaseStructuredConnector.COLUMNS: property_spec("Column names (simple SQL identifiers)", context=False),
-        BaseStructuredConnector.ROWS: property_spec("Table rows: a list of {column: value} dicts", context=False),
+        BaseStructuredConnector.TABLE: property_spec(
+            "Table name (a simple SQL identifier)", context=False, default=None
+        ),
+        BaseStructuredConnector.COLUMNS: property_spec(
+            "Column names (simple SQL identifiers)", context=False, default=None
+        ),
+        BaseStructuredConnector.ROWS: property_spec(
+            "Table rows: a list of {column: value} dicts", context=False, default=None
+        ),
     }
 
     @classmethod

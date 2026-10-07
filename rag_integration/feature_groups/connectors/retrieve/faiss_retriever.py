@@ -35,11 +35,15 @@ class FaissDenseRetriever(BaseRetrieveConnector):
 
     PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec("Use 'faiss' for dense FAISS retrieval", context=False),
-        BaseRetrieveConnector.QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
-        BaseRetrieveConnector.TOP_K: property_spec(
-            f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})", context=False
+        BaseRetrieveConnector.QUERY_TEXT: property_spec(
+            "Raw text query to search the corpus", context=False, default=None
         ),
-        BaseRetrieveConnector.CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
+        BaseRetrieveConnector.TOP_K: property_spec(
+            f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})", context=False, default=None
+        ),
+        BaseRetrieveConnector.CORPUS: property_spec(
+            "Inline corpus: a list of {doc_id, text} dicts", context=False, default=None
+        ),
     }
 
     @classmethod

@@ -80,24 +80,27 @@ class BaseGraphRagConnector(
     # Filled per concrete; empty on the base so it never matches.
     GRAPH_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    # Declarative option documentation only; selection is via
-    # ``match_feature_group_criteria`` (not the FeatureChainParser).
+    # Selection is via ``match_feature_group_criteria`` on the backend key. The other
+    # keys declare ``default=None`` (mloda requires keys without a default) and are
+    # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         GRAPH_BACKEND: property_spec("Which graph-RAG backend to use", context=False),
-        QUERY_TEXT: property_spec("Raw text query to search the graph", context=False),
+        QUERY_TEXT: property_spec("Raw text query to search the graph", context=False, default=None),
         TopKMixin.TOP_K: property_spec(
-            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False
+            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False, default=None
         ),
-        NODES: property_spec("Graph nodes: a list of {doc_id, text} dicts", context=False),
+        NODES: property_spec("Graph nodes: a list of {doc_id, text} dicts", context=False, default=None),
         EDGES: property_spec(
             "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
             " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)",
             context=False,
+            default=None,
         ),
         GRAPH_SOURCE: property_spec(
             "Name of an upstream feature whose row carries the {nodes, edges} graph payload."
             " Optional: replaces inline nodes/edges with a consumed graph source",
             context=False,
+            default=None,
         ),
     }
 

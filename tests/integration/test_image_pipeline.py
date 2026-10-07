@@ -144,7 +144,7 @@ class TestFullImagePipelineIntegration:
 
         raw_result = mlodaAPI.run_all(
             features=list(feature_names),
-            compute_frameworks={PythonDictFramework},
+            compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups(get_test_providers()),
         )
 
@@ -323,7 +323,7 @@ class TestAlternativeImageProviders:
 
         raw_result = mlodaAPI.run_all(
             features=[feature1, feature2, feature3],
-            compute_frameworks={PythonDictFramework},
+            compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups(all_providers),
         )
 

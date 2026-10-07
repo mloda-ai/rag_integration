@@ -40,10 +40,13 @@ class ClaudeCliResponse(BaseLLMResponse):
             "Which LLM implementation to use",
             strict=True,
             allowed_values={"claude_cli": "Claude CLI (claude -p) response generation"},
+            default=None,
         ),
-        BaseLLMResponse.QUERY: property_spec("The user question to answer"),
-        BaseLLMResponse.CONTEXT: property_spec("Retrieved context to include in the prompt (list or string)"),
-        BaseLLMResponse.SYSTEM_PROMPT: property_spec("System prompt for the LLM"),
+        BaseLLMResponse.QUERY: property_spec("The user question to answer", default=None),
+        BaseLLMResponse.CONTEXT: property_spec(
+            "Retrieved context to include in the prompt (list or string)", default=None
+        ),
+        BaseLLMResponse.SYSTEM_PROMPT: property_spec("System prompt for the LLM", default=None),
         ALLOWED_TOOLS: property_spec("Comma-separated tools to allow for Claude CLI", default=""),
         MAX_TURNS: property_spec("Maximum conversation turns for Claude CLI", default=1),
         TIMEOUT: property_spec("Subprocess timeout in seconds for Claude CLI", default=300),

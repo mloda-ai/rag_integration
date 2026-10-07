@@ -227,7 +227,7 @@ def run_faiss_eval(data_dir: str, embedder_name: str) -> None:
 
     raw_result = mlodaAPI.run_all(
         features=[feature],
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups(
             {
                 ScifactDatasetSource,

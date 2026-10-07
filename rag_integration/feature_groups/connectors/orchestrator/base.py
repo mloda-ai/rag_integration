@@ -62,11 +62,13 @@ class BaseOrchestratorConnector(SingleQueryPerRunMixin, OptionsMixin, TopKMixin,
 
     PROPERTY_MAPPING: ClassVar = {
         ORCHESTRATOR_BACKEND: property_spec("Which orchestrator (external framework) backend to use", context=False),
-        QUERY_TEXT: property_spec("The query to run through the framework pipeline", context=False),
+        QUERY_TEXT: property_spec("The query to run through the framework pipeline", context=False, default=None),
         TopKMixin.TOP_K: property_spec(
-            f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})", context=False
+            f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})",
+            context=False,
+            default=None,
         ),
-        CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
+        CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False, default=None),
     }
 
     @classmethod

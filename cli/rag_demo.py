@@ -257,7 +257,7 @@ def cmd_run(args: argparse.Namespace) -> None:
         features.append(chunk_feature)
     raw_result = mlodaAPI.run_all(
         features=features,
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups(providers),
     )
 

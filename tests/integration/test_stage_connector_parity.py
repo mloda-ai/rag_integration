@@ -69,7 +69,7 @@ class _StubLLMResponse(BaseLLMResponse):
 def _run_one(feature: Feature, groups: set[type[FeatureGroup]], key: str) -> Any:
     result = mlodaAPI.run_all(
         [feature],
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups(groups),
     )
     for row in flatten_result(result):

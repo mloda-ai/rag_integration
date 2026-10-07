@@ -115,7 +115,7 @@ class RetrieveConnectorContractBase(ABC):
         feature = Feature(connector.ROOT_FEATURE_NAME, options=cls._options(query, corpus, top_k))
         result = mlodaAPI.run_all(
             [feature],
-            compute_frameworks={PythonDictFramework},
+            compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
         for partition in result:

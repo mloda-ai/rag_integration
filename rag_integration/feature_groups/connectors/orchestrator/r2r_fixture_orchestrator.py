@@ -54,13 +54,15 @@ class R2RFixtureOrchestrator(BaseOrchestratorConnector):
             "Use 'r2r' for the R2R fixture-stub pipeline", context=False
         ),
         BaseOrchestratorConnector.QUERY_TEXT: property_spec(
-            "The query to look up in the canned R2R responses", context=False
+            "The query to look up in the canned R2R responses", context=False, default=None
         ),
         BaseOrchestratorConnector.TOP_K: property_spec(
-            f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})", context=False
+            f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})",
+            context=False,
+            default=None,
         ),
         BaseOrchestratorConnector.CORPUS: property_spec(
-            "Inline corpus (the documents ingested into R2R)", context=False
+            "Inline corpus (the documents ingested into R2R)", context=False, default=None
         ),
     }
 

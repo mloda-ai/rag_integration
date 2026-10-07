@@ -231,7 +231,7 @@ def run_connector(root_feature, options):
     feature = Feature(root_feature, options=Options(context=options))
     result = mlodaAPI.run_all(
         [feature],
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups(CONNECTORS),
     )
     # ... return the single result row's value

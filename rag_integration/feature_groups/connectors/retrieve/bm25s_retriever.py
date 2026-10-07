@@ -28,16 +28,20 @@ class Bm25sRetriever(BaseRetrieveConnector):
         "bm25s": "BM25 lexical retrieval (bm25s)",
     }
 
-    # Declarative option documentation; selection is via
+    # Option documentation; selection is via
     # ``match_feature_group_criteria`` (see BaseRetrieveConnector). The allowed
     # backend value is the single key of RETRIEVE_BACKENDS above.
     PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec("Use 'bm25s' for BM25 lexical retrieval", context=False),
-        BaseRetrieveConnector.QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
-        BaseRetrieveConnector.TOP_K: property_spec(
-            f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})", context=False
+        BaseRetrieveConnector.QUERY_TEXT: property_spec(
+            "Raw text query to search the corpus", context=False, default=None
         ),
-        BaseRetrieveConnector.CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
+        BaseRetrieveConnector.TOP_K: property_spec(
+            f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})", context=False, default=None
+        ),
+        BaseRetrieveConnector.CORPUS: property_spec(
+            "Inline corpus: a list of {doc_id, text} dicts", context=False, default=None
+        ),
     }
 
     @classmethod
