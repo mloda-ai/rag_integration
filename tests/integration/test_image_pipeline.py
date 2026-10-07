@@ -25,7 +25,7 @@ from rag_integration.feature_groups.image_pipeline import (
     SolidFillPIIRedactor,
     ThumbnailPreprocessor,
 )
-from tests.integration.helpers import flatten_result, get_results_by_feature
+from tests.integration.helpers import get_results_by_feature
 
 # =============================================================================
 # Test Data
@@ -330,12 +330,13 @@ class TestAlternativeImageProviders:
         assert len(raw_result) == 3, f"Should have 3 result sets, got {len(raw_result)}"
 
         feature_names = ["embedded_imgset1", "embedded_imgset2", "embedded_imgset3"]
-        for i, result_set in enumerate(raw_result):
-            result = flatten_result([result_set])
+        results = get_results_by_feature(raw_result, feature_names)
+        for i, name in enumerate(feature_names):
+            result = results[name]
             assert len(result) > 0, f"Set {i + 1}: Should produce results"
 
             for row in result:
-                embedding = row.get(feature_names[i])
+                embedding = row.get(name)
                 assert isinstance(embedding, list), f"Set {i + 1}: Embedding should be a list"
                 magnitude = math.sqrt(sum(x * x for x in embedding))
                 assert abs(magnitude - 1.0) < 0.001, f"Set {i + 1}: Embedding should be unit length, got {magnitude}"

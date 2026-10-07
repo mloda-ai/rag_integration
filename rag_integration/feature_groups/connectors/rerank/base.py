@@ -71,7 +71,7 @@ class BaseRerankConnector(
     RERANK_BACKENDS: ClassVar[dict[str, str]] = {}
 
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
-    # keys declare ``default=None`` (mloda requires keys without a default) and are
+    # keys declare ``default=None`` (mloda treats a key without a default as required) and are
     # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         RERANK_BACKEND: property_spec("Which rerank-connector backend to use", context=False),

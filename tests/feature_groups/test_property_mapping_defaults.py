@@ -13,7 +13,7 @@ import pkgutil
 from typing import Any
 
 import pytest
-from mloda.provider import FeatureChainParser, FeatureGroup, PropertySpec
+from mloda.provider import FeatureChainParser, FeatureChainParserMixin, FeatureGroup, PropertySpec, is_no_default
 
 import rag_integration.feature_groups
 
@@ -107,6 +107,24 @@ def test_group_context_split_is_stable() -> None:
     assert not misplaced, "PROPERTY_MAPPING options on the wrong side of the group/context split:\n" + "\n".join(
         misplaced
     )
+
+
+def test_plain_groups_require_only_backend_keys() -> None:
+    """mloda requires no-default keys when a plain group matches; only connector backends may be required.
+
+    The other options are validated in ``calculate_feature``, so a key without ``default=None`` would make
+    the group stop matching instead of raising a clear option error.
+    """
+    required: list[str] = []
+    for feature_group in _all_feature_groups():
+        if issubclass(feature_group, FeatureChainParserMixin):
+            continue
+        owner = f"{feature_group.__module__}.{feature_group.__name__}"
+        for key, spec in (feature_group.PROPERTY_MAPPING or {}).items():
+            if is_no_default(spec.default) and not str(key).endswith("_backend"):
+                required.append(f"{owner}.{key}")
+
+    assert not required, "plain feature group keys missing default=None:\n" + "\n".join(required)
 
 
 def test_all_property_mapping_values_are_property_specs() -> None:

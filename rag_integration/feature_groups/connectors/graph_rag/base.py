@@ -81,7 +81,7 @@ class BaseGraphRagConnector(
     GRAPH_BACKENDS: ClassVar[dict[str, str]] = {}
 
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
-    # keys declare ``default=None`` (mloda requires keys without a default) and are
+    # keys declare ``default=None`` (mloda treats a key without a default as required) and are
     # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         GRAPH_BACKEND: property_spec("Which graph-RAG backend to use", context=False),
