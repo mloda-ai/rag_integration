@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import faiss
 import numpy as np
+import pytest
 from mloda.user import Options
 
 from rag_integration.feature_groups.rag_pipeline.retrieval import FaissRetriever
@@ -108,3 +110,16 @@ class TestFaissRetriever:
         assert FaissRetriever.match_feature_group_criteria("retrieved", Options())
         assert not FaissRetriever.match_feature_group_criteria("docs", Options())
         assert not FaissRetriever.match_feature_group_criteria("docs__indexed", Options())
+
+    @pytest.mark.parametrize(
+        ("retrieval_method", "expected"),
+        [(None, True), ("faiss", True), ("nope", False)],
+    )
+    def test_strict_retrieval_method_on_both_paths(self, retrieval_method: str | None, expected: bool) -> None:
+        """The strict retrieval_method values hold on the retrieved and passages-stage paths."""
+        context: dict[str, Any] = {FaissRetriever.INDEX_PATH: "index.faiss"}
+        if retrieval_method is not None:
+            context[FaissRetriever.RETRIEVAL_METHOD] = retrieval_method
+        options = Options(context=context)
+        assert FaissRetriever.match_feature_group_criteria("retrieved", options) is expected
+        assert FaissRetriever.match_feature_group_criteria(FaissRetriever.PASSAGES_KEY, options) is expected
