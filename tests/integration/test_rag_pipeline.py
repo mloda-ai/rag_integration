@@ -19,6 +19,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.rag_pipeline import (
+    DictDocumentSource,
     ExactHashDeduplicator,
     FixedSizeChunker,
     HashEmbedder,
@@ -29,6 +30,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     SemanticChunker,
     SentenceChunker,
     SentenceTransformerEmbedder,
+    SimplePIIRedactor,
     TfidfEmbedder,
 )
 from rag_integration.feature_groups.rag_pipeline.embedding import EmbeddingArtifact
@@ -231,6 +233,48 @@ class TestAlternativeProviders:
                 assert isinstance(embedding, list), f"Set {i + 1}: Embedding should be a list"
                 magnitude = math.sqrt(sum(x * x for x in embedding))
                 assert abs(magnitude - 1.0) < 0.001, f"Set {i + 1}: Embedding should be unit length, got {magnitude}"
+
+    def test_group_selectors_pick_among_enabled_providers(self) -> None:
+        """Stage selectors in group options reach every upstream stage, as in the quickstart's step 4."""
+        providers = {
+            DictDocumentSource,
+            RegexPIIRedactor,
+            SimplePIIRedactor,
+            FixedSizeChunker,
+            SentenceChunker,
+            ExactHashDeduplicator,
+            NormalizedDeduplicator,
+            MockEmbedder,
+            HashEmbedder,
+        }
+        chunked = "docs__pii_redacted__chunked"
+        embedded = "docs__pii_redacted__chunked__deduped__embedded"
+        options = Options(
+            group={
+                "documents": [{"doc_id": "d1", "text": "Contact john@example.com for help. Open daily. Call us."}],
+                "redaction_method": "regex",
+                "chunking_method": "sentence",
+                "deduplication_method": "exact_hash",
+                "embedding_method": "hash",
+                "chunk_size": 30,
+                "chunk_overlap": 0,
+            }
+        )
+
+        results = {
+            name: get_results_by_feature(
+                mlodaAPI.run_all(
+                    features=[Feature(name, options=options)],
+                    compute_frameworks=[PythonDictFramework],
+                    plugin_collector=PluginCollector.enabled_feature_groups(providers),
+                ),
+                [name],
+            )[name]
+            for name in (chunked, embedded)
+        }
+        # FixedSizeChunker would cut mid-sentence at this chunk_size.
+        assert [row[chunked] for row in results[chunked]] == ["Contact [REDACTED] for help.", "Open daily. Call us."]
+        assert len(results[embedded]) == 2
 
 
 # =============================================================================

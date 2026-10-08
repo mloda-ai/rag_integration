@@ -71,7 +71,7 @@ providers = {
     MockEmbedder,
 }
 
-# Group options forward to the `docs` input feature; context options do not.
+# Group options forward to every upstream stage, down to `docs`; context options do not.
 feature = Feature(
     "docs__pii_redacted__chunked__deduped__embedded",
     options=Options(
@@ -93,21 +93,37 @@ results = mlodaAPI.run_all(
 
 ### 4. Configure pipeline stages
 
-Use `Options` to select specific implementations and tune parameters:
+With several implementations per stage enabled, group options select one each and tune parameters:
 
 ```python
+from rag_integration.feature_groups.rag_pipeline import (
+    HashEmbedder,
+    NormalizedDeduplicator,
+    SentenceChunker,
+    SimplePIIRedactor,
+)
+
+providers |= {SimplePIIRedactor, SentenceChunker, NormalizedDeduplicator, HashEmbedder}
+
 feature = Feature(
     "docs__pii_redacted__chunked__deduped__embedded",
     options=Options(
-        context={
+        group={
+            "documents": documents,
             "redaction_method": "regex",  # or "simple", "pattern", "presidio"
             "chunking_method": "sentence",  # or "fixed_size", "paragraph", "semantic"
             "deduplication_method": "exact_hash",  # or "normalized", "ngram"
-            "embedding_method": "sentence_transformer",  # or "hash", "tfidf", "mock"
+            "embedding_method": "hash",  # or "mock", "tfidf", "sentence_transformer"
             "chunk_size": 512,
             "chunk_overlap": 128,
         }
     ),
+)
+
+results = mlodaAPI.run_all(
+    features=[feature],
+    compute_frameworks=[PythonDictFramework],
+    plugin_collector=PluginCollector.enabled_feature_groups(providers),
 )
 ```
 
