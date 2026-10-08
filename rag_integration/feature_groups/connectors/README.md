@@ -28,7 +28,7 @@ download or server). The full survey in the design doc also uses
 
 | Family | Reader contract (in -> out) | No-Docker concrete | Other backends | Pedigree of the anchor | Contract suite |
 |---|---|---|---|---|---|
-| [`retrieve`](retrieve/) | `query_text + corpus + top_k -> ranked passages` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra), `HybridRrfRetriever` (RRF-fused lexical + dense, `faiss` extra) | real-lib-inmem | [`retrieve_contract.py`](../../../tests/connectors/retrieve/retrieve_contract.py) |
+| [`retrieve`](retrieve/) | `query_text + (corpus, or a `corpus_source` feature) + top_k -> ranked passages` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra), `HybridRrfRetriever` (RRF-fused lexical + dense, `faiss` extra) | real-lib-inmem | [`retrieve_contract.py`](../../../tests/connectors/retrieve/retrieve_contract.py) |
 | [`rerank`](rerank/) | `query_text + candidates + top_k -> reordered passages` (`reranked_passages`) | `LexicalReranker` (token overlap, zero-download) | `FlashRankReranker` (ONNX cross-encoder, `rerank` extra, CI-skip on model download) | fixture-stub | [`rerank_contract.py`](../../../tests/connectors/rerank/rerank_contract.py) |
 | [`generate`](generate/) | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub | [`generate_contract.py`](../../../tests/connectors/generate/generate_contract.py) |
 | [`graph_rag`](graph_rag/) | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub | [`graph_rag_contract.py`](../../../tests/connectors/graph_rag/graph_rag_contract.py) |
@@ -53,6 +53,12 @@ the lexical and dense rankings with reciprocal-rank fusion; the fusion
 mechanics live in the cross-cutting [`fusion.py`](fusion.py), so future
 blending of rankings across families (e.g. `retrieve` + `graph_rag`, by
 `doc_id`) reuses `rrf_fuse` instead of growing a new backend.
+
+The corpus arrives inline (`corpus`) or from an upstream feature: setting
+`corpus_source` to that feature's name makes the connector declare it as its
+input and read the corpus (a list of `{doc_id, text}` dicts) from its single
+row, so a corpus filtered upstream (e.g. per-user authorization) feeds
+retrieval within one `run_all`.
 
 The FAISS `retrieval` stage and this family are one world: the stage serves the
 same `retrieved_passages` shape from a pre-built on-disk index, so migrating

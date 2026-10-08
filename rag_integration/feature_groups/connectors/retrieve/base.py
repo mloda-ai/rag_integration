@@ -2,11 +2,14 @@
 
 Contract: ``query_text + corpus + top_k -> ranked passages with scores``.
 
-A retrieve connector is a ROOT FeatureGroup (no input features): it takes an
-inline corpus and a query through ``Options`` and returns the passages ranked
-best-first. Concrete backends (lexical, dense, hybrid, late-interaction) differ
-only in the ranking they apply behind this one contract; they declare their
-selector value in ``RETRIEVE_BACKENDS`` and implement :meth:`_rank`.
+By default a retrieve connector is a ROOT FeatureGroup: it takes an inline
+corpus and a query through ``Options`` and returns the passages ranked
+best-first. Alternatively, ``corpus_source`` names an upstream feature whose
+single row carries the corpus (a list of ``{doc_id, text}`` dicts), declared
+as the connector's input. Ranking and output are identical on both paths.
+Concrete backends (lexical, dense, hybrid, late-interaction) differ only in
+the ranking they apply behind this one contract; they declare their selector
+value in ``RETRIEVE_BACKENDS`` and implement :meth:`_rank`.
 
 Output (single row, keyed by the root feature name)::
 
@@ -25,10 +28,11 @@ from abc import abstractmethod
 from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
-from mloda.user import FeatureName, Options
+from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.errors import (
     DuplicateDocIdError,
@@ -47,7 +51,7 @@ from rag_integration.feature_groups.connectors.mixins import (
 class BaseRetrieveConnector(
     SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup
 ):
-    """Root FeatureGroup for retrieve-connector backends.
+    """FeatureGroup for retrieve-connector backends.
 
     A concrete backend declares its selector value in ``RETRIEVE_BACKENDS`` and
     implements :meth:`_rank` (the only per-backend logic); the base owns the
@@ -64,7 +68,7 @@ class BaseRetrieveConnector(
     Reuse note for sibling families (rerank, generate, ...): the carry-over is
     the *shape* (the ``RETRIEVE_BACKENDS`` selector dict, the
     ``match_feature_group_criteria`` gating, and the ``_rank`` hoist), not this
-    class. The root/``DataCreator``/``_get_corpus`` triad below is
+    class. The root/``DataCreator``/corpus handling below is
     retrieve-specific: rerank consumes candidate passages as input features
     rather than an inline corpus, so a sibling family copies this pattern, it
     does not subclass ``BaseRetrieveConnector``.
@@ -76,11 +80,23 @@ class BaseRetrieveConnector(
     RETRIEVE_BACKEND = "retrieve_backend"
     QUERY_TEXT = "query_text"
     CORPUS = "corpus"
+    CORPUS_SOURCE = "corpus_source"
+
+    # Family option keys, kept off the corpus-source feature in input_features.
+    FAMILY_OPTION_KEYS = frozenset({RETRIEVE_BACKEND, CORPUS_SOURCE, QUERY_TEXT, TopKMixin.TOP_K, CORPUS})
 
     # Filled per concrete: {backend_value: human-readable description}. The base
     # stays empty so it never matches a feature. Values must be disjoint across
     # backends (see the class docstring).
     RETRIEVE_BACKENDS: ClassVar[dict[str, str]] = {}
+
+    # Shared so each concrete's PROPERTY_MAPPING advertises the same spec.
+    CORPUS_SOURCE_SPEC = property_spec(
+        "Name of an upstream feature whose single row carries the corpus as a list of {doc_id, text} dicts."
+        " Optional: replaces the inline corpus",
+        context=False,
+        default=None,
+    )
 
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
     # keys declare ``default=None`` (mloda treats a key without a default as required) and are
@@ -92,6 +108,7 @@ class BaseRetrieveConnector(
             f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False, default=None
         ),
         CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False, default=None),
+        CORPUS_SOURCE: CORPUS_SOURCE_SPEC,
     }
 
     @classmethod
@@ -121,9 +138,41 @@ class BaseRetrieveConnector(
         backend = options.get(cls.RETRIEVE_BACKEND)
         return backend in cls.RETRIEVE_BACKENDS
 
-    def input_features(self, options: Options, feature_name: FeatureName) -> None:
-        """Root feature: no input features."""
-        return
+    def input_features(self, options: Options, feature_name: FeatureName) -> set[Feature] | None:
+        """Declare the corpus-source feature as input when ``CORPUS_SOURCE`` is set.
+
+        Without it this is a root feature (corpus arrives via Options). With
+        it, the source gets the parent's group and context options minus
+        ``FAMILY_OPTION_KEYS``: context keys do not propagate on their own, and
+        ``forward_group_exclude`` keeps the engine's default group forwarding
+        from re-adding query-specific keys to the source.
+        """
+        source = options.get(self.CORPUS_SOURCE)
+        if source is None:
+            return None
+        forwarded_group = {key: value for key, value in options.group.items() if key not in self.FAMILY_OPTION_KEYS}
+        forwarded_context = {key: value for key, value in options.context.items() if key not in self.FAMILY_OPTION_KEYS}
+        return {
+            Feature(
+                str(source),
+                options=Options(group=forwarded_group, context=forwarded_context),
+                forward_group_exclude=self.FAMILY_OPTION_KEYS,
+            )
+        }
+
+    @classmethod
+    def _corpus_from_source(cls, data: Any, source_name: str) -> list[dict[str, Any]]:
+        """Read the corpus list the corpus-source feature produced in its single row."""
+        for row in columnar_to_rows(data):
+            if isinstance(row, dict) and source_name in row:
+                payload = row[source_name]
+                if not isinstance(payload, (list, tuple)):
+                    raise InvalidOptionError(
+                        f"{cls.__name__} corpus source '{source_name}' must produce a single row holding a "
+                        f"list of {{doc_id, text}} dicts, got {payload!r}."
+                    )
+                return list(payload)
+        raise InvalidOptionError(f"{cls.__name__} corpus source '{source_name}' produced no row.")
 
     @classmethod
     @abstractmethod
@@ -218,7 +267,15 @@ class BaseRetrieveConnector(
         for feature in features.features:
             options = feature.options
             query = cls._require_option(options, cls.QUERY_TEXT)
-            corpus = cls._require_doc_list(options, cls.CORPUS)
+            source = options.get(cls.CORPUS_SOURCE)
+            if source is not None:
+                if options.get(cls.CORPUS) is not None:
+                    raise InvalidOptionError(
+                        f"{cls.__name__} got both '{cls.CORPUS_SOURCE}' and inline '{cls.CORPUS}'; pass one corpus only."
+                    )
+                corpus = cls._corpus_from_source(data, str(source))
+            else:
+                corpus = cls._require_doc_list(options, cls.CORPUS)
             top_k = cls._get_top_k(options)
             passages = cls._retrieve(str(query), corpus, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]

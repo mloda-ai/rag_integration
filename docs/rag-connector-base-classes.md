@@ -183,7 +183,7 @@ contracts declared on the family base classes.
 
 | Family | Reader contract (in -> out) | No-Docker concrete | Other backends | Pedigree of the anchor |
 |---|---|---|---|---|
-| `retrieve` | `query_text + corpus + top_k -> ranked passages w/ scores` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra), `HybridRrfRetriever` (RRF-fused lexical + dense) | real-lib-inmem |
+| `retrieve` | `query_text + (corpus, or a `corpus_source` feature) + top_k -> ranked passages w/ scores` (`retrieved_passages: [{doc_id, text, score, rank}]`) | `Bm25sRetriever` (`bm25s`, zero-download lexical) | `TfidfRetriever` (vector-space lexical), `FaissDenseRetriever` (dense FAISS, `faiss` extra), `HybridRrfRetriever` (RRF-fused lexical + dense) | real-lib-inmem |
 | `rerank` | `query_text + candidates + top_k -> reordered passages w/ scores` (`reranked_passages`) | `LexicalReranker` (pure-Python token overlap, zero-download) | `FlashRankReranker` (ONNX cross-encoder, `rerank` extra, CI-skip on model download) | fixture-stub anchor + real-lib |
 | `generate` | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub anchor |
 | `graph_rag` | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query-overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub anchor + real-lib |
@@ -194,7 +194,8 @@ What each family is for:
 
 - **`retrieve`** holds the vector-store / lexical / late-interaction backends
   (FAISS, Chroma, bm25s, ColBERT, ...): all share `query + top_k -> ranked
-  passages`. Paradigm and vendor are backend and pedigree distinctions.
+  passages`. Paradigm and vendor are backend and pedigree distinctions. The
+  corpus arrives inline or, with `corpus_source`, from an upstream feature.
 - **`rerank`** takes *candidates* in, not a corpus (FlashRank, cross-encoders,
   RankGPT).
 - **`generate`** returns prose plus citations, a different out-shape from a
