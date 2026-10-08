@@ -97,7 +97,7 @@ class BaseGraphRagConnector(
             default=None,
         ),
         GRAPH_SOURCE: property_spec(
-            "Name of an upstream feature whose row carries the {nodes, edges} graph payload."
+            "Name of an upstream feature whose single row carries the {nodes, edges} graph payload."
             " Optional: replaces inline nodes/edges with a consumed graph source",
             context=False,
             default=None,

@@ -93,7 +93,7 @@ results = mlodaAPI.run_all(
 
 ### 4. Configure pipeline stages
 
-With several implementations per stage enabled, group options select one each and tune parameters:
+With several implementations per stage enabled, group options select one each and tune parameters. To pick another value, add its class to `providers`:
 
 ```python
 from rag_integration.feature_groups.rag_pipeline import (

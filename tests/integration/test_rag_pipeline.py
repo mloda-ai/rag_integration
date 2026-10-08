@@ -251,7 +251,7 @@ class TestAlternativeProviders:
         embedded = "docs__pii_redacted__chunked__deduped__embedded"
         options = Options(
             group={
-                "documents": [{"doc_id": "d1", "text": "Contact john@example.com for help. Open daily. Call us."}],
+                "documents": [{"doc_id": "d1", "text": "Ask John at john@example.com for help. Open daily. Call us."}],
                 "redaction_method": "regex",
                 "chunking_method": "sentence",
                 "deduplication_method": "exact_hash",
@@ -272,9 +272,10 @@ class TestAlternativeProviders:
             )[name]
             for name in (chunked, embedded)
         }
-        # FixedSizeChunker would cut mid-sentence at this chunk_size.
-        assert [row[chunked] for row in results[chunked]] == ["Contact [REDACTED] for help.", "Open daily. Call us."]
-        assert len(results[embedded]) == 2
+        # SimplePIIRedactor keeps "Ask"; FixedSizeChunker would cut mid-sentence at this chunk_size.
+        chunks = ["[REDACTED] at [REDACTED] for help.", "Open daily. Call us."]
+        assert [row[chunked] for row in results[chunked]] == chunks
+        assert [row[embedded] for row in results[embedded]] == HashEmbedder._embed_texts(chunks, 384, "default")
 
 
 # =============================================================================
