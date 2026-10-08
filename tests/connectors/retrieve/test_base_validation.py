@@ -5,9 +5,10 @@ pairs a test injects, proving that every ``_rank`` requirement the base
 documents (indices in range, indices unique, at most ``top_k`` pairs, scores
 non-increasing) fails loudly in ``_validate_ranking`` instead of silently
 corrupting the passage list. The corpus validation in ``_retrieve``, the
-one-feature-per-run limit of ``calculate_feature``, and the ``top_k`` option
-parsing are covered here too: they are base behavior, not per-backend behavior,
-so they live outside the inheritable contract suite.
+one-feature-per-run limit of ``calculate_feature``, the ``top_k`` option
+parsing, and the ``corpus_source`` declaration and validation are covered
+here too: they are base behavior, not per-backend behavior, so they live
+outside the inheritable contract suite.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from typing import Any, ClassVar
 from unittest.mock import MagicMock
 
 import pytest
-from mloda.user import Options
+from mloda.user import FeatureName, Options
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
 
@@ -102,3 +103,73 @@ class TestTopKParsing:
         options = Options(context={BaseRetrieveConnector.TOP_K: "not-an-int"})
         with pytest.raises(ValueError, match="top_k.*not-an-int"):
             BaseRetrieveConnector._get_top_k(options)
+
+
+class TestCorpusSource:
+    """``corpus_source`` declares the upstream feature and validates what it produced."""
+
+    _SOURCE = "scoped_corpus"
+
+    @classmethod
+    def _context(cls, **extra: Any) -> dict[str, Any]:
+        return {
+            BaseRetrieveConnector.RETRIEVE_BACKEND: "misbehaving_stub",
+            BaseRetrieveConnector.QUERY_TEXT: "alpha",
+            BaseRetrieveConnector.CORPUS_SOURCE: cls._SOURCE,
+            "tenant": "acme",
+            **extra,
+        }
+
+    @staticmethod
+    def _feature_set(options: Options) -> Any:
+        feature = MagicMock()
+        feature.options = options
+        features = MagicMock()
+        features.features = [feature]
+        return features
+
+    def test_no_corpus_source_stays_root(self) -> None:
+        stub = _stub_returning([])
+        options = Options(context={BaseRetrieveConnector.RETRIEVE_BACKEND: "misbehaving_stub"})
+        assert stub().input_features(options, FeatureName(stub.ROOT_FEATURE_NAME)) is None
+
+    @pytest.mark.parametrize("category", ["context", "group"])
+    def test_declares_source_forwarding_options_without_family_keys(self, category: str) -> None:
+        stub = _stub_returning([])
+        options = Options(context=self._context()) if category == "context" else Options(group=self._context())
+        inputs = stub().input_features(options, FeatureName(stub.ROOT_FEATURE_NAME))
+        assert inputs is not None
+        (feature,) = inputs
+        assert str(feature.name) == self._SOURCE
+        assert getattr(feature.options, category).get("tenant") == "acme"
+        for family_key in stub.FAMILY_OPTION_KEYS:
+            assert feature.options.get(family_key) is None
+        assert feature.forward_group_exclude == stub.FAMILY_OPTION_KEYS
+
+    def test_source_with_inline_corpus_raises(self) -> None:
+        stub = _stub_returning([(0, 1.0)])
+        options = Options(context=self._context(**{BaseRetrieveConnector.CORPUS: _corpus()}))
+        with pytest.raises(ValueError, match="one corpus only"):
+            stub.calculate_feature({}, self._feature_set(options))
+
+    def test_source_without_upstream_row_raises(self) -> None:
+        stub = _stub_returning([(0, 1.0)])
+        with pytest.raises(ValueError, match="produced no row"):
+            stub.calculate_feature({}, self._feature_set(Options(context=self._context())))
+
+    @pytest.mark.parametrize(
+        "rows",
+        [[{"doc_id": "d0", "text": "alpha"}], [_corpus()[:1], _corpus()[1:]]],
+        ids=["non_list_payload", "multiple_rows"],
+    )
+    def test_source_not_one_list_row_raises(self, rows: list[Any]) -> None:
+        stub = _stub_returning([(0, 1.0)])
+        data = {self._SOURCE: rows}
+        with pytest.raises(ValueError, match="single row holding a list"):
+            stub.calculate_feature(data, self._feature_set(Options(context=self._context())))
+
+    def test_source_with_empty_corpus_returns_no_passages(self) -> None:
+        stub = _stub_returning([])
+        data: dict[str, Any] = {self._SOURCE: [[]]}
+        result = stub.calculate_feature(data, self._feature_set(Options(context=self._context())))
+        assert result == [{stub.ROOT_FEATURE_NAME: []}]

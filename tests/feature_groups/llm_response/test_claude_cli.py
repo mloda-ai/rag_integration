@@ -47,6 +47,19 @@ class TestFeatureMatching:
         assert not ClaudeCliResponse.match_feature_group_criteria("docs", Options())
         assert not ClaudeCliResponse.match_feature_group_criteria("llm", Options())
 
+    @pytest.mark.parametrize(
+        ("llm_method", "expected"),
+        [(None, True), ("claude_cli", True), ("nope", False)],
+    )
+    def test_strict_llm_method_on_both_paths(self, llm_method: str | None, expected: bool) -> None:
+        """The strict llm_method values hold on the llm_response and answer-stage paths."""
+        context: dict[str, Any] = {BaseLLMResponse.QUERY: "q"}
+        if llm_method is not None:
+            context[BaseLLMResponse.LLM_METHOD] = llm_method
+        options = Options(context=context)
+        assert ClaudeCliResponse.match_feature_group_criteria("llm_response", options) is expected
+        assert ClaudeCliResponse.match_feature_group_criteria(BaseLLMResponse.ANSWER_KEY, options) is expected
+
 
 class TestGetQuery:
     """Tests for _get_query extraction."""

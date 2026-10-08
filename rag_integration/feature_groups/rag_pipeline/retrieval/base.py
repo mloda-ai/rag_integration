@@ -80,16 +80,18 @@ class BaseRetriever(FeatureGroup):
         Serving PASSAGES_KEY makes migration a pure option swap. The gate on
         index_path, plus yielding when an explicit retrieve-connector selector
         is present, keeps the stage and the connector family from both
-        claiming one request.
+        claiming one request. ``passes_option_declarations`` keeps the
+        PROPERTY_MAPPING value checks (strict ``retrieval_method``) this
+        override would otherwise skip.
         """
         name = str(feature_name)
         if name == "retrieved":
-            return True
+            return cls.passes_option_declarations(options)
         if name != cls.PASSAGES_KEY:
             return False
         if options.get("retrieve_backend") is not None:
             return False
-        return options.get(cls.INDEX_PATH) is not None
+        return options.get(cls.INDEX_PATH) is not None and cls.passes_option_declarations(options)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features."""

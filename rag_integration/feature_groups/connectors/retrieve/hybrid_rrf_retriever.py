@@ -50,6 +50,7 @@ class HybridRrfRetriever(BaseRetrieveConnector):
         BaseRetrieveConnector.CORPUS: property_spec(
             "Inline corpus: a list of {doc_id, text} dicts", context=False, default=None
         ),
+        BaseRetrieveConnector.CORPUS_SOURCE: BaseRetrieveConnector.CORPUS_SOURCE_SPEC,
     }
 
     @classmethod

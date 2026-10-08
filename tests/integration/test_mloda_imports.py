@@ -9,9 +9,9 @@ def test_mloda_provider_imports() -> None:
     assert ComputeFramework is not None
 
 
-def test_mloda_core_imports() -> None:
-    """Verify mloda.core module imports work."""
-    from mloda.core.abstract_plugins.function_extender import Extender
+def test_mloda_steward_imports() -> None:
+    """Verify the public mloda.steward Extender import works."""
+    from mloda.steward import Extender
 
     assert Extender is not None
 

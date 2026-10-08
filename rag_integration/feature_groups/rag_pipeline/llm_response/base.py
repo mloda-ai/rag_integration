@@ -70,16 +70,17 @@ class BaseLLMResponse(FeatureGroup):
         Serving ANSWER_KEY makes migration a pure option swap. The gate on
         query, plus yielding when an explicit generate-connector selector is
         present, keeps the stage and the connector family from both claiming
-        one request.
+        one request. ``passes_option_declarations`` keeps the PROPERTY_MAPPING
+        value checks (strict ``llm_method``) this override would otherwise skip.
         """
         name = str(feature_name)
         if name == "llm_response":
-            return True
+            return cls.passes_option_declarations(options)
         if name != cls.ANSWER_KEY:
             return False
         if options.get("generate_backend") is not None:
             return False
-        return options.get(cls.QUERY) is not None
+        return options.get(cls.QUERY) is not None and cls.passes_option_declarations(options)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features."""

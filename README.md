@@ -71,8 +71,21 @@ providers = {
     MockEmbedder,
 }
 
+# Group options forward to the `docs` input feature; context options do not.
+feature = Feature(
+    "docs__pii_redacted__chunked__deduped__embedded",
+    options=Options(
+        group={
+            "documents": [
+                {"doc_id": "1", "text": "Contact support@example.com for help."},
+                {"doc_id": "2", "text": "Our office is at 123 Main St."},
+            ]
+        }
+    ),
+)
+
 results = mlodaAPI.run_all(
-    features=["docs__pii_redacted__chunked__deduped__embedded"],
+    features=[feature],
     compute_frameworks=[PythonDictFramework],
     plugin_collector=PluginCollector.enabled_feature_groups(providers),
 )
