@@ -138,19 +138,20 @@ class RetrieveConnectorContractBase(ABC):
         return cls._run_options(cls._options(query, corpus, top_k))
 
     @classmethod
-    def _run_from_source(cls, corpus: list[dict[str, Any]], allowed_doc_ids: list[str]) -> list[dict[str, Any]]:
+    def _run_from_source(
+        cls, corpus: list[dict[str, Any]], allowed_doc_ids: list[str], category: str
+    ) -> list[dict[str, Any]]:
         """Run with the corpus taken from ``ScopedCorpusSource`` via ``corpus_source``."""
         connector = cls.connector_class()
-        options = Options(
-            context={
-                connector.RETRIEVE_BACKEND: cls.backend_value(),
-                connector.QUERY_TEXT: cls.sample_query(),
-                connector.TOP_K: len(corpus),
-                connector.CORPUS_SOURCE: ScopedCorpusSource.ROOT_FEATURE_NAME,
-                ScopedCorpusSource.DOCUMENTS: corpus,
-                ScopedCorpusSource.ALLOWED_DOC_IDS: allowed_doc_ids,
-            }
-        )
+        values: dict[str, Any] = {
+            connector.RETRIEVE_BACKEND: cls.backend_value(),
+            connector.QUERY_TEXT: cls.sample_query(),
+            connector.TOP_K: len(corpus),
+            connector.CORPUS_SOURCE: ScopedCorpusSource.ROOT_FEATURE_NAME,
+            ScopedCorpusSource.DOCUMENTS: corpus,
+            ScopedCorpusSource.ALLOWED_DOC_IDS: allowed_doc_ids,
+        }
+        options = Options(context=values) if category == "context" else Options(group=values)
         return cls._run_options(options, ScopedCorpusSource)
 
     @classmethod
@@ -328,14 +329,15 @@ class RetrieveConnectorContractBase(ABC):
         assert passages, "run_all produced no passages"
         assert passages[0]["doc_id"] == self.expected_top_doc_id()
 
-    def test_end_to_end_corpus_source(self) -> None:
+    @pytest.mark.parametrize("category", ["context", "group"])
+    def test_end_to_end_corpus_source(self, category: str) -> None:
         """The corpus can come from an upstream feature; a doc it filters out never surfaces."""
         corpus = self.sample_corpus()
         doc_ids = [str(doc["doc_id"]) for doc in corpus]
         top = self.expected_top_doc_id()
 
-        passages = self._run_from_source(corpus, doc_ids)
+        passages = self._run_from_source(corpus, doc_ids, category)
         assert passages[0]["doc_id"] == top
 
-        passages = self._run_from_source(corpus, [doc_id for doc_id in doc_ids if doc_id != top])
+        passages = self._run_from_source(corpus, [doc_id for doc_id in doc_ids if doc_id != top], category)
         assert top not in {p["doc_id"] for p in passages}

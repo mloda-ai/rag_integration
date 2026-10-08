@@ -6,8 +6,9 @@ documents (indices in range, indices unique, at most ``top_k`` pairs, scores
 non-increasing) fails loudly in ``_validate_ranking`` instead of silently
 corrupting the passage list. The corpus validation in ``_retrieve``, the
 one-feature-per-run limit of ``calculate_feature``, the ``top_k`` option
-parsing, and the ``corpus_source`` declaration and validation are covered here too: they are base behavior, not per-backend behavior,
-so they live outside the inheritable contract suite.
+parsing, and the ``corpus_source`` declaration and validation are covered
+here too: they are base behavior, not per-backend behavior, so they live
+outside the inheritable contract suite.
 """
 
 from __future__ import annotations
@@ -156,10 +157,15 @@ class TestCorpusSource:
         with pytest.raises(ValueError, match="produced no row"):
             stub.calculate_feature({}, self._feature_set(Options(context=self._context())))
 
-    def test_source_with_non_list_payload_raises(self) -> None:
+    @pytest.mark.parametrize(
+        "rows",
+        [[{"doc_id": "d0", "text": "alpha"}], [_corpus()[:1], _corpus()[1:]]],
+        ids=["non_list_payload", "multiple_rows"],
+    )
+    def test_source_not_one_list_row_raises(self, rows: list[Any]) -> None:
         stub = _stub_returning([(0, 1.0)])
-        data = {self._SOURCE: [{"doc_id": "d0", "text": "alpha"}]}
-        with pytest.raises(ValueError, match="list of"):
+        data = {self._SOURCE: rows}
+        with pytest.raises(ValueError, match="single row holding a list"):
             stub.calculate_feature(data, self._feature_set(Options(context=self._context())))
 
     def test_source_with_empty_corpus_returns_no_passages(self) -> None:

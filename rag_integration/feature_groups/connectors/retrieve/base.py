@@ -163,16 +163,15 @@ class BaseRetrieveConnector(
     @classmethod
     def _corpus_from_source(cls, data: Any, source_name: str) -> list[dict[str, Any]]:
         """Read the corpus list the corpus-source feature produced in its single row."""
-        for row in columnar_to_rows(data):
-            if isinstance(row, dict) and source_name in row:
-                payload = row[source_name]
-                if not isinstance(payload, (list, tuple)):
-                    raise InvalidOptionError(
-                        f"{cls.__name__} corpus source '{source_name}' must produce a single row holding a "
-                        f"list of {{doc_id, text}} dicts, got {payload!r}."
-                    )
-                return list(payload)
-        raise InvalidOptionError(f"{cls.__name__} corpus source '{source_name}' produced no row.")
+        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
+        if not payloads:
+            raise InvalidOptionError(f"{cls.__name__} corpus source '{source_name}' produced no row.")
+        if len(payloads) > 1 or not isinstance(payloads[0], (list, tuple)):
+            raise InvalidOptionError(
+                f"{cls.__name__} corpus source '{source_name}' must produce a single row holding a "
+                f"list of {{doc_id, text}} dicts, got {payloads!r}."
+            )
+        return list(payloads[0])
 
     @classmethod
     @abstractmethod
@@ -271,7 +270,8 @@ class BaseRetrieveConnector(
             if source is not None:
                 if options.get(cls.CORPUS) is not None:
                     raise InvalidOptionError(
-                        f"{cls.__name__} got both '{cls.CORPUS_SOURCE}' and inline '{cls.CORPUS}'; pass one corpus only."
+                        f"{cls.__name__} got both '{cls.CORPUS_SOURCE}' and inline '{cls.CORPUS}'; "
+                        f"pass one corpus only."
                     )
                 corpus = cls._corpus_from_source(data, str(source))
             else:
