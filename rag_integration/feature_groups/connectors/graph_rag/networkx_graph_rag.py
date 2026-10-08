@@ -38,15 +38,20 @@ class NetworkxGraphRag(BaseGraphRagConnector):
         BaseGraphRagConnector.GRAPH_BACKEND: property_spec(
             "Use 'networkx' for graph-expansion retrieval", context=False
         ),
-        BaseGraphRagConnector.QUERY_TEXT: property_spec("Raw text query to search the graph", context=False),
-        BaseGraphRagConnector.TOP_K: property_spec(
-            f"Number of passages to return (default {BaseGraphRagConnector.DEFAULT_TOP_K})", context=False
+        BaseGraphRagConnector.QUERY_TEXT: property_spec(
+            "Raw text query to search the graph", context=False, default=None
         ),
-        BaseGraphRagConnector.NODES: property_spec("Graph nodes: a list of {doc_id, text} dicts", context=False),
+        BaseGraphRagConnector.TOP_K: property_spec(
+            f"Number of passages to return (default {BaseGraphRagConnector.DEFAULT_TOP_K})", context=False, default=None
+        ),
+        BaseGraphRagConnector.NODES: property_spec(
+            "Graph nodes: a list of {doc_id, text} dicts", context=False, default=None
+        ),
         BaseGraphRagConnector.EDGES: property_spec(
             "Graph edges: a list of [doc_id_a, doc_id_b] pairs."
             " Optional: omitting it degrades scoring to lexical-only (no neighbour bonus)",
             context=False,
+            default=None,
         ),
     }
 

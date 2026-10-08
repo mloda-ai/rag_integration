@@ -70,15 +70,20 @@ class BaseRerankConnector(
     # across backends; empty on the base so it never matches.
     RERANK_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    # Declarative option documentation only; selection is via
-    # ``match_feature_group_criteria`` (not the FeatureChainParser).
+    # Selection is via ``match_feature_group_criteria`` on the backend key. The other
+    # keys declare ``default=None`` (mloda treats a key without a default as required) and are
+    # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         RERANK_BACKEND: property_spec("Which rerank-connector backend to use", context=False),
-        QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
+        QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False, default=None),
         TopKMixin.TOP_K: property_spec(
-            f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})", context=False
+            f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})",
+            context=False,
+            default=None,
         ),
-        CANDIDATES: property_spec("Candidate passages to rerank: a list of {doc_id, text} dicts", context=False),
+        CANDIDATES: property_spec(
+            "Candidate passages to rerank: a list of {doc_id, text} dicts", context=False, default=None
+        ),
     }
 
     @classmethod

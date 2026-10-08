@@ -96,7 +96,7 @@ class GraphRagConnectorContractBase(ABC):
         )
         result = mlodaAPI.run_all(
             [feature],
-            compute_frameworks={PythonDictFramework},
+            compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
         for partition in result:

@@ -57,12 +57,13 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     # Filled per concrete; empty on the base so it never matches.
     GENERATE_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    # Declarative option documentation only; selection is via
-    # ``match_feature_group_criteria`` (not the FeatureChainParser).
+    # Selection is via ``match_feature_group_criteria`` on the backend key. The other
+    # keys declare ``default=None`` (mloda treats a key without a default as required) and are
+    # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         GENERATE_BACKEND: property_spec("Which generate-connector backend to use", context=False),
-        QUERY_TEXT: property_spec("The question to answer", context=False),
-        PASSAGES: property_spec("Supporting passages: a list of {doc_id, text} dicts", context=False),
+        QUERY_TEXT: property_spec("The question to answer", context=False, default=None),
+        PASSAGES: property_spec("Supporting passages: a list of {doc_id, text} dicts", context=False, default=None),
     }
 
     @classmethod

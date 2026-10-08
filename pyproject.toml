@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 version = "0.4.3"
-dependencies = ["mloda>=0.13.0"]
+dependencies = ["mloda>=0.15.1"]
 name = "rag-integration"
 description = "RAG integration plugin for mloda"
 readme = "README.md"
@@ -44,7 +44,7 @@ dev = [
     "mypy",
     "bandit",
     # Base for FeatureGroupTestBase, used only by tests/integration/test_mloda_imports.py.
-    "mloda-testing>=0.4.7",
+    "mloda-testing>=0.9.0",
 ]
 # FAISS vector indexing
 faiss = ["faiss-cpu>=1.7.0"]

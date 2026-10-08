@@ -82,18 +82,16 @@ class BaseRetrieveConnector(
     # backends (see the class docstring).
     RETRIEVE_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    # Declarative option documentation only. These root connector groups select
-    # by ``match_feature_group_criteria`` (not the FeatureChainParser), so the
-    # ``context``/``default``/``strict_validation`` flags that the parser would
-    # consume are intentionally omitted here; defaulting and validation live in
-    # the code below (``_get_top_k``) and in ``match_feature_group_criteria``.
+    # Selection is via ``match_feature_group_criteria`` on the backend key. The other
+    # keys declare ``default=None`` (mloda treats a key without a default as required) and are
+    # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         RETRIEVE_BACKEND: property_spec("Which retrieve-connector backend to use", context=False),
-        QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False),
+        QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False, default=None),
         TopKMixin.TOP_K: property_spec(
-            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False
+            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False, default=None
         ),
-        CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False),
+        CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False, default=None),
     }
 
     @classmethod

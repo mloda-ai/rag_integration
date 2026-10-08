@@ -44,9 +44,9 @@ class BaseLLMResponse(FeatureGroup):
     LLM_METHODS: ClassVar[dict[str, str]] = {}
 
     PROPERTY_MAPPING: ClassVar = {
-        LLM_METHOD: property_spec("Which LLM implementation to use"),
-        QUERY: property_spec("The user question to answer"),
-        CONTEXT: property_spec("Retrieved context to include in the prompt (list or string)"),
+        LLM_METHOD: property_spec("Which LLM implementation to use", default=None),
+        QUERY: property_spec("The user question to answer", default=None),
+        CONTEXT: property_spec("Retrieved context to include in the prompt (list or string)", default=None),
         SYSTEM_PROMPT: property_spec("System prompt for the LLM", default=DEFAULT_SYSTEM_PROMPT),
     }
 

@@ -57,7 +57,7 @@ def _run_chained(options: Options, connector: type[BaseGraphRagConnector] = Adja
     feature = Feature(connector.ROOT_FEATURE_NAME, options=options)
     result = mlodaAPI.run_all(
         [feature],
-        compute_frameworks={PythonDictFramework},
+        compute_frameworks=[PythonDictFramework],
         plugin_collector=PluginCollector.enabled_feature_groups({connector, TriplesKnowledgeGraph}),
     )
     for partition in result:

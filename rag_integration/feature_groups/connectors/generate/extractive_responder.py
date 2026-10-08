@@ -44,9 +44,9 @@ class ExtractiveResponder(BaseGenerateConnector):
         BaseGenerateConnector.GENERATE_BACKEND: property_spec(
             "Use 'extractive' for no-LLM sentence extraction", context=False
         ),
-        BaseGenerateConnector.QUERY_TEXT: property_spec("The question to answer", context=False),
+        BaseGenerateConnector.QUERY_TEXT: property_spec("The question to answer", context=False, default=None),
         BaseGenerateConnector.PASSAGES: property_spec(
-            "Supporting passages: a list of {doc_id, text} dicts", context=False
+            "Supporting passages: a list of {doc_id, text} dicts", context=False, default=None
         ),
     }
 

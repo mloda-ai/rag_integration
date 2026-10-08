@@ -38,12 +38,16 @@ class FlashRankReranker(BaseRerankConnector):
 
     PROPERTY_MAPPING: ClassVar = {
         BaseRerankConnector.RERANK_BACKEND: property_spec("Use 'flashrank' for cross-encoder reranking", context=False),
-        BaseRerankConnector.QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False),
+        BaseRerankConnector.QUERY_TEXT: property_spec(
+            "Query the candidates are reranked against", context=False, default=None
+        ),
         BaseRerankConnector.TOP_K: property_spec(
-            f"Number of passages to return after reranking (default {BaseRerankConnector.DEFAULT_TOP_K})", context=False
+            f"Number of passages to return after reranking (default {BaseRerankConnector.DEFAULT_TOP_K})",
+            context=False,
+            default=None,
         ),
         BaseRerankConnector.CANDIDATES: property_spec(
-            "Candidate passages: a list of {doc_id, text} dicts", context=False
+            "Candidate passages: a list of {doc_id, text} dicts", context=False, default=None
         ),
     }
 

@@ -53,11 +53,11 @@ class BaseRetriever(FeatureGroup):
     RETRIEVAL_METHODS: ClassVar[dict[str, str]] = {}
 
     PROPERTY_MAPPING: ClassVar = {
-        RETRIEVAL_METHOD: property_spec("Which retriever implementation to use"),
+        RETRIEVAL_METHOD: property_spec("Which retriever implementation to use", default=None),
         TOP_K: property_spec("Number of results to return", default=5),
-        QUERY_TEXT: property_spec("Raw text query to embed and search"),
-        INDEX_PATH: property_spec("Path to the FAISS index file"),
-        METADATA_PATH: property_spec("Path to the metadata JSON sidecar"),
+        QUERY_TEXT: property_spec("Raw text query to embed and search", default=None),
+        INDEX_PATH: property_spec("Path to the FAISS index file", default=None),
+        METADATA_PATH: property_spec("Path to the metadata JSON sidecar", default=None),
     }
 
     @classmethod

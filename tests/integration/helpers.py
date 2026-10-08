@@ -34,12 +34,16 @@ def flatten_result(result: Any) -> list[dict[str, Any]]:
 
 
 def get_results_by_feature(raw_result: list[Any], feature_names: list[str]) -> dict[str, list[dict[str, Any]]]:
-    """Map mlodaAPI results to feature names.
+    """Map each requested feature name to the rows of the result frame holding its column.
 
-    mlodaAPI.run_all() returns a list where each element corresponds to each requested feature.
-    This helper creates a dict mapping feature_name -> result_rows.
+    mloda does not guarantee frame order, so frames are matched by column, not position.
     """
-    return {name: flatten_result([raw_result[i]]) for i, name in enumerate(feature_names)}
+    results: dict[str, list[dict[str, Any]]] = {}
+    for name in feature_names:
+        frame = next((f for f in raw_result if isinstance(f, dict) and name in f), None)
+        assert frame is not None, f"no result frame holds column '{name}'"
+        results[name] = flatten_result([frame])
+    return results
 
 
 def get_metrics(raw_result: Any, feature_name: str) -> dict[str, Any]:
