@@ -125,7 +125,8 @@ graph library.
 The graph arrives inline (`nodes` + `edges`) or from an upstream
 knowledge-graph source: setting `graph_source` to the source's feature name
 (e.g. `"knowledge_graph"`) makes the connector declare that feature as its
-input and consume an existing graph source instead of duplicating one.
+input and read its `{nodes, edges}` payload from the source's single row,
+consuming an existing graph source instead of duplicating one.
 `TriplesKnowledgeGraph` (`kg_backend="triples"`, [`kg_source.py`](graph_rag/kg_source.py))
 is the first source: it builds the `{nodes, edges}` payload from
 subject-predicate-object triples, pure Python.

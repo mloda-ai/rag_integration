@@ -158,7 +158,15 @@ def test_graph_source_without_upstream_row_raises() -> None:
         AdjacencyGraphRag.calculate_feature({}, _feature_set(_chained_options()))
 
 
-def test_graph_source_with_malformed_payload_raises() -> None:
-    data = {TriplesKnowledgeGraph.ROOT_FEATURE_NAME: [["not", "a", "dict"]]}
-    with pytest.raises(ValueError, match="nodes"):
+_GRAPH_PAYLOAD: dict[str, Any] = {"nodes": [{"doc_id": "n", "text": "photosynthesis"}], "edges": []}
+
+
+@pytest.mark.parametrize(
+    "rows",
+    [[["not", "a", "dict"]], [_GRAPH_PAYLOAD, _GRAPH_PAYLOAD]],
+    ids=["malformed_payload", "multiple_rows"],
+)
+def test_graph_source_not_one_dict_row_raises(rows: list[Any]) -> None:
+    data = {TriplesKnowledgeGraph.ROOT_FEATURE_NAME: rows}
+    with pytest.raises(ValueError, match="single row holding"):
         AdjacencyGraphRag.calculate_feature(data, _feature_set(_chained_options()))

@@ -97,7 +97,7 @@ class BaseGraphRagConnector(
             default=None,
         ),
         GRAPH_SOURCE: property_spec(
-            "Name of an upstream feature whose row carries the {nodes, edges} graph payload."
+            "Name of an upstream feature whose single row carries the {nodes, edges} graph payload."
             " Optional: replaces inline nodes/edges with a consumed graph source",
             context=False,
             default=None,
@@ -153,17 +153,17 @@ class BaseGraphRagConnector(
 
     @classmethod
     def _graph_from_source(cls, data: Any, source_name: str) -> dict[str, Any]:
-        """Read the ``{nodes, edges}`` payload the graph-source feature produced."""
-        for row in columnar_to_rows(data):
-            if isinstance(row, dict) and source_name in row:
-                payload = row[source_name]
-                if not isinstance(payload, dict) or cls.NODES not in payload:
-                    raise InvalidOptionError(
-                        f"{cls.__name__} graph source '{source_name}' must produce a "
-                        f"{{nodes, edges}} dict, got {payload!r}."
-                    )
-                return payload
-        raise InvalidOptionError(f"{cls.__name__} graph source '{source_name}' produced no row.")
+        """Read the ``{nodes, edges}`` payload the graph-source feature produced in its single row."""
+        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
+        if not payloads:
+            raise InvalidOptionError(f"{cls.__name__} graph source '{source_name}' produced no row.")
+        if len(payloads) > 1 or not isinstance(payloads[0], dict) or cls.NODES not in payloads[0]:
+            raise InvalidOptionError(
+                f"{cls.__name__} graph source '{source_name}' must produce a single row holding a "
+                f"{{nodes, edges}} dict, got {payloads!r}."
+            )
+        payload: dict[str, Any] = payloads[0]
+        return payload
 
     @classmethod
     def _resolve_edges(cls, raw_edges: Any) -> list[tuple[str, str]]:
