@@ -2,18 +2,21 @@
 
 Each mixin hoists one concern duplicated inline: option parsing (``OptionsMixin``),
 top_k cut-off (``TopKMixin``), doc collection / doc_id bookkeeping
-(``DocCollectionMixin``), ranking validation (``RankingValidationMixin``), and the
-one-query-per-run guard (``SingleQueryPerRunMixin``). They are plain classes listed
+(``DocCollectionMixin``), ranking validation (``RankingValidationMixin``), the
+one-query-per-run guard (``SingleQueryPerRunMixin``), and reading an upstream
+source's single row (``SingleRowSourceMixin``). They are plain classes listed
 ahead of ``FeatureGroup`` in a base, so mloda discovery still sees only the
 ``FeatureGroup`` leaves; ``cls.__name__`` keeps messages naming the backend.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import reprlib
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from mloda.user import Options
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.errors import (
     InvalidOptionError,
@@ -37,6 +40,36 @@ class SingleQueryPerRunMixin:
             raise ValueError(
                 f"{cls.__name__} answers one query per run, but the FeatureSet contains {len(feature_list)} features."
             )
+
+
+class SingleRowSourceMixin:
+    """Read the one payload an upstream source feature produced (``corpus_source``, ``graph_source``)."""
+
+    @classmethod
+    def _single_row_payload(
+        cls,
+        data: Any,
+        source_name: str,
+        *,
+        label: str,
+        expected: str,
+        is_valid: Callable[[Any], bool],
+    ) -> Any:
+        """Return the source's single payload; errors report a row count, never every payload."""
+        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
+        prefix = f"{cls.__name__} {label} source '{source_name}'"
+        if not payloads:
+            raise InvalidOptionError(f"{prefix} produced no row.")
+        if len(payloads) > 1:
+            raise InvalidOptionError(
+                f"{prefix} must produce a single row holding {expected}, got {len(payloads)} rows."
+            )
+        if not is_valid(payloads[0]):
+            # reprlib bounds the message for a large malformed payload.
+            raise InvalidOptionError(
+                f"{prefix} must produce a single row holding {expected}, got {reprlib.repr(payloads[0])}."
+            )
+        return payloads[0]
 
 
 class OptionsMixin:

@@ -40,7 +40,6 @@ from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, InvalidOptionError
 from rag_integration.feature_groups.connectors.mixins import (
@@ -48,12 +47,19 @@ from rag_integration.feature_groups.connectors.mixins import (
     OptionsMixin,
     RankingValidationMixin,
     SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
     TopKMixin,
 )
 
 
 class BaseGraphRagConnector(
-    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup
+    SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
+    OptionsMixin,
+    TopKMixin,
+    DocCollectionMixin,
+    RankingValidationMixin,
+    FeatureGroup,
 ):
     """Root FeatureGroup for graph-RAG connector backends.
 
@@ -154,15 +160,13 @@ class BaseGraphRagConnector(
     @classmethod
     def _graph_from_source(cls, data: Any, source_name: str) -> dict[str, Any]:
         """Read the ``{nodes, edges}`` payload the graph-source feature produced in its single row."""
-        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
-        if not payloads:
-            raise InvalidOptionError(f"{cls.__name__} graph source '{source_name}' produced no row.")
-        if len(payloads) > 1 or not isinstance(payloads[0], dict) or cls.NODES not in payloads[0]:
-            raise InvalidOptionError(
-                f"{cls.__name__} graph source '{source_name}' must produce a single row holding a "
-                f"{{nodes, edges}} dict, got {payloads!r}."
-            )
-        payload: dict[str, Any] = payloads[0]
+        payload: dict[str, Any] = cls._single_row_payload(
+            data,
+            source_name,
+            label="graph",
+            expected="a {nodes, edges} dict",
+            is_valid=lambda candidate: isinstance(candidate, dict) and cls.NODES in candidate,
+        )
         return payload
 
     @classmethod

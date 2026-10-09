@@ -9,6 +9,7 @@ existing contract suite).
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -162,11 +163,17 @@ _GRAPH_PAYLOAD: dict[str, Any] = {"nodes": [{"doc_id": "n", "text": "photosynthe
 
 
 @pytest.mark.parametrize(
-    "rows",
-    [[["not", "a", "dict"]], [_GRAPH_PAYLOAD, _GRAPH_PAYLOAD]],
-    ids=["malformed_payload", "multiple_rows"],
+    ("rows", "detail", "absent"),
+    [
+        ([["not", "a", "dict"]], re.escape("['not', 'a', 'dict']"), None),
+        ([{"edges": []}], re.escape("{'edges': []}"), None),
+        ([_GRAPH_PAYLOAD, _GRAPH_PAYLOAD], "got 2 rows", "photosynthesis"),
+    ],
+    ids=["malformed_payload", "missing_nodes", "multiple_rows"],
 )
-def test_graph_source_not_one_dict_row_raises(rows: list[Any]) -> None:
+def test_graph_source_not_one_dict_row_raises(rows: list[Any], detail: str, absent: str | None) -> None:
     data = {TriplesKnowledgeGraph.ROOT_FEATURE_NAME: rows}
-    with pytest.raises(ValueError, match="single row holding"):
+    with pytest.raises(ValueError, match="single row holding") as exc_info:
         AdjacencyGraphRag.calculate_feature(data, _feature_set(_chained_options()))
+    assert re.search(detail, str(exc_info.value))
+    assert absent is None or absent not in str(exc_info.value)

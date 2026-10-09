@@ -32,7 +32,6 @@ from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
-from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.errors import (
     DuplicateDocIdError,
@@ -44,12 +43,19 @@ from rag_integration.feature_groups.connectors.mixins import (
     OptionsMixin,
     RankingValidationMixin,
     SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
     TopKMixin,
 )
 
 
 class BaseRetrieveConnector(
-    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup
+    SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
+    OptionsMixin,
+    TopKMixin,
+    DocCollectionMixin,
+    RankingValidationMixin,
+    FeatureGroup,
 ):
     """FeatureGroup for retrieve-connector backends.
 
@@ -163,15 +169,15 @@ class BaseRetrieveConnector(
     @classmethod
     def _corpus_from_source(cls, data: Any, source_name: str) -> list[dict[str, Any]]:
         """Read the corpus list the corpus-source feature produced in its single row."""
-        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
-        if not payloads:
-            raise InvalidOptionError(f"{cls.__name__} corpus source '{source_name}' produced no row.")
-        if len(payloads) > 1 or not isinstance(payloads[0], (list, tuple)):
-            raise InvalidOptionError(
-                f"{cls.__name__} corpus source '{source_name}' must produce a single row holding a "
-                f"list of {{doc_id, text}} dicts, got {payloads!r}."
+        return list(
+            cls._single_row_payload(
+                data,
+                source_name,
+                label="corpus",
+                expected="a list of {doc_id, text} dicts",
+                is_valid=lambda payload: isinstance(payload, (list, tuple)),
             )
-        return list(payloads[0])
+        )
 
     @classmethod
     @abstractmethod
