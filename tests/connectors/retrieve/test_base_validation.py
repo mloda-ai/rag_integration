@@ -159,21 +159,21 @@ class TestCorpusSource:
             stub.calculate_feature({}, self._feature_set(Options(context=self._context())))
 
     @pytest.mark.parametrize(
-        ("rows", "detail"),
+        ("rows", "detail", "absent"),
         [
-            ([{"doc_id": "d0", "text": "alpha"}], re.escape("{'doc_id': 'd0', 'text': 'alpha'}")),
-            ([_corpus()[:1], _corpus()[1:]], "got 2 rows"),
+            ([{"doc_id": "d0", "text": "alpha"}], re.escape("{'doc_id': 'd0', 'text': 'alpha'}"), None),
+            ([{"doc_id": "d0", "text": "z" * 500}], re.escape("..."), "z" * 100),
+            ([_corpus()[:1], _corpus()[1:]], "got 2 rows", "alpha"),
         ],
-        ids=["non_list_payload", "multiple_rows"],
+        ids=["non_list_payload", "large_payload_truncated", "multiple_rows"],
     )
-    def test_source_not_one_list_row_raises(self, rows: list[Any], detail: str) -> None:
+    def test_source_not_one_list_row_raises(self, rows: list[Any], detail: str, absent: str | None) -> None:
         stub = _stub_returning([(0, 1.0)])
         data = {self._SOURCE: rows}
         with pytest.raises(ValueError, match="single row holding a list") as exc_info:
             stub.calculate_feature(data, self._feature_set(Options(context=self._context())))
         assert re.search(detail, str(exc_info.value))
-        if len(rows) > 1:
-            assert "alpha" not in str(exc_info.value)
+        assert absent is None or absent not in str(exc_info.value)
 
     def test_source_with_empty_corpus_returns_no_passages(self) -> None:
         stub = _stub_returning([])

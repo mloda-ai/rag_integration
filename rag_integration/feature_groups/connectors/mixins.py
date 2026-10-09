@@ -11,6 +11,7 @@ ahead of ``FeatureGroup`` in a base, so mloda discovery still sees only the
 
 from __future__ import annotations
 
+import reprlib
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -64,7 +65,10 @@ class SingleRowSourceMixin:
                 f"{prefix} must produce a single row holding {expected}, got {len(payloads)} rows."
             )
         if not is_valid(payloads[0]):
-            raise InvalidOptionError(f"{prefix} must produce a single row holding {expected}, got {payloads[0]!r}.")
+            # reprlib bounds the message for a large malformed payload.
+            raise InvalidOptionError(
+                f"{prefix} must produce a single row holding {expected}, got {reprlib.repr(payloads[0])}."
+            )
         return payloads[0]
 
 
