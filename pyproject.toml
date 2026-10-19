@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,15 +8,30 @@ dependencies = ["mloda>=0.15.1"]
 name = "rag-integration"
 description = "RAG integration plugin for mloda"
 readme = "README.md"
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE.md"]
 authors = [{ name = "mloda", email = "plugin-dev@mloda.ai" }]
 requires-python = ">=3.10"
-keywords = ["mloda", "rag", "retrieval-augmented-generation", "llm", "embeddings", "vector-search", "feature-engineering"]
+keywords = [
+    "mloda",
+    "rag",
+    "retrieval-augmented-generation",
+    "llm",
+    "embeddings",
+    "vector-search",
+    "feature-engineering",
+    "haystack",
+    "faiss",
+    "bm25",
+    "reranking",
+    "graphrag",
+    "pii-redaction",
+]
+# No `License ::` classifier: setuptools rejects it next to the SPDX `license`.
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
