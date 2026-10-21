@@ -204,5 +204,6 @@ class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGr
                 row["embedding_dim"] = len(embeddings[i])
                 row["embedding_model"] = model_name
 
-        HookContext.publish_result_attributes({"rag.embedding.artifact_reused": artifact_reused})
+        if artifact_cls is not None:
+            HookContext.publish_result_attributes({"rag.embedding.artifact_reused": artifact_reused})
         return rows

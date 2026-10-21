@@ -12,7 +12,10 @@ from mloda.provider import HookContext
 
 def metrics_result(feature_name: str, metrics: dict[str, Any]) -> list[dict[str, Any]]:
     """Publish the metrics as ``rag.eval.*`` result attributes and return the result row."""
-    HookContext.publish_result_attributes({f"rag.eval.{name}": value for name, value in metrics.items()})
+    # Without queries or corpus the recall placeholders are not measurements, so only the counts go out.
+    measured = bool(metrics.get("num_queries")) and bool(metrics.get("num_corpus"))
+    published = {name: value for name, value in metrics.items() if measured or name.startswith("num_")}
+    HookContext.publish_result_attributes({f"rag.eval.{name}": value for name, value in published.items()})
     # Under the feature name for mloda's column selector, and flat for direct access.
     return [{feature_name: metrics, **metrics}]
 

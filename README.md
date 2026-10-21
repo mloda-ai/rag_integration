@@ -176,11 +176,11 @@ The level belongs to the feature, not the row: rows still carry their source's o
 With an mloda extender (for example the registry's `OtelExtender`, which exports them as
 `mloda.result.<key>` span attributes), these stages publish counts, flags and metrics, never text or ids.
 
-| Key                             | Published by                                                                        |
-|---------------------------------|-------------------------------------------------------------------------------------|
-| `rag.dedup.duplicates_found`    | Text and image deduplicators: rows flagged as duplicates                            |
-| `rag.embedding.artifact_reused` | Text embedders: embeddings loaded from a saved artifact                             |
-| `rag.eval.<metric>`             | `RetrievalEvaluator`, `FaissRetrievalEvaluator`: `recall@1/5/10`, `num_queries`, `num_corpus` |
+| Key                             | Published by                                                                                                       |
+|---------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `rag.dedup.duplicates_found`    | Text and image deduplicators: rows flagged as duplicates                                                           |
+| `rag.embedding.artifact_reused` | Artifact-enabled text embedders: embeddings loaded from a saved artifact                                           |
+| `rag.eval.<metric>`             | `RetrievalEvaluator`, `FaissRetrievalEvaluator`: `recall@1/5/10` (only when measured), `num_queries`, `num_corpus` |
 
 ## Connector families
 

@@ -368,7 +368,7 @@ class TestEmbeddingArtifactIntegration:
             rows2 = flatten_result(api2.get_result())
 
             assert rows1 == rows2, "Rows should match between runs"
-            assert capture2.attributes["rag.embedding.artifact_reused"] is True
+            assert capture2.attributes == {"rag.dedup.duplicates_found": 1, "rag.embedding.artifact_reused": True}
 
     @requires_sentence_transformer_model
     def test_embedding_artifact_save_and_load(self) -> None:

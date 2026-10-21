@@ -115,7 +115,12 @@ class TestRetrievalEvaluator:
         )
         features = _make_features(source)
 
-        with patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]):
+        with (
+            patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]),
+            make_hook_context().activate() as context,
+        ):
             result = RetrievalEvaluator.calculate_feature(data, features)
 
         assert result[0]["recall@1"] == 0.0
+        # Placeholder recalls are not published, only the counts.
+        assert context.result_attributes == {"rag.eval.num_queries": 1, "rag.eval.num_corpus": 0}
