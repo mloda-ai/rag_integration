@@ -37,7 +37,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
-from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k
+from rag_integration.feature_groups.evaluation.metrics import mean_recall_at_k, metrics_result
 
 
 class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
@@ -120,7 +120,7 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
                     "num_queries": len(query_rows),
                     "num_corpus": len(corpus_rows),
                 }
-                return [{feature_name: metrics, **metrics}]
+                return metrics_result(feature_name, metrics)
 
             # Build corpus embedding matrix
             corpus_embeddings = [r[embedding_feature] for r in corpus_rows]
@@ -174,6 +174,6 @@ class FaissRetrievalEvaluator(FeatureChainParserMixin, FeatureGroup):
                 "num_queries": len(query_rows),
                 "num_corpus": len(corpus_rows),
             }
-            return [{feature_name: metrics, **metrics}]
+            return metrics_result(feature_name, metrics)
 
         return []

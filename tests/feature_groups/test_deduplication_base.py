@@ -14,6 +14,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from mloda.testing.extenders.hook_context import make_hook_context
 from mloda.user import Feature
 
 from rag_integration.feature_groups.deduplication_base import BaseRowDeduplicator
@@ -97,9 +98,11 @@ class TestBaseRowDeduplicatorKeepStrategies:
         assert [row["items__deduped"] for row in result] == ["aa", "bb"]
 
     def test_all_unique_keeps_all_rows_with_duplicate_metadata(self) -> None:
-        """Strategy "all_unique" keeps every row but still annotates duplicate metadata."""
+        """Strategy "all_unique" keeps every row but still annotates and publishes the duplicates found."""
         data = {"item": ["aa", "aaaa", "bb", "b"]}
-        result = _LenDeduplicator.calculate_feature(data, _features("all_unique"))
+        with make_hook_context().activate() as context:
+            result = _LenDeduplicator.calculate_feature(data, _features("all_unique"))
+        assert context.result_attributes == {"rag.dedup.duplicates_found": 2}
         assert [row["items__deduped"] for row in result] == ["aa", "aaaa", "bb", "b"]
         assert [(row["is_duplicate"], row["duplicate_of"]) for row in result] == [
             (False, None),

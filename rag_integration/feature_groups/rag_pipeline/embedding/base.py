@@ -12,6 +12,7 @@ from mloda.provider import (
     FeatureChainParserMixin,
     FeatureGroup,
     FeatureSet,
+    HookContext,
     property_spec,
 )
 from mloda.user import Feature
@@ -149,6 +150,7 @@ class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGr
 
         # mloda 0.9.0 delivers columnar data; read it row-wise.
         rows = columnar_to_rows(data)
+        artifact_reused = False
 
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)
@@ -167,6 +169,7 @@ class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGr
                     if loaded is not None:
                         embeddings = loaded.get("embeddings")
                         model_name = loaded.get("model_name", model_name)
+                        artifact_reused = artifact_reused or embeddings is not None
                 except ValueError:
                     # Artifact not found, will compute embeddings
                     pass
@@ -201,4 +204,5 @@ class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGr
                 row["embedding_dim"] = len(embeddings[i])
                 row["embedding_model"] = model_name
 
+        HookContext.publish_result_attributes({"rag.embedding.artifact_reused": artifact_reused})
         return rows

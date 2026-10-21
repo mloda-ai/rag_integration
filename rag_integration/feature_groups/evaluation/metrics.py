@@ -1,9 +1,20 @@
 """Retrieval evaluation metrics.
 
-Pure Python implementation — no external dependencies required.
+Pure Python metric functions, plus the result row both evaluators return.
 """
 
 from __future__ import annotations
+
+from typing import Any
+
+from mloda.provider import HookContext
+
+
+def metrics_result(feature_name: str, metrics: dict[str, Any]) -> list[dict[str, Any]]:
+    """Publish the metrics as ``rag.eval.*`` result attributes and return the result row."""
+    HookContext.publish_result_attributes({f"rag.eval.{name}": value for name, value in metrics.items()})
+    # Under the feature name for mloda's column selector, and flat for direct access.
+    return [{feature_name: metrics, **metrics}]
 
 
 def recall_at_k(relevant_ids: set[str], ranked_ids: list[str], k: int) -> float:

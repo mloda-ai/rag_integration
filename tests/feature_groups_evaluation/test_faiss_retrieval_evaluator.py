@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from mloda.testing.extenders.hook_context import make_hook_context
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import (
     homogenize_rows,
     rows_to_columnar,
@@ -79,10 +80,15 @@ class TestFaissRetrievalEvaluator:
         data = _make_data()
         features = _make_features()
 
-        with patch.object(FaissRetrievalEvaluator, "_extract_source_features", return_value=[_INDEXED_FEATURE]):
+        with (
+            patch.object(FaissRetrievalEvaluator, "_extract_source_features", return_value=[_INDEXED_FEATURE]),
+            make_hook_context().activate() as context,
+        ):
             result = FaissRetrievalEvaluator.calculate_feature(data, features)
 
         assert len(result) == 1
+        metrics = result[0][features.features[0].name]
+        assert context.result_attributes == {f"rag.eval.{name}": value for name, value in metrics.items()}
         assert result[0]["recall@1"] == pytest.approx(1.0)
         assert result[0]["recall@5"] == pytest.approx(1.0)
         assert result[0]["recall@10"] == pytest.approx(1.0)

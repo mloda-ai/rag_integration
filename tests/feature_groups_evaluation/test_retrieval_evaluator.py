@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from mloda.testing.extenders.hook_context import make_hook_context
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import (
     homogenize_rows,
     rows_to_columnar,
@@ -61,10 +62,15 @@ class TestRetrievalEvaluator:
         data = _make_data(source)
         features = _make_features(source)
 
-        with patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]):
+        with (
+            patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]),
+            make_hook_context().activate() as context,
+        ):
             result = RetrievalEvaluator.calculate_feature(data, features)
 
         assert len(result) == 1
+        metrics = result[0][f"{source}__evaluated"]
+        assert context.result_attributes == {f"rag.eval.{name}": value for name, value in metrics.items()}
         assert result[0]["recall@1"] == pytest.approx(1.0)
         assert result[0]["recall@5"] == pytest.approx(1.0)
         assert result[0]["recall@10"] == pytest.approx(1.0)
