@@ -21,8 +21,8 @@ tox
 It runs pytest, `ruff format --check`, `ruff check`, `mypy --strict`, and bandit.
 CI runs the same gate on all supported Python versions.
 
-To intentionally change the README quickstart's resolved plan, regenerate and commit its lock files
-(`tox` does not pass the variable through):
+To intentionally change the README quickstart's resolved plan, regenerate its lock files (`tox` does not
+pass the variable through), review the diff, and commit them:
 
 ```bash
 UPDATE_PLAN_LOCKS=1 pytest tests/integration/test_rag_pipeline.py -k plan_matches_lock

@@ -78,14 +78,15 @@ QUICKSTART_PROVIDERS: frozenset[type[FeatureGroup]] = frozenset(
     {DictDocumentSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
 )
 SELECTOR_PROVIDERS = QUICKSTART_PROVIDERS | {SimplePIIRedactor, SentenceChunker, NormalizedDeduplicator, HashEmbedder}
-QUICKSTART_SELECTORS: dict[str, dict[str, str]] = {
-    "step3": {},
-    "step4": {
-        "redaction_method": "regex",
-        "chunking_method": "sentence",
-        "deduplication_method": "exact_hash",
-        "embedding_method": "hash",
-    },
+STEP4_SELECTORS = {
+    "redaction_method": "regex",
+    "chunking_method": "sentence",
+    "deduplication_method": "exact_hash",
+    "embedding_method": "hash",
+}
+QUICKSTART_STEPS: dict[str, tuple[frozenset[type[FeatureGroup]], dict[str, str]]] = {
+    "step3": (QUICKSTART_PROVIDERS, {}),
+    "step4": (SELECTOR_PROVIDERS, STEP4_SELECTORS),
 }
 
 
@@ -262,7 +263,7 @@ class TestAlternativeProviders:
         options = Options(
             group={
                 "documents": [{"doc_id": "d1", "text": "Ask John at john@example.com for help. Open daily. Call us."}],
-                **QUICKSTART_SELECTORS["step4"],
+                **STEP4_SELECTORS,
                 "chunk_size": 30,
                 "chunk_overlap": 0,
             }
@@ -284,14 +285,14 @@ class TestAlternativeProviders:
         assert [row[chunked] for row in results[chunked]] == chunks
         assert [row[embedded] for row in results[embedded]] == HashEmbedder._embed_texts(chunks, 384, "default")
 
-    @pytest.mark.parametrize("step", sorted(QUICKSTART_SELECTORS))
+    @pytest.mark.parametrize("step", sorted(QUICKSTART_STEPS))
     def test_quickstart_plan_matches_lock(self, step: str) -> None:
-        """The README quickstart request (copied by hand) resolves to the locked plan; regenerate per CONTRIBUTING.md."""
-        providers = QUICKSTART_PROVIDERS if step == "step3" else SELECTOR_PROVIDERS
+        """The README quickstart's providers and selectors resolve to the locked plan; regenerate per CONTRIBUTING.md."""
+        providers, selectors = QUICKSTART_STEPS[step]
         documents = [{"doc_id": "1", "text": "Contact support@example.com for help."}]
         feature = Feature(
             "docs__pii_redacted__chunked__deduped__embedded",
-            options=Options(group={"documents": documents, **QUICKSTART_SELECTORS[step]}),
+            options=Options(group={"documents": documents, **selectors}),
         )
         plan = mloda.explain(
             [feature],
