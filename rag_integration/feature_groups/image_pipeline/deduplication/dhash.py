@@ -71,7 +71,7 @@ class DifferenceHashImageDeduplicator(BaseImageDeduplicator):
         # Resize to (hash_size + 1) x hash_size grayscale
         img = img.convert("L").resize((hash_size + 1, hash_size), Image.Resampling.LANCZOS)
 
-        pixels: list[int] = list(img.get_flattened_data())  # type: ignore[arg-type]
+        pixels: list[int] = list(img.get_flattened_data())  # type: ignore[arg-type, unused-ignore]
         width = hash_size + 1
 
         hash_val = 0

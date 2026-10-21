@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
+import pytest
 from mloda.provider import DataCreator, FeatureGroup
 from mloda.user import Domain, Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -27,6 +28,8 @@ from rag_integration.feature_groups.image_pipeline import (
 )
 from tests.integration.helpers import get_results_by_feature
 
+pytest.importorskip("PIL")
+
 # =============================================================================
 # Test Data
 # =============================================================================
@@ -34,13 +37,9 @@ from tests.integration.helpers import get_results_by_feature
 
 def _create_test_image_bytes(color: tuple[int, int, int] = (255, 0, 0), size: tuple[int, int] = (64, 64)) -> bytes:
     """Create a test PNG image as bytes."""
-    try:
-        from PIL import Image
-    except ImportError:
-        # Fallback: return synthetic bytes that differ by color
-        return bytes([color[0], color[1], color[2]] * (size[0] * size[1]))
-
     import io
+
+    from PIL import Image
 
     img = Image.new("RGB", size, color=color)
     output = io.BytesIO()
