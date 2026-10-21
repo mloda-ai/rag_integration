@@ -19,8 +19,10 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
+from rag_integration.feature_groups.classification import RedactedClassification
 
-class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
+
+class BasePIIRedactor(RedactedClassification, FeatureChainParserMixin, FeatureGroup):
     """
     Base class for PII redaction feature groups.
 
@@ -137,7 +139,19 @@ class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
             pii_types = ["ALL"]
         if not isinstance(pii_types, list):
             pii_types = [pii_types]
+        # A masking step must not silently redact nothing, so empty or unknown types fail instead of being skipped.
+        known = cls._known_pii_types(feature)
+        unknown = sorted(str(pii_type) for pii_type in pii_types if pii_type not in known)
+        if not pii_types or unknown:
+            raise ValueError(
+                f"{cls.__name__} got pii_types {pii_types!r}; unknown: {unknown}. Use one or more of {sorted(known)}."
+            )
         return pii_types
+
+    @classmethod
+    def _known_pii_types(cls, feature: Feature) -> set[str]:
+        """PII types this redactor detects, plus ``ALL``."""
+        return set(cls.SUPPORTED_PII_TYPES)
 
     @classmethod
     def _get_replacement_strategy(cls, feature: Feature) -> str:

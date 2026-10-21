@@ -81,6 +81,10 @@ class PatternPIIRedactor(BasePIIRedactor):
         return patterns
 
     @classmethod
+    def _known_pii_types(cls, feature: Feature) -> set[str]:
+        return set(cls._get_patterns(feature)) | {"ALL"}
+
+    @classmethod
     def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
         """Extract custom patterns from feature options before redacting."""
         for feature in features.features:

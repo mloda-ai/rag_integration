@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from unittest.mock import MagicMock
 
+import pytest
 from mloda.user import Options
 
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
@@ -38,6 +40,14 @@ class TextPIIRedactionTestBase(ABC):
         """Should use type labels when configured."""
         result = self.redactor_class._redact_pii(["Email: test@example.com"], ["EMAIL"], "type_label")
         assert "[EMAIL]" in result[0]
+
+    @pytest.mark.parametrize("pii_types", [[], ["email"], ["EMAIL", "NOT_A_TYPE"]])
+    def test_empty_or_unknown_pii_types_raise(self, pii_types: list[str]) -> None:
+        """A masking step lowers the classification, so it must not silently redact nothing."""
+        feature = MagicMock()
+        feature.options.get.side_effect = lambda key: pii_types if key == BasePIIRedactor.PII_TYPES else None
+        with pytest.raises(ValueError, match="pii_types"):
+            self.redactor_class._get_pii_types(feature)
 
     def test_feature_matching_pattern(self) -> None:
         """Should match pii_redacted features and reject others."""
