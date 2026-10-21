@@ -74,7 +74,7 @@ class PerceptualHashImageDeduplicator(BaseImageDeduplicator):
         # Resize to hash_size x hash_size grayscale
         img = img.convert("L").resize((hash_size, hash_size), Image.Resampling.LANCZOS)
 
-        pixels: list[int] = list(img.get_flattened_data())  # type: ignore[arg-type]
+        pixels: list[int] = list(img.get_flattened_data())  # type: ignore[arg-type, unused-ignore]
         mean_val = sum(pixels) / len(pixels)
 
         # Build hash: 1 if pixel > mean, 0 otherwise

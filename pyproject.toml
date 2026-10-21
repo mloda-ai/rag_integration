@@ -72,7 +72,8 @@ advanced = [
     # Pinned explicitly since sentence-transformers only requires >=5.0.0,<6.0.0.
     "transformers>=5.10.2",
     "joblib>=1.0.0",
-    "Pillow>=9.0.0",
+    # Pillow>=13.0.0 fixes advisories but needs Python 3.11; no patched 12.x for 3.10.
+    "Pillow>=13.0.0; python_version >= '3.11'",
     "faiss-cpu>=1.7.0",
 ]
 # Evaluation datasets and metrics (no network access at eval time)

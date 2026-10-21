@@ -227,7 +227,7 @@ To install only specific extras, use `uv sync --extra <name>`:
 | Extra      | What it adds                                         |
 |------------|------------------------------------------------------|
 | `faiss`    | FAISS vector indexing (`faiss-cpu`)                   |
-| `advanced` | Presidio, sentence-transformers, joblib, Pillow, FAISS|
+| `advanced` | Presidio, sentence-transformers, joblib, Pillow (Python 3.11+), FAISS|
 | `eval`     | BEIR benchmark datasets, pandas, numpy               |
 | `graph`    | networkx graph-RAG backend (`NetworkxGraphRag`)      |
 | `dev`      | tox, pytest, ruff, mypy, bandit, mloda-testing       |
