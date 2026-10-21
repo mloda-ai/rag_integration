@@ -27,6 +27,7 @@ PASS_THROUGH_BASES: set[type[FeatureGroup]] = {
     BaseEmbedder,
     BaseImageEmbedder,
     BaseImagePreprocessor,
+    BaseVectorStore,
 }
 
 
@@ -34,8 +35,7 @@ def test_stage_bases_declare_their_classification() -> None:
     assert all(issubclass(base, RedactedClassification) for base in MASKING_BASES)
     assert all(issubclass(base, PassThroughClassification) for base in PASS_THROUGH_BASES)
     assert not getattr(BaseImagePIIRedactor, "masking", False)
-    # Undeclared: its index sidecar stores the rows' raw source text, not the redacted feature.
-    assert BaseVectorStore.declared_attributes(None) == {}
+    assert BaseVectorStore.declared_attributes(None) == {CLASSIFICATION_KEY: "public"}
 
 
 def test_every_feature_group_declares_a_valid_level_or_none() -> None:

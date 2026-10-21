@@ -20,10 +20,11 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
+from rag_integration.feature_groups.classification import PassThroughClassification
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
-class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
+class BaseVectorStore(PassThroughClassification, FeatureChainParserMixin, FeatureGroup):
     """
     Base class for vector store (indexing) feature groups.
 
@@ -142,8 +143,9 @@ class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
                     else:
                         embeddings.append([])
 
-                    # Collect text and doc_id for metadata sidecar
-                    text = row.get("text", row.get(source_feature.rsplit("__", 1)[0], ""))
+                    # Prefer the text feature that produced the embedding over a raw text alias.
+                    text_feature = source_feature.rsplit("__", 1)[0]
+                    text = row.get(text_feature, row.get("text", ""))
                     if isinstance(text, list):
                         text = ""
                     texts.append(str(text))
