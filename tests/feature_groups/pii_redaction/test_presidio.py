@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import patch
 
+import pytest
 from mloda.user import Feature, Options
 
 from rag_integration.feature_groups.rag_pipeline.pii_redaction.presidio import PresidioPIIRedactor
@@ -31,6 +32,12 @@ class TestLanguageOption:
     def test_language_default(self) -> None:
         feature = Feature("docs__pii_redacted", options=Options())
         assert PresidioPIIRedactor._get_language(feature) == PresidioPIIRedactor.DEFAULT_LANGUAGE
+
+    def test_pii_types_accept_presidio_types_and_reject_unknown(self) -> None:
+        feature = Feature("docs__pii_redacted", options=Options(context={"pii_types": ["CREDIT_CARD"]}))
+        assert PresidioPIIRedactor._get_pii_types(feature) == ["CREDIT_CARD"]
+        with pytest.raises(ValueError, match="pii_types"):
+            PresidioPIIRedactor._get_pii_types(Feature("x", options=Options(context={"pii_types": ["email"]})))
 
     def test_language_from_options(self) -> None:
         feature = Feature("docs__pii_redacted", options=Options(context={"language": "de"}))

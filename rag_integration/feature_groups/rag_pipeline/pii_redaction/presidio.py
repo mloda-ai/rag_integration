@@ -86,6 +86,10 @@ class PresidioPIIRedactor(BasePIIRedactor):
         return str(value) if value is not None else cls.DEFAULT_LANGUAGE
 
     @classmethod
+    def _known_pii_types(cls, feature: Feature) -> set[str]:
+        return set(cls.PII_TYPE_MAPPING) | {"ALL"}
+
+    @classmethod
     def _redact_texts_for_feature(cls, texts: list[str], feature: Feature) -> list[str]:
         """Redact texts using the per-feature language option."""
         return cls._redact_pii(

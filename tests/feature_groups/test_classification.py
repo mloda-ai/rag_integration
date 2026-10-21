@@ -19,9 +19,6 @@ from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BaseP
 from rag_integration.feature_groups.rag_pipeline.vector_store.base import BaseVectorStore
 from tests.feature_groups.test_property_mapping_defaults import _all_feature_groups
 
-# The registry extenders' levels, least to most restrictive.
-LEVELS = ("public", "internal", "confidential", "restricted", "pii")
-
 MASKING_BASES: set[type[FeatureGroup]] = {BasePIIRedactor}
 PASS_THROUGH_BASES: set[type[FeatureGroup]] = {
     BaseImagePIIRedactor,
@@ -30,7 +27,6 @@ PASS_THROUGH_BASES: set[type[FeatureGroup]] = {
     BaseEmbedder,
     BaseImageEmbedder,
     BaseImagePreprocessor,
-    BaseVectorStore,
 }
 
 
@@ -38,6 +34,8 @@ def test_stage_bases_declare_their_classification() -> None:
     assert all(issubclass(base, RedactedClassification) for base in MASKING_BASES)
     assert all(issubclass(base, PassThroughClassification) for base in PASS_THROUGH_BASES)
     assert not getattr(BaseImagePIIRedactor, "masking", False)
+    # Undeclared: its index sidecar stores the rows' raw source text, not the redacted feature.
+    assert BaseVectorStore.declared_attributes(None) == {}
 
 
 def test_every_feature_group_declares_a_valid_level_or_none() -> None:
@@ -53,4 +51,3 @@ def test_every_feature_group_declares_a_valid_level_or_none() -> None:
             assert level == "public", group
         else:
             assert level is None, group
-        assert level is None or level in LEVELS, group

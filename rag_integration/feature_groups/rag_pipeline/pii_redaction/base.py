@@ -139,7 +139,19 @@ class BasePIIRedactor(RedactedClassification, FeatureChainParserMixin, FeatureGr
             pii_types = ["ALL"]
         if not isinstance(pii_types, list):
             pii_types = [pii_types]
+        # A masking step must not silently redact nothing, so empty or unknown types fail instead of being skipped.
+        known = cls._known_pii_types(feature)
+        unknown = sorted(str(pii_type) for pii_type in pii_types if pii_type not in known)
+        if not pii_types or unknown:
+            raise ValueError(
+                f"{cls.__name__} got pii_types {pii_types!r}; unknown: {unknown}. Use one or more of {sorted(known)}."
+            )
         return pii_types
+
+    @classmethod
+    def _known_pii_types(cls, feature: Feature) -> set[str]:
+        """PII types this redactor detects, plus ``ALL``."""
+        return set(cls.SUPPORTED_PII_TYPES)
 
     @classmethod
     def _get_replacement_strategy(cls, feature: Feature) -> str:
