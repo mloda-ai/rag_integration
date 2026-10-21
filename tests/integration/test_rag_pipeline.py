@@ -7,14 +7,16 @@ Uses mlodaAPI.run_all() with multiple features per call for efficiency.
 from __future__ import annotations
 
 import math
+import os
 import tempfile
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+import pytest
 from mloda.provider import BaseArtifact, DataCreator, FeatureGroup
-from mloda.steward import Extender, ExtenderHook, HookContext
-from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
+from mloda.steward import Extender, ExtenderHook, HookContext, check_plan_lock, write_plan_lock
+from mloda.user import Domain, Feature, Options, ParallelizationMode, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -69,6 +71,23 @@ class MockDocumentDataCreator(FeatureGroup):
 
 def get_test_providers() -> set[type[FeatureGroup]]:
     return {MockDocumentDataCreator, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
+
+
+# The README quickstart: step 3 enables one provider per stage, step 4 adds more and selects with group options.
+QUICKSTART_PROVIDERS: frozenset[type[FeatureGroup]] = frozenset(
+    {DictDocumentSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
+)
+SELECTOR_PROVIDERS = QUICKSTART_PROVIDERS | {SimplePIIRedactor, SentenceChunker, NormalizedDeduplicator, HashEmbedder}
+STEP4_SELECTORS = {
+    "redaction_method": "regex",
+    "chunking_method": "sentence",
+    "deduplication_method": "exact_hash",
+    "embedding_method": "hash",
+}
+QUICKSTART_STEPS: dict[str, tuple[frozenset[type[FeatureGroup]], dict[str, str]]] = {
+    "step3": (QUICKSTART_PROVIDERS, {}),
+    "step4": (SELECTOR_PROVIDERS, STEP4_SELECTORS),
+}
 
 
 # =============================================================================
@@ -238,26 +257,13 @@ class TestAlternativeProviders:
 
     def test_group_selectors_pick_among_enabled_providers(self) -> None:
         """Stage selectors in group options reach every upstream stage, as in the quickstart's step 4."""
-        providers = {
-            DictDocumentSource,
-            RegexPIIRedactor,
-            SimplePIIRedactor,
-            FixedSizeChunker,
-            SentenceChunker,
-            ExactHashDeduplicator,
-            NormalizedDeduplicator,
-            MockEmbedder,
-            HashEmbedder,
-        }
+        providers = set(SELECTOR_PROVIDERS)
         chunked = "docs__pii_redacted__chunked"
         embedded = "docs__pii_redacted__chunked__deduped__embedded"
         options = Options(
             group={
                 "documents": [{"doc_id": "d1", "text": "Ask John at john@example.com for help. Open daily. Call us."}],
-                "redaction_method": "regex",
-                "chunking_method": "sentence",
-                "deduplication_method": "exact_hash",
-                "embedding_method": "hash",
+                **STEP4_SELECTORS,
                 "chunk_size": 30,
                 "chunk_overlap": 0,
             }
@@ -278,6 +284,26 @@ class TestAlternativeProviders:
         chunks = ["[REDACTED] at [REDACTED] for help.", "Open daily. Call us."]
         assert [row[chunked] for row in results[chunked]] == chunks
         assert [row[embedded] for row in results[embedded]] == HashEmbedder._embed_texts(chunks, 384, "default")
+
+    @pytest.mark.parametrize("step", sorted(QUICKSTART_STEPS))
+    def test_quickstart_plan_matches_lock(self, step: str) -> None:
+        """The README quickstart's providers and selectors resolve to the locked plan; regenerate per CONTRIBUTING.md."""
+        providers, selectors = QUICKSTART_STEPS[step]
+        documents = [{"doc_id": "1", "text": "Contact support@example.com for help."}]
+        feature = Feature(
+            "docs__pii_redacted__chunked__deduped__embedded",
+            options=Options(group={"documents": documents, **selectors}),
+        )
+        plan = mloda.explain(
+            [feature],
+            compute_frameworks=[PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups(set(providers)),
+            parallelization_modes={ParallelizationMode.SYNC},
+        )
+        lock = Path(__file__).with_name(f"quickstart_{step}.plan.lock.json")
+        if os.environ.get("UPDATE_PLAN_LOCKS"):
+            write_plan_lock(plan, lock)
+        check_plan_lock(plan, lock)
 
 
 # =============================================================================

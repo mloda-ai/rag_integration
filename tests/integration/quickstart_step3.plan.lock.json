@@ -1,0 +1,86 @@
+{
+  "compute": [
+    {
+      "compute_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
+      "compute_framework_reason": "only allowed framework",
+      "feature_group": "rag_integration.feature_groups.rag_pipeline.chunking.fixed_size:FixedSizeChunker",
+      "feature_names": [
+        "docs__pii_redacted__chunked"
+      ],
+      "input_feature_edges": {
+        "docs__pii_redacted__chunked": [
+          "docs__pii_redacted"
+        ]
+      },
+      "reader": null,
+      "result_framework": null,
+      "specialized_from": []
+    },
+    {
+      "compute_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
+      "compute_framework_reason": "only allowed framework",
+      "feature_group": "rag_integration.feature_groups.rag_pipeline.deduplication.exact_hash:ExactHashDeduplicator",
+      "feature_names": [
+        "docs__pii_redacted__chunked__deduped"
+      ],
+      "input_feature_edges": {
+        "docs__pii_redacted__chunked__deduped": [
+          "docs__pii_redacted__chunked"
+        ]
+      },
+      "reader": null,
+      "result_framework": null,
+      "specialized_from": []
+    },
+    {
+      "compute_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
+      "compute_framework_reason": "only allowed framework",
+      "feature_group": "rag_integration.feature_groups.rag_pipeline.document_source.dict_loader:DictDocumentSource",
+      "feature_names": [
+        "docs"
+      ],
+      "input_feature_edges": {},
+      "reader": null,
+      "result_framework": null,
+      "specialized_from": []
+    },
+    {
+      "compute_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
+      "compute_framework_reason": "only allowed framework",
+      "feature_group": "rag_integration.feature_groups.rag_pipeline.embedding.mock:MockEmbedder",
+      "feature_names": [
+        "docs__pii_redacted__chunked__deduped__embedded"
+      ],
+      "input_feature_edges": {
+        "docs__pii_redacted__chunked__deduped__embedded": [
+          "docs__pii_redacted__chunked__deduped"
+        ]
+      },
+      "reader": null,
+      "result_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
+      "specialized_from": []
+    },
+    {
+      "compute_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
+      "compute_framework_reason": "only allowed framework",
+      "feature_group": "rag_integration.feature_groups.rag_pipeline.pii_redaction.regex:RegexPIIRedactor",
+      "feature_names": [
+        "docs__pii_redacted"
+      ],
+      "input_feature_edges": {
+        "docs__pii_redacted": [
+          "docs"
+        ]
+      },
+      "reader": null,
+      "result_framework": null,
+      "specialized_from": []
+    }
+  ],
+  "format": 5,
+  "joins": [],
+  "requested_features": [
+    "docs__pii_redacted__chunked__deduped__embedded"
+  ],
+  "transforms": []
+}
