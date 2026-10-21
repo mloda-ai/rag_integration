@@ -62,8 +62,6 @@ class PatternPIIRedactor(BasePIIRedactor):
         "IP_ADDRESS": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
     }
 
-    _active_patterns: dict[str, Pattern[str]] | None = None
-
     @classmethod
     def _get_patterns(cls, feature: Feature) -> dict[str, Pattern[str]]:
         """Get compiled patterns including custom ones from feature options."""
@@ -85,11 +83,14 @@ class PatternPIIRedactor(BasePIIRedactor):
         return set(cls._get_patterns(feature)) | {"ALL"}
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
-        """Extract custom patterns from feature options before redacting."""
-        for feature in features.features:
-            cls._active_patterns = cls._get_patterns(feature)
-        return super().calculate_feature(data, features)
+    def _redact_texts_for_feature(cls, texts: list[str], feature: Feature) -> list[str]:
+        """Redact texts using the per-feature custom patterns."""
+        return cls._redact_pii(
+            texts,
+            cls._get_pii_types(feature),
+            cls._get_replacement_strategy(feature),
+            patterns=cls._get_patterns(feature),
+        )
 
     @classmethod
     def _redact_pii(
@@ -97,11 +98,10 @@ class PatternPIIRedactor(BasePIIRedactor):
         texts: list[str],
         pii_types: list[str],
         replacement_strategy: str,
+        patterns: dict[str, Pattern[str]] | None = None,
     ) -> list[str]:
-        """Redact PII using configurable patterns (default + custom)."""
-        if cls._active_patterns is not None:
-            patterns = cls._active_patterns
-        else:
+        """Redact PII using the given patterns, or the defaults when none are given."""
+        if patterns is None:
             patterns = {name: re.compile(p) for name, p in cls.DEFAULT_PATTERNS.items()}
 
         if "ALL" in pii_types:
