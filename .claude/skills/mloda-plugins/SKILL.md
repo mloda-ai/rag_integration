@@ -12,7 +12,7 @@ If path is empty, browse online: https://github.com/mloda-ai/mloda-registry/tree
 
 **Guides location (relative to mloda-registry path):** `docs/guides/`
 
-## Top-Level Guides (01-11)
+## Top-Level Guides (01-12)
 
 | # | Guide | Description |
 |---|-------|-------------|
@@ -27,6 +27,7 @@ If path is empty, browse online: https://github.com/mloda-ai/mloda-registry/tree
 | 09 | `09-create-feature-group.md` | Decision tree for choosing the right feature group pattern |
 | 10 | `10-create-compute-framework.md` | Decision tree for creating a compute framework plugin |
 | 11 | `11-create-extender.md` | Guide for creating extender plugins (logging, tracing, metrics) |
+| 12 | `12-export-telemetry.md` | Export OTel (spans, metrics) and OpenLineage telemetry to any backend: Collector, sampling, privacy defaults, multiprocessing |
 | -- | `index.md` | Your Plugin Journey: step-by-step progression overview |
 
 ---
@@ -112,6 +113,27 @@ Q24: Need conditional aggregation that nulls out non-matching values instead of 
 
 Q25: Several readers under one root group, or a non-file (HTTP/API) source?
     YES → See 27-input-data-readers
+
+Q26: Does it declare another feature group's feature (source, connector) in input_features(), and need to control which of its own options forward to that input?
+    YES → See 26-input-feature-forwarding
+
+Q27: Several interchangeable backends for one feature (e.g. BM25 vs. FAISS)?
+    YES → See 28-backend-families
+
+Q28: Is it a standard column transform (binning, window/scalar/frame aggregate, rank, offset, percentile, string op, time bucketization, ffill, EMA, resample, sessionization, key lookup)?
+    YES → See Data Operation Patterns below
+
+Q29: Ready to test your implementation?
+    YES → See 10-testing-guide
+
+Q30: Need to decide whether an option affects feature identity/resolution (group) vs is runtime-only metadata (context)?
+    YES → See 11-options
+
+Q31: Need to define what feature names your FeatureGroup provides (beyond the default class name)?
+    YES → See 13-feature-naming
+
+Q32: Is the model a compiled binary (shipped as a wheel, possibly license-gated) that must stay a black box?
+    YES → See 29-binary-backed-features
 ```
 
 ### Feature Group Pattern Guides
@@ -129,7 +151,7 @@ Location: `docs/guides/feature-group-patterns/`
 | 07 | `07-index-features.md` | Ordering, grouping, joining columns |
 | 08 | `08-links-joins.md` | Join data from multiple feature groups |
 | 09 | `09-framework-specific.md` | Restrict to certain frameworks |
-| 10 | `10-testing-guide.md` | Unit, framework, integration testing |
+| 10 | `10-testing-guide.md` | Unit, framework, integration testing; plan locks |
 | 11 | `11-options.md` | Group vs context configuration |
 | 12 | `12-calculate-feature.md` | Core computation method |
 | 13 | `13-feature-naming.md` | Define feature names |
@@ -146,7 +168,39 @@ Location: `docs/guides/feature-group-patterns/`
 | 24 | `24-realtime.md` | Reuse execution plans with `prepare` + `run` |
 | 25 | `25-masking.md` | Conditional aggregation via FilterMask |
 | 26 | `26-input-feature-forwarding.md` | Consume another group's root feature; option forwarding |
-| 27 | `27-input-data-readers.md` | Sibling reader selection; non-file / HTTP readers |
+| 27 | `27-input-data-readers.md` | Sibling reader selection; non-file / HTTP readers; reader options; required declarations |
+| 28 | `28-backend-families.md` | Pick one sibling backend: name, discriminator option, or reader |
+| 29 | `29-binary-backed-features.md` | Compiled, license-gated binary as a black-box model over Arrow IPC |
+
+---
+
+## Data Operation Patterns
+
+Location: `docs/guides/data-operation-patterns/`
+
+Built-in feature groups that transform existing columns: row-preserving analytics (binning, ranks, windows, offsets, percentiles), row-changing operations (resample), group-reducing aggregations, element-wise string transforms.
+
+| # | Guide | Description |
+|---|-------|-------------|
+| 01 | `01-overview.md` | Categories, naming patterns, code layout |
+| 02 | `02-row-preserving-contract.md` | Output row count/order must match input |
+| 03 | `03-reference-implementation.md` | PyArrow as source of truth |
+| 04 | `04-supported-ops.md` | Ops excluded per framework |
+| 05 | `05-binning.md` | `bin` vs `qbin` |
+| 06 | `06-window-aggregation.md` | Partitioned aggregates broadcast per row |
+| 07 | `07-percentile-rank-offset.md` | Analytic window family |
+| 08 | `08-scalar-and-frame-aggregate.md` | Global/rolling aggregates, arithmetic |
+| 09 | `09-string-operations.md` | Element-wise string transforms |
+| 10 | `10-adding-new-operation.md` | End-to-end recipe for a new operation |
+| 11 | `11-time-bucketization.md` | Floor/ceil/round timestamp to a bucket |
+| 12 | `12-ffill-by-time.md` | Forward fill across time gaps |
+| 13 | `13-ema.md` | Exponential moving average |
+| 14 | `14-resample.md` | Collapse events onto a regular time grid |
+| 15 | `15-sessionization.md` | Gap-threshold session id |
+| 16 | `16-return-data-type-rule.md` | Fail-fast return-type contract |
+| 17 | `17-lookup.md` | Key lookup with an unmatched-key policy and a mapping hook |
+
+See also `framework-support-matrix.md` (op x framework support) and `known-divergences.md` (audited framework divergences).
 
 ---
 
@@ -191,6 +245,9 @@ Q10: Should connections be auto-created or user-provided?
 
 Q11: Ready to test your implementation?
     YES → See 09-testing-guide
+
+Q12: Need to map a native column type (e.g. pandas dtype, Arrow type) to mloda's DataType?
+    YES → See 10-data-type-extraction
 ```
 
 ### Compute Framework Pattern Guides
@@ -208,6 +265,7 @@ Location: `docs/guides/compute-framework-patterns/`
 | 07 | `07-filter-engine.md` | Filter operations |
 | 08 | `08-framework-transformer.md` | Cross-framework conversion |
 | 09 | `09-testing-guide.md` | Testing your implementation |
+| 10 | `10-data-type-extraction.md` | Mapping native column types to mloda `DataType` |
 
 ---
 
@@ -218,6 +276,9 @@ Q1: What do you want to wrap?
     Feature calculation → FEATURE_GROUP_CALCULATE_FEATURE
     Input validation   → VALIDATE_INPUT_FEATURE
     Output validation  → VALIDATE_OUTPUT_FEATURE
+    Feature matched    → FEATURE_GROUP_MATCHED
+    Input data loads   → INPUT_DATA_LOAD
+    Data joins         → JOIN
 
 Q2: Need execution order control?
     YES → Set custom priority (lower runs first, default 100)
@@ -226,4 +287,4 @@ Q3: Need state with ParallelizationMode.MULTIPROCESSING?
     YES → Use class-level storage (pickle-safe)
 ```
 
-Full guide: `docs/guides/11-create-extender.md`
+Full guide: `docs/guides/11-create-extender.md`. Running the shipped OTel and OpenLineage extenders against a backend: `docs/guides/12-export-telemetry.md`
