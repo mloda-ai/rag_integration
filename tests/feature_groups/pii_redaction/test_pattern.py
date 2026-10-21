@@ -1,5 +1,8 @@
 """Tests for PatternPIIRedactor."""
 
+from typing import Any
+
+import pytest
 from mloda.provider import FeatureSet
 from mloda.user import Feature, Options
 
@@ -68,3 +71,17 @@ class TestPatternPIIRedactor(TextPIIRedactionTestBase):
         assert rows[0]["a__pii_redacted"] == "[EMPLOYEE_ID] on PRJ-ABC"
         assert rows[0]["b__pii_redacted"] == "EMP-123456 on [PROJECT]"
         assert PatternPIIRedactor._redact_pii(["EMP-123456"], ["ALL"], "mask") == ["EMP-123456"]
+
+    @pytest.mark.parametrize(
+        ("custom_patterns", "error", "match"),
+        [
+            (["EMP-\\d{6}"], TypeError, "must be a dict"),
+            ({"EMPLOYEE_ID": 123}, TypeError, "'EMPLOYEE_ID' must map a string name"),
+            ({"EMPLOYEE_ID": "EMP-("}, ValueError, "'EMPLOYEE_ID' is not a valid regex"),
+        ],
+    )
+    def test_invalid_custom_patterns_raise(self, custom_patterns: Any, error: type[Exception], match: str) -> None:
+        """Malformed custom_patterns fail with an error naming the option."""
+        feature = Feature("docs__pii_redacted", options=Options(context={"custom_patterns": custom_patterns}))
+        with pytest.raises(error, match=f"custom_patterns.*{match}"):
+            PatternPIIRedactor._get_patterns(feature)
