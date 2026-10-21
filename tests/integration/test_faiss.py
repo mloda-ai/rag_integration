@@ -9,6 +9,7 @@ Covers three scenarios:
 
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -57,6 +58,15 @@ class MockDocumentDataCreator(FeatureGroup):
     @classmethod
     def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
         return [{"docs": doc["text"], "doc_id": doc["doc_id"]} for doc in SAMPLE_DOCUMENTS]
+
+
+class PIIDocumentDataCreator(MockDocumentDataCreator):
+    """DataCreator that keeps the original text column beside the source feature."""
+
+    @classmethod
+    def calculate_feature(cls, data: Any, features: Any) -> list[dict[str, Any]]:
+        text = "Contact sensitive-156@example.com or call 415-555-0199 for support."
+        return [{"docs": text, "text": text, "doc_id": "private_doc"}]
 
 
 def get_test_providers() -> set[type[FeatureGroup]]:
@@ -120,6 +130,28 @@ class TestVectorStorePipeline:
 
             assert len(faiss_files) >= 1, "FAISS index file should be created"
             assert len(json_files) >= 1, "Metadata sidecar should be created"
+
+    def test_sidecar_persists_redacted_text_when_raw_text_column_is_present(self) -> None:
+        """Vector metadata should use the indexed text feature, not a raw text alias."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
+            providers = get_test_providers() - {MockDocumentDataCreator} | {PIIDocumentDataCreator}
+            feature = Feature(feature_name, options=Options({"artifact_storage_path": tmp_dir}))
+
+            mlodaAPI.run_all(
+                features=[feature],
+                compute_frameworks=[PythonDictFramework],
+                plugin_collector=PluginCollector.enabled_feature_groups(providers),
+            )
+
+            metadata_files = list(Path(tmp_dir).glob("vector_store_*_metadata.json"))
+            assert len(metadata_files) == 1
+            metadata = json.loads(metadata_files[0].read_text(encoding="utf-8"))
+
+            raw_metadata = metadata_files[0].read_text(encoding="utf-8")
+            assert metadata["texts"] == ["Contact [REDACTED] or call [REDACTED] for support."]
+            assert "sensitive-156@example.com" not in raw_metadata
+            assert "415-555-0199" not in raw_metadata
 
 
 # =============================================================================
