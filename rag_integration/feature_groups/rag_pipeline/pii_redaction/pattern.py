@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from re import Pattern
 from typing import Any, ClassVar
 
@@ -35,6 +36,8 @@ class PatternPIIRedactor(BasePIIRedactor):
         redaction_method="pattern"
     """
 
+    CUSTOM_PATTERNS = "custom_patterns"
+
     PROPERTY_MAPPING: ClassVar = {
         BasePIIRedactor.REDACTION_METHOD: property_spec(
             "Detector used to locate PII in text",
@@ -49,6 +52,9 @@ class PatternPIIRedactor(BasePIIRedactor):
             "How detected PII is replaced in the redacted text",
             allowed_values=BasePIIRedactor.REPLACEMENT_STRATEGIES,
             default="mask",
+        ),
+        CUSTOM_PATTERNS: property_spec(
+            "Extra PII types as a dict of type name to regex string, added to the defaults", default=None
         ),
         DefaultOptionKeys.in_features: property_spec("Source feature containing text to redact"),
     }
@@ -70,11 +76,21 @@ class PatternPIIRedactor(BasePIIRedactor):
         for name, pattern_str in cls.DEFAULT_PATTERNS.items():
             patterns[name] = re.compile(pattern_str)
 
-        custom_patterns: Any = feature.options.get("custom_patterns")
+        custom_patterns: Any = feature.options.get(cls.CUSTOM_PATTERNS)
         if custom_patterns is None:
             custom_patterns = {}
+        if not isinstance(custom_patterns, Mapping):
+            raise TypeError(
+                f"{cls.CUSTOM_PATTERNS} must be a dict of type name to regex string, "
+                f"got {type(custom_patterns).__name__}."
+            )
         for name, pattern_str in custom_patterns.items():
-            patterns[name] = re.compile(pattern_str)
+            if not isinstance(name, str) or not isinstance(pattern_str, str):
+                raise TypeError(f"{cls.CUSTOM_PATTERNS} entry {name!r} must map a string name to a regex string.")
+            try:
+                patterns[name] = re.compile(pattern_str)
+            except re.error as e:
+                raise ValueError(f"{cls.CUSTOM_PATTERNS} entry {name!r} is not a valid regex: {e}") from e
 
         return patterns
 
