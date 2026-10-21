@@ -16,7 +16,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any
 
-from mloda.provider import ComputeFramework, FeatureChainParserMixin, FeatureGroup, FeatureSet
+from mloda.provider import ComputeFramework, FeatureChainParserMixin, FeatureGroup, FeatureSet, HookContext
 from mloda.user import Feature
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -116,6 +116,10 @@ class BaseRowDeduplicator(PassThroughClassification, FeatureChainParserMixin, Fe
 
         items = cls._extract_items(rows, feature)
         duplicate_of = cls._find_duplicates(items, threshold)
+        # Flagged rows, not removed ones (keep_strategy decides removal).
+        HookContext.publish_result_attributes(
+            {"rag.dedup.duplicates_found": sum(dup is not None for dup in duplicate_of)}
+        )
 
         result = []
         for i, row in enumerate(rows):
