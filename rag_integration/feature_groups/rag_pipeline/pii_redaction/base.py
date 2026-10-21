@@ -19,8 +19,10 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
+from rag_integration.feature_groups.classification import RedactedClassification
 
-class BasePIIRedactor(FeatureChainParserMixin, FeatureGroup):
+
+class BasePIIRedactor(RedactedClassification, FeatureChainParserMixin, FeatureGroup):
     """
     Base class for PII redaction feature groups.
 

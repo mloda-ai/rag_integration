@@ -152,6 +152,21 @@ results = mlodaAPI.run_all(
 | Deduplication   | `ExactHashImageDeduplicator`, `PerceptualHashImageDeduplicator`, `DifferenceHashImageDeduplicator`   |
 | Embedding       | `MockImageEmbedder`, `HashImageEmbedder`, `CLIPImageEmbedder`                                        |
 
+### Data classification
+
+The mloda-registry OTel, OpenLineage and audit extenders track a data classification level
+(`public` < `internal` < `confidential` < `restricted` < `pii`) through the pipeline. Stages declare theirs
+(`mloda.data.classification`):
+
+- **Text PII redactors** are masking steps: their outputs are `confidential`, whatever came in. This is a
+  best-effort claim (a narrowed `pii_types` leaves other PII in place), and a `public` input is raised to
+  `confidential` too. Subclass and set `REDACTED_CLASSIFICATION`, or `masking = False`, to change it.
+- **Chunkers, deduplicators, embedders, vector stores, image preprocessors and image redactors** declare
+  `public`, meaning "adds no sensitivity": their outputs keep their inputs' level. Read the effective level
+  from the extenders' `classification_undeclared` output, not the declared one.
+- **Sources, retrievers, LLM responses, evaluators and connectors** declare nothing and get the extender's
+  `undeclared` level.
+
 ## Connector families
 
 Alongside the build-your-own stage pipeline, the `connectors/` package wraps

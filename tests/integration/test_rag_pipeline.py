@@ -13,11 +13,13 @@ from typing import Any
 from unittest.mock import patch
 
 from mloda.provider import BaseArtifact, DataCreator, FeatureGroup
+from mloda.steward import Extender, ExtenderHook, HookContext
 from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
 
+from rag_integration.feature_groups.classification import CLASSIFICATION_KEY
 from rag_integration.feature_groups.rag_pipeline import (
     DictDocumentSource,
     ExactHashDeduplicator,
@@ -419,3 +421,53 @@ class TestEmbeddingArtifactIntegration:
                 assert isinstance(embedding, list), "Embedding should be a list"
                 magnitude = math.sqrt(sum(x * x for x in embedding))
                 assert abs(magnitude - 1.0) < 0.001, f"Embedding should be unit length, got {magnitude}"
+
+
+# =============================================================================
+# Integration Test: Data Classification Declarations
+# =============================================================================
+
+
+class DeclaredAttributeCapture(Extender):
+    """Records the declared attributes core hands to extenders, per calculated feature group."""
+
+    def __init__(self) -> None:
+        self.declared: dict[str, dict[str, Any]] = {}
+
+    def wraps(self) -> set[ExtenderHook]:
+        return {ExtenderHook.FEATURE_GROUP_CALCULATE_FEATURE}
+
+    def __call__(self, func: Any, *args: Any, **kwargs: Any) -> Any:
+        context = HookContext.current()
+        if context is not None and context.feature_group_class is not None:
+            name = context.feature_group_class.rsplit(".", 1)[-1]
+            self.declared[name] = dict(context.declared_attributes or {})
+        return func(*args, **kwargs)
+
+
+class TestDataClassification:
+    def test_quickstart_pipeline_hands_declared_levels_to_extenders(self) -> None:
+        """The redactor lowers to confidential, later stages keep it, the source declares nothing."""
+        capture = DeclaredAttributeCapture()
+        mlodaAPI.run_all(
+            features=[
+                Feature(
+                    "docs__pii_redacted__chunked__deduped__embedded",
+                    options=Options(group={"documents": SAMPLE_DOCUMENTS}),
+                )
+            ],
+            compute_frameworks=[PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups(
+                {DictDocumentSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
+            ),
+            function_extender={capture},
+        )
+
+        key = CLASSIFICATION_KEY
+        assert capture.declared == {
+            "DictDocumentSource": {},
+            "RegexPIIRedactor": {key: "confidential"},
+            "FixedSizeChunker": {key: "public"},
+            "ExactHashDeduplicator": {key: "public"},
+            "MockEmbedder": {key: "public"},
+        }

@@ -20,10 +20,11 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
+from rag_integration.feature_groups.classification import PassThroughClassification
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
-class BaseVectorStore(FeatureChainParserMixin, FeatureGroup):
+class BaseVectorStore(PassThroughClassification, FeatureChainParserMixin, FeatureGroup):
     """
     Base class for vector store (indexing) feature groups.
 
