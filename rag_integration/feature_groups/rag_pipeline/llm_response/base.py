@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, ClassVar
 
-from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
+from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -14,7 +14,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Answer the question using the provided context."
 
 
-class BaseLLMResponse(FeatureGroup):
+class BaseLLMResponse(DataCreatorFeatureGroup):
     """
     Base class for LLM response feature groups.
 
@@ -55,8 +55,8 @@ class BaseLLMResponse(FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def input_data(cls) -> DataCreator:
-        return DataCreator({"llm_response", cls.ANSWER_KEY})
+    def feature_names_supported(cls) -> set[str]:
+        return {"llm_response", cls.ANSWER_KEY}
 
     @classmethod
     def match_feature_group_criteria(

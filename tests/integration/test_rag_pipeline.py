@@ -14,7 +14,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from mloda.provider import BaseArtifact, DataCreator, FeatureGroup
+from mloda.provider import BaseArtifact, DataCreatorFeatureGroup, FeatureGroup
 from mloda.steward import Extender, ExtenderHook, HookContext, check_plan_lock, write_plan_lock
 from mloda.user import Domain, Feature, Options, ParallelizationMode, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -49,12 +49,12 @@ SAMPLE_DOCUMENTS = [
 ]
 
 
-class MockDocumentDataCreator(FeatureGroup):
+class MockDocumentDataCreator(DataCreatorFeatureGroup):
     """DataCreator that provides mock documents for testing."""
 
     @classmethod
-    def input_data(cls) -> DataCreator:
-        return DataCreator({"docs"})
+    def feature_names_supported(cls) -> set[str]:
+        return {"docs"}
 
     @classmethod
     def match_feature_group_criteria(cls, feature_name: Any, options: Any, data_access_collection: Any = None) -> bool:

@@ -16,7 +16,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet
+from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureGroup, FeatureSet
 from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -26,7 +26,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
 
 
-class ScopedCorpusSource(FeatureGroup):
+class ScopedCorpusSource(DataCreatorFeatureGroup):
     """Upstream corpus source for the ``corpus_source`` path: keeps only ``allowed_doc_ids``."""
 
     ROOT_FEATURE_NAME = "scoped_corpus"
@@ -38,8 +38,8 @@ class ScopedCorpusSource(FeatureGroup):
         return {PythonDictFramework}
 
     @classmethod
-    def input_data(cls) -> DataCreator:
-        return DataCreator({cls.ROOT_FEATURE_NAME})
+    def feature_names_supported(cls) -> set[str]:
+        return {cls.ROOT_FEATURE_NAME}
 
     @classmethod
     def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:

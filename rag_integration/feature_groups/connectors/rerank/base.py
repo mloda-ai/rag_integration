@@ -29,7 +29,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, ClassVar
 
-from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
+from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -45,7 +45,7 @@ from rag_integration.feature_groups.connectors.mixins import (
 
 
 class BaseRerankConnector(
-    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, FeatureGroup
+    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, DataCreatorFeatureGroup
 ):
     """Root FeatureGroup for rerank-connector backends.
 
@@ -91,8 +91,8 @@ class BaseRerankConnector(
         return {PythonDictFramework}
 
     @classmethod
-    def input_data(cls) -> DataCreator:
-        return DataCreator({cls.ROOT_FEATURE_NAME})
+    def feature_names_supported(cls) -> set[str]:
+        return {cls.ROOT_FEATURE_NAME}
 
     @classmethod
     def match_feature_group_criteria(

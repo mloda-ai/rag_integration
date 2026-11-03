@@ -27,7 +27,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, ClassVar
 
-from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
+from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureSet, property_spec
 from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -55,7 +55,7 @@ class BaseRetrieveConnector(
     TopKMixin,
     DocCollectionMixin,
     RankingValidationMixin,
-    FeatureGroup,
+    DataCreatorFeatureGroup,
 ):
     """FeatureGroup for retrieve-connector backends.
 
@@ -74,7 +74,7 @@ class BaseRetrieveConnector(
     Reuse note for sibling families (rerank, generate, ...): the carry-over is
     the *shape* (the ``RETRIEVE_BACKENDS`` selector dict, the
     ``match_feature_group_criteria`` gating, and the ``_rank`` hoist), not this
-    class. The root/``DataCreator``/corpus handling below is
+    class. The root/``DataCreatorFeatureGroup``/corpus handling below is
     retrieve-specific: rerank consumes candidate passages as input features
     rather than an inline corpus, so a sibling family copies this pattern, it
     does not subclass ``BaseRetrieveConnector``.
@@ -122,8 +122,8 @@ class BaseRetrieveConnector(
         return {PythonDictFramework}
 
     @classmethod
-    def input_data(cls) -> DataCreator:
-        return DataCreator({cls.ROOT_FEATURE_NAME})
+    def feature_names_supported(cls) -> set[str]:
+        return {cls.ROOT_FEATURE_NAME}
 
     @classmethod
     def match_feature_group_criteria(

@@ -66,9 +66,11 @@ class TestDictDocumentSource(DocumentSourceTestBase):
             {"doc_id": "2", "text": "No author"},
         ]
         feature = MagicMock()
+        feature.name = "docs"
         feature.options = Options(context={"documents": documents})
         features = MagicMock()
         features.features = [feature]
         rows = DictDocumentSource.calculate_feature([], features)
-        assert {frozenset(row) for row in rows} == {frozenset({"doc_id", "text", "author"})}
+        assert {frozenset(row) for row in rows} == {frozenset({"doc_id", "text", "author", "docs"})}
         assert rows[1]["author"] is None
+        assert rows[0]["docs"] == "Has author"
