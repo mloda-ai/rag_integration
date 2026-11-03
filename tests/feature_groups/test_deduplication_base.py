@@ -122,6 +122,17 @@ class TestBaseRowDeduplicatorKeepStrategies:
         assert isinstance(result, list)
         assert result == [{"item": "aa"}, {"item": "bb"}]
 
+    def test_empty_input_keeps_schema_and_publishes_zero(self) -> None:
+        """Zero rows return the input, metadata and feature columns, still publishing the duplicates count."""
+        with make_hook_context().activate() as context:
+            result = _LenDeduplicator.calculate_feature({"item": []}, _features("first"))
+        assert context.result_attributes == {"rag.dedup.duplicates_found": 0}
+        assert result == {"item": [], "is_duplicate": [], "duplicate_of": [], "items__deduped": []}
+
+    def test_empty_input_with_empty_feature_set_keeps_input_columns(self) -> None:
+        """Zero rows and no features return the input columns rather than a zero-column result."""
+        assert _LenDeduplicator.calculate_feature({"item": []}, _features_named()) == {"item": []}
+
     def test_repeated_same_feature_is_processed_once(self) -> None:
         """The same feature appearing multiple times (a framework duplicate) collapses by name."""
         data = {"item": ["aa", "aaaa", "bb"]}

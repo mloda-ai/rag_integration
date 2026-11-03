@@ -114,7 +114,7 @@ class TestVectorStorePipeline:
         feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
         providers = get_test_providers() - {MockDocumentDataCreator} | {FileDocumentSource}
 
-        with pytest.raises(ValueError, match="cannot build an index from zero rows"):
+        with pytest.raises(ValueError, match="cannot build an index from zero input rows"):
             mlodaAPI.run_all(
                 features=[Feature(feature_name, options=Options(group={"file_path": str(corpus_file)}))],
                 compute_frameworks=[PythonDictFramework],

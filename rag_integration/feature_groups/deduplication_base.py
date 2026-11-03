@@ -102,7 +102,7 @@ class BaseRowDeduplicator(PassThroughClassification, FeatureChainParserMixin, Fe
 
         features_by_name = {feature.name: feature for feature in features.features}
         if not features_by_name:
-            return rows
+            return rows or empty_result(data, features)
         if len(features_by_name) > 1:
             names = sorted(str(name) for name in features_by_name)
             raise ValueError(

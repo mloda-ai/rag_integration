@@ -152,6 +152,8 @@ class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGr
         # mloda 0.9.0 delivers columnar data; read it row-wise.
         rows = columnar_to_rows(data)
         if not rows:
+            if artifact_cls is not None:
+                HookContext.publish_result_attributes({"rag.embedding.artifact_reused": False})
             return empty_result(data, features, ("embedding_dim", "embedding_model"))
         artifact_reused = False
 
