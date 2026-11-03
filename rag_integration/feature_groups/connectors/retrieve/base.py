@@ -74,7 +74,7 @@ class BaseRetrieveConnector(
     Reuse note for sibling families (rerank, generate, ...): the carry-over is
     the *shape* (the ``RETRIEVE_BACKENDS`` selector dict, the
     ``match_feature_group_criteria`` gating, and the ``_rank`` hoist), not this
-    class. The root/``DataCreatorFeatureGroup``/corpus handling below is
+    class. The root/corpus handling below is
     retrieve-specific: rerank consumes candidate passages as input features
     rather than an inline corpus, so a sibling family copies this pattern, it
     does not subclass ``BaseRetrieveConnector``.
