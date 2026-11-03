@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mloda.provider import DataCreator, FeatureGroup
+from mloda.provider import DataCreatorFeatureGroup, FeatureGroup
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -59,12 +59,12 @@ def get_metrics(raw_result: Any, feature_name: str) -> dict[str, Any]:
 def make_mock_document_data_creator(documents: list[dict[str, str]]) -> type[FeatureGroup]:
     """Create a MockDocumentDataCreator FeatureGroup for the given documents."""
 
-    class _MockDocumentDataCreator(FeatureGroup):
+    class _MockDocumentDataCreator(DataCreatorFeatureGroup):
         """DataCreator that provides mock documents for testing."""
 
         @classmethod
-        def input_data(cls) -> DataCreator:
-            return DataCreator({"docs"})
+        def feature_names_supported(cls) -> set[str]:
+            return {"docs"}
 
         @classmethod
         def match_feature_group_criteria(

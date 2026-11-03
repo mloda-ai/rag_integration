@@ -44,7 +44,7 @@ from rag_integration.feature_groups.rag_pipeline import (
 
 ### 1. Define your documents
 
-Documents are loaded through a `DataCreator`-based FeatureGroup. The simplest option is `DictDocumentSource`, which loads from a Python list:
+Documents are loaded through a root FeatureGroup. The simplest option is `DictDocumentSource`, which loads from a Python list:
 
 ```python
 documents = [

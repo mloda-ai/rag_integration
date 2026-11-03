@@ -1,6 +1,6 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/mloda-ai/rag_integration/blob/main/LICENSE)
 [![mloda](https://img.shields.io/badge/built%20with-mloda-blue.svg)](https://github.com/mloda-ai/mloda)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 
 # rag-integration
 
@@ -26,7 +26,7 @@ docs/                   # Detailed guides
 
 ### 1. Define your documents
 
-Documents are loaded through a `DataCreator`-based FeatureGroup. The simplest option is `DictDocumentSource`, which loads from a Python list:
+Documents are loaded through a root FeatureGroup. The simplest option is `DictDocumentSource`, which loads from a Python list:
 
 ```python
 documents = [

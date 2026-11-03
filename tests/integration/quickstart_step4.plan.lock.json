@@ -7,12 +7,15 @@
       "feature_names": [
         "docs__pii_redacted__chunked"
       ],
+      "implementation": null,
+      "implementation_hash": null,
+      "implementation_specialized_from": [],
       "input_feature_edges": {
         "docs__pii_redacted__chunked": [
           "docs__pii_redacted"
         ]
       },
-      "reader": null,
+      "leaves_connection": null,
       "result_framework": null,
       "specialized_from": []
     },
@@ -23,12 +26,15 @@
       "feature_names": [
         "docs__pii_redacted__chunked__deduped"
       ],
+      "implementation": null,
+      "implementation_hash": null,
+      "implementation_specialized_from": [],
       "input_feature_edges": {
         "docs__pii_redacted__chunked__deduped": [
           "docs__pii_redacted__chunked"
         ]
       },
-      "reader": null,
+      "leaves_connection": null,
       "result_framework": null,
       "specialized_from": []
     },
@@ -39,8 +45,11 @@
       "feature_names": [
         "docs"
       ],
+      "implementation": null,
+      "implementation_hash": null,
+      "implementation_specialized_from": [],
       "input_feature_edges": {},
-      "reader": null,
+      "leaves_connection": null,
       "result_framework": null,
       "specialized_from": []
     },
@@ -51,12 +60,15 @@
       "feature_names": [
         "docs__pii_redacted__chunked__deduped__embedded"
       ],
+      "implementation": null,
+      "implementation_hash": null,
+      "implementation_specialized_from": [],
       "input_feature_edges": {
         "docs__pii_redacted__chunked__deduped__embedded": [
           "docs__pii_redacted__chunked__deduped"
         ]
       },
-      "reader": null,
+      "leaves_connection": null,
       "result_framework": "mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework:PythonDictFramework",
       "specialized_from": []
     },
@@ -67,17 +79,20 @@
       "feature_names": [
         "docs__pii_redacted"
       ],
+      "implementation": null,
+      "implementation_hash": null,
+      "implementation_specialized_from": [],
       "input_feature_edges": {
         "docs__pii_redacted": [
           "docs"
         ]
       },
-      "reader": null,
+      "leaves_connection": null,
       "result_framework": null,
       "specialized_from": []
     }
   ],
-  "format": 5,
+  "format": 8,
   "joins": [],
   "requested_features": [
     "docs__pii_redacted__chunked__deduped__embedded"

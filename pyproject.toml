@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 version = "0.4.4"
-dependencies = ["mloda>=0.16.0"]
+dependencies = ["mloda>=0.19.1"]
 name = "rag-integration"
 description = "RAG integration plugin for mloda"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE.md"]
 authors = [{ name = "mloda", email = "plugin-dev@mloda.ai" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = [
     "mloda",
     "rag",
@@ -34,7 +34,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -59,7 +58,7 @@ dev = [
     "mypy",
     "bandit",
     # Base for FeatureGroupTestBase, used only by tests/integration/test_mloda_imports.py.
-    "mloda-testing>=0.10.0",
+    "mloda-testing>=0.12.0",
 ]
 # FAISS vector indexing
 faiss = ["faiss-cpu>=1.7.0"]
@@ -72,8 +71,7 @@ advanced = [
     # Pinned explicitly since sentence-transformers only requires >=5.0.0,<6.0.0.
     "transformers>=5.10.2",
     "joblib>=1.0.0",
-    # Pillow>=13.0.0 fixes advisories but needs Python 3.11; no patched 12.x for 3.10.
-    "Pillow>=13.0.0; python_version >= '3.11'",
+    "Pillow>=13.0.0",
     "faiss-cpu>=1.7.0",
 ]
 # Evaluation datasets and metrics (no network access at eval time)
@@ -126,7 +124,7 @@ python_files = ["test_*.py"]
 [tool.ruff]
 line-length = 120
 extend-exclude = ["demo.ipynb"]
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 # Explicit so a wider default rule set can't silently change the gate. Lint

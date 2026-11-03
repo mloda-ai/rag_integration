@@ -27,7 +27,7 @@ import sqlite3
 from abc import abstractmethod
 from typing import Any, ClassVar
 
-from mloda.provider import ComputeFramework, DataCreator, FeatureGroup, FeatureSet, property_spec
+from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureSet, property_spec
 from mloda.user import FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -39,7 +39,7 @@ from rag_integration.feature_groups.connectors.mixins import OptionsMixin, Singl
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
-class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup):
+class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, DataCreatorFeatureGroup):
     """Root FeatureGroup for structured (text-to-SQL) connector backends.
 
     A concrete backend declares its selector value in ``STRUCTURED_BACKENDS`` and
@@ -72,8 +72,8 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, FeatureGroup
         return {PythonDictFramework}
 
     @classmethod
-    def input_data(cls) -> DataCreator:
-        return DataCreator({cls.ROOT_FEATURE_NAME})
+    def feature_names_supported(cls) -> set[str]:
+        return {cls.ROOT_FEATURE_NAME}
 
     @classmethod
     def match_feature_group_criteria(

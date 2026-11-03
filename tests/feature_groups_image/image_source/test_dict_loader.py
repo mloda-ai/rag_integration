@@ -1,5 +1,7 @@
 """Tests for DictImageSource."""
 
+from unittest.mock import MagicMock
+
 import pytest
 from mloda.user import Options
 
@@ -56,3 +58,14 @@ class TestDictImageSource(ImageSourceTestBase):
         result = DictImageSource._load_images(Options(context={"images": images}))
         assert result[0]["camera"] == "Canon"
         assert result[0]["tags"] == ["nature"]
+
+    def test_calculate_feature_emits_feature_named_column(self) -> None:
+        """mloda requires a column named after the requested feature; it carries the image bytes."""
+        images = [{"image_id": "img_001", "image_data": b"\x89PNG_fake", "format": "png"}]
+        feature = MagicMock()
+        feature.name = "image_docs"
+        feature.options = Options(context={"images": images})
+        features = MagicMock()
+        features.features = [feature]
+        rows = DictImageSource.calculate_feature([], features)
+        assert rows[0]["image_docs"] == rows[0]["image_data"] == b"\x89PNG_fake"

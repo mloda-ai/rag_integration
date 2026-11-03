@@ -68,5 +68,7 @@ class BaseImageDatasetSource(FeatureGroup):
     def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
         """Load and return dataset rows with a uniform key schema."""
         for feature in features.features:
-            return homogenize_rows(cls._load_dataset(feature.options))
+            rows = homogenize_rows(cls._load_dataset(feature.options))
+            # mloda requires a column named after the requested feature.
+            return [{**row, str(feature.name): row.get("image_data")} for row in rows]
         return []
