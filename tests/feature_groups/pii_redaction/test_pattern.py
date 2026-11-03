@@ -67,6 +67,7 @@ class TestPatternPIIRedactor(TextPIIRedactionTestBase):
         )
         text = "EMP-123456 on PRJ-ABC"
         rows = PatternPIIRedactor.calculate_feature({"a": [text], "b": [text]}, features)
+        assert isinstance(rows, list)
 
         assert rows[0]["a__pii_redacted"] == "[EMPLOYEE_ID] on PRJ-ABC"
         assert rows[0]["b__pii_redacted"] == "EMP-123456 on [PROJECT]"

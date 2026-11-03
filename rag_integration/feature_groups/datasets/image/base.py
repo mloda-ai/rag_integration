@@ -12,6 +12,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import homogenize_rows
 
+from rag_integration.feature_groups.empty_result import empty_result
+
 
 class BaseImageDatasetSource(FeatureGroup):
     """
@@ -72,8 +74,7 @@ class BaseImageDatasetSource(FeatureGroup):
         for feature in features.features:
             rows = homogenize_rows(cls._load_dataset(feature.options))
             if not rows:
-                # Zero rows still need a schema; mloda rejects a zero-column result.
-                return {str(feature.name): [], **{column: [] for column in cls.EMPTY_SCHEMA_COLUMNS}}
+                return empty_result(None, features, cls.EMPTY_SCHEMA_COLUMNS)
             # mloda requires a column named after the requested feature.
             return [{**row, str(feature.name): row.get("image_data")} for row in rows]
         return []

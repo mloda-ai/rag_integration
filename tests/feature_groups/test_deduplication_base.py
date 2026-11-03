@@ -83,18 +83,21 @@ class TestBaseRowDeduplicatorKeepStrategies:
         """Strategy "longest" keeps the longest string from each duplicate group."""
         data = {"item": ["aa", "aaaa", "bb", "b"]}
         result = _LenDeduplicator.calculate_feature(data, _features("longest"))
+        assert isinstance(result, list)
         assert [row["items__deduped"] for row in result] == ["aaaa", "bb"]
 
     def test_keep_largest_uses_length_for_bytes_and_custom_strategy_value(self) -> None:
         """A subclass with KEEP_LARGEST_STRATEGY="largest" keeps the largest bytes per group."""
         data = {"item": [b"aa", b"aaaa", b"bb"]}
         result = _LargestLenDeduplicator.calculate_feature(data, _features("largest"))
+        assert isinstance(result, list)
         assert [row["items__deduped"] for row in result] == [b"aaaa", b"bb"]
 
     def test_keep_first_keeps_only_non_duplicate_rows(self) -> None:
         """Strategy "first" keeps the first occurrence of each group and drops the duplicates."""
         data = {"item": ["aa", "aaaa", "bb", "b"]}
         result = _LenDeduplicator.calculate_feature(data, _features("first"))
+        assert isinstance(result, list)
         assert [row["items__deduped"] for row in result] == ["aa", "bb"]
 
     def test_all_unique_keeps_all_rows_with_duplicate_metadata(self) -> None:
@@ -102,6 +105,7 @@ class TestBaseRowDeduplicatorKeepStrategies:
         data = {"item": ["aa", "aaaa", "bb", "b"]}
         with make_hook_context().activate() as context:
             result = _LenDeduplicator.calculate_feature(data, _features("all_unique"))
+            assert isinstance(result, list)
         assert context.result_attributes == {"rag.dedup.duplicates_found": 2}
         assert [row["items__deduped"] for row in result] == ["aa", "aaaa", "bb", "b"]
         assert [(row["is_duplicate"], row["duplicate_of"]) for row in result] == [
@@ -115,12 +119,14 @@ class TestBaseRowDeduplicatorKeepStrategies:
         """An empty FeatureSet is a no-op: the pivoted rows come back unfiltered."""
         data = {"item": ["aa", "bb"]}
         result = _LenDeduplicator.calculate_feature(data, _features_named())
+        assert isinstance(result, list)
         assert result == [{"item": "aa"}, {"item": "bb"}]
 
     def test_repeated_same_feature_is_processed_once(self) -> None:
         """The same feature appearing multiple times (a framework duplicate) collapses by name."""
         data = {"item": ["aa", "aaaa", "bb"]}
         result = _LenDeduplicator.calculate_feature(data, _features_named("items__deduped", "items__deduped"))
+        assert isinstance(result, list)
         # "first" strategy: one row survives per duplicate group, under the single feature name.
         assert [row["items__deduped"] for row in result] == ["aa", "bb"]
 

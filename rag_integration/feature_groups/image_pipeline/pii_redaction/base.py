@@ -20,6 +20,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.classification import PassThroughClassification
+from rag_integration.feature_groups.empty_result import empty_result
 
 
 # Not masking: without pii_regions the image passes through unchanged, so it cannot claim a lower level.
@@ -173,10 +174,12 @@ class BaseImagePIIRedactor(PassThroughClassification, FeatureChainParserMixin, F
         return cls._redact_region(image_data, image_format, regions)
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Perform PII redaction on images, processing row by row for memory efficiency."""
         # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         rows = columnar_to_rows(data)
+        if not rows:
+            return empty_result(data, features, ("pii_redacted", "pii_regions_count"))
         for feature in features.features:
             cls._get_source_feature_name(feature)
             regions = cls._get_pii_regions(feature)

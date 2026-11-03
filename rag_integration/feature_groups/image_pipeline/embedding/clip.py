@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from mloda.provider import DefaultOptionKeys, FeatureSet, property_spec
 
+from rag_integration.feature_groups.empty_result import empty_result
+
 if TYPE_CHECKING:
     from mloda.user import Feature
 
@@ -212,7 +214,7 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         return embedding  # type: ignore[no-any-return]
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """
         Embed each row using CLIP's vision or text encoder based on row content.
 
@@ -224,6 +226,8 @@ class CLIPImageEmbedder(BaseImageEmbedder):
         """
         # mloda 0.9.0 passes columnar data; pivot to rows for row-wise reading.
         rows = columnar_to_rows(data)
+        if not rows:
+            return empty_result(data, features, ("embedding_dim", "embedding_model"))
         for feature in features.features:
             embedding_dim = cls._get_embedding_dim(feature)
             model_name = cls._get_model_name(feature)

@@ -8,6 +8,7 @@ with multiple features per call for efficiency.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -19,6 +20,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 
 from rag_integration.feature_groups.image_pipeline import (
     ExactHashImageDeduplicator,
+    FileImageSource,
     HashImageEmbedder,
     MockImageEmbedder,
     NormalizePreprocessor,
@@ -179,6 +181,19 @@ class TestFullImagePipelineIntegration:
             # Check unit normalization
             magnitude = math.sqrt(sum(x * x for x in embedding))
             assert abs(magnitude - 1.0) < 0.001, f"Embedding should be unit length, got {magnitude}"
+
+    def test_empty_image_dir_flows_through_every_stage(self, tmp_path: Path) -> None:
+        """An empty image directory yields zero rows at every stage instead of EmptyResultError."""
+        feature_name = "image_docs__pii_redacted__preprocessed__deduped__embedded"
+        providers = get_test_providers() - {MockImageDataCreator} | {FileImageSource}
+
+        raw_result = mlodaAPI.run_all(
+            features=[Feature(feature_name, options=Options(group={"image_dir": str(tmp_path)}))],
+            compute_frameworks=[PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups(providers),
+        )
+
+        assert raw_result == [{feature_name: []}]
 
 
 # =============================================================================
