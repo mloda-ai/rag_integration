@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
-from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
+from rag_integration.feature_groups.classification import RedactedClassification
+from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor, full_coverage_mapping
 
 if TYPE_CHECKING:
     from mloda.user import Feature
@@ -191,3 +192,9 @@ class PresidioPIIRedactor(BasePIIRedactor):
             result.append(redacted)
 
         return result
+
+
+class FullCoveragePresidioPIIRedactor(RedactedClassification, PresidioPIIRedactor):
+    """``PresidioPIIRedactor`` for full ``pii_types`` coverage (absent or ``ALL``); masks, so it lowers the level."""
+
+    PROPERTY_MAPPING: ClassVar = full_coverage_mapping(PresidioPIIRedactor.PROPERTY_MAPPING)

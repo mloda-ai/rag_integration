@@ -22,10 +22,10 @@ class PassThroughClassification:
 
 
 class RedactedClassification:
-    """Masking redactor: outputs get exactly ``REDACTED_CLASSIFICATION``, whatever level their inputs carried.
+    """Masking redactor: caps outputs at ``REDACTED_CLASSIFICATION``, the lower of it and their inputs' level.
 
-    ``confidential`` rather than lower, since redaction is best effort and removes PII only. Subclass to change
-    the level, or set ``masking = False`` to stop lowering it.
+    ``confidential`` rather than lower, since redaction is best effort and removes PII only. Use only on a group
+    that matches full PII coverage, since a narrowed config leaves residual PII.
     """
 
     masking: ClassVar[bool] = True

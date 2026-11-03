@@ -7,7 +7,8 @@ from typing import ClassVar
 
 from mloda.provider import DefaultOptionKeys, property_spec
 
-from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
+from rag_integration.feature_groups.classification import RedactedClassification
+from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor, full_coverage_mapping
 
 
 class RegexPIIRedactor(BasePIIRedactor):
@@ -92,3 +93,9 @@ class RegexPIIRedactor(BasePIIRedactor):
             result.append(redacted)
 
         return result
+
+
+class FullCoverageRegexPIIRedactor(RedactedClassification, RegexPIIRedactor):
+    """``RegexPIIRedactor`` for full ``pii_types`` coverage (absent or ``ALL``); masks, so it lowers the level."""
+
+    PROPERTY_MAPPING: ClassVar = full_coverage_mapping(RegexPIIRedactor.PROPERTY_MAPPING)

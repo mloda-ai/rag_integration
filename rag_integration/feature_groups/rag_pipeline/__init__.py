@@ -31,6 +31,10 @@ from rag_integration.feature_groups.rag_pipeline.llm_response import (
 )
 from rag_integration.feature_groups.rag_pipeline.pii_redaction import (
     BasePIIRedactor,
+    FullCoveragePatternPIIRedactor,
+    FullCoveragePresidioPIIRedactor,
+    FullCoverageRegexPIIRedactor,
+    FullCoverageSimplePIIRedactor,
     PatternPIIRedactor,
     PresidioPIIRedactor,
     RegexPIIRedactor,
@@ -66,6 +70,10 @@ __all__ = [
     "FaissRetriever",
     "FileDocumentSource",
     "FixedSizeChunker",
+    "FullCoveragePatternPIIRedactor",
+    "FullCoveragePresidioPIIRedactor",
+    "FullCoverageRegexPIIRedactor",
+    "FullCoverageSimplePIIRedactor",
     "HashEmbedder",
     "MockEmbedder",
     "NGramDeduplicator",
