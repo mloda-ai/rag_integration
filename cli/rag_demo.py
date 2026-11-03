@@ -21,6 +21,10 @@ from rag_integration.feature_groups.rag_pipeline import (
     DictDocumentSource,
     ExactHashDeduplicator,
     FixedSizeChunker,
+    FullCoveragePatternPIIRedactor,
+    FullCoveragePresidioPIIRedactor,
+    FullCoverageRegexPIIRedactor,
+    FullCoverageSimplePIIRedactor,
     HashEmbedder,
     MockEmbedder,
     NGramDeduplicator,
@@ -101,6 +105,14 @@ PROVIDER_CLASSES: dict[str, dict[str, type[FeatureGroup]]] = {
     },
 }
 
+# Picked over the plain redactor only for full pii_types coverage, where it lowers the classification.
+FULL_COVERAGE_PII = {
+    "regex": FullCoverageRegexPIIRedactor,
+    "simple": FullCoverageSimplePIIRedactor,
+    "pattern": FullCoveragePatternPIIRedactor,
+    "presidio": FullCoveragePresidioPIIRedactor,
+}
+
 
 def get_providers(args: argparse.Namespace) -> set[type[FeatureGroup]]:
     """Get the set of FeatureGroup providers needed for the pipeline based on CLI args."""
@@ -112,6 +124,7 @@ def get_providers(args: argparse.Namespace) -> set[type[FeatureGroup]]:
     }
     if args.pii:
         providers.add(PROVIDER_CLASSES["pii"][args.pii])
+        providers.add(FULL_COVERAGE_PII[args.pii])
     return providers
 
 

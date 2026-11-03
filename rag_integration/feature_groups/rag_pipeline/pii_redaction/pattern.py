@@ -10,7 +10,8 @@ from typing import Any, ClassVar
 from mloda.provider import DefaultOptionKeys, property_spec
 from mloda.user import Feature
 
-from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor
+from rag_integration.feature_groups.classification import RedactedClassification
+from rag_integration.feature_groups.rag_pipeline.pii_redaction.base import BasePIIRedactor, full_coverage_mapping
 
 
 class PatternPIIRedactor(BasePIIRedactor):
@@ -135,3 +136,9 @@ class PatternPIIRedactor(BasePIIRedactor):
             result.append(redacted)
 
         return result
+
+
+class FullCoveragePatternPIIRedactor(RedactedClassification, PatternPIIRedactor):
+    """``PatternPIIRedactor`` for full ``pii_types`` coverage (absent or ``ALL``); masks, so it lowers the level."""
+
+    PROPERTY_MAPPING: ClassVar = full_coverage_mapping(PatternPIIRedactor.PROPERTY_MAPPING)

@@ -27,6 +27,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     ExactHashDeduplicator,
     FileDocumentSource,
     FixedSizeChunker,
+    FullCoverageRegexPIIRedactor,
     HashEmbedder,
     MockEmbedder,
     NormalizedDeduplicator,
@@ -518,19 +519,35 @@ class DeclaredAttributeCapture(Extender):
 
 
 class TestDataClassification:
-    def test_quickstart_pipeline_hands_declared_levels_to_extenders(self) -> None:
-        """The redactor lowers to confidential, later stages keep it, the source declares nothing."""
+    @pytest.mark.parametrize(
+        ("group", "redactor", "level"),
+        [
+            ({}, "FullCoverageRegexPIIRedactor", "confidential"),
+            ({"pii_types": ["EMAIL"]}, "RegexPIIRedactor", "public"),
+        ],
+    )
+    def test_quickstart_pipeline_hands_declared_levels_to_extenders(
+        self, group: dict[str, Any], redactor: str, level: str
+    ) -> None:
+        """Only a full-coverage redactor lowers to confidential; later stages keep it, the source declares nothing."""
         capture = DeclaredAttributeCapture()
         mlodaAPI.run_all(
             features=[
                 Feature(
                     "docs__pii_redacted__chunked__deduped__embedded",
-                    options=Options(group={"documents": SAMPLE_DOCUMENTS}),
+                    options=Options(group={"documents": SAMPLE_DOCUMENTS, **group}),
                 )
             ],
             compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups(
-                {DictDocumentSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
+                {
+                    DictDocumentSource,
+                    RegexPIIRedactor,
+                    FullCoverageRegexPIIRedactor,
+                    FixedSizeChunker,
+                    ExactHashDeduplicator,
+                    MockEmbedder,
+                }
             ),
             function_extender={capture},
         )
@@ -538,7 +555,7 @@ class TestDataClassification:
         key = CLASSIFICATION_KEY
         assert capture.declared == {
             "DictDocumentSource": {},
-            "RegexPIIRedactor": {key: "confidential"},
+            redactor: {key: level},
             "FixedSizeChunker": {key: "public"},
             "ExactHashDeduplicator": {key: "public"},
             "MockEmbedder": {key: "public"},

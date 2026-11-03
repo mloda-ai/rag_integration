@@ -58,6 +58,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from rag_integration.feature_groups.rag_pipeline import (
     DictDocumentSource,
     RegexPIIRedactor,
+    FullCoverageRegexPIIRedactor,  # lowers the classification only for full pii_types coverage
     FixedSizeChunker,
     ExactHashDeduplicator,
     MockEmbedder,
@@ -66,6 +67,7 @@ from rag_integration.feature_groups.rag_pipeline import (
 providers = {
     DictDocumentSource,
     RegexPIIRedactor,
+    FullCoverageRegexPIIRedactor,
     FixedSizeChunker,
     ExactHashDeduplicator,
     MockEmbedder,

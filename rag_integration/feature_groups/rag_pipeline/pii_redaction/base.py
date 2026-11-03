@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import dataclasses
 from abc import abstractmethod
+from collections.abc import Mapping
 from typing import Any, ClassVar
 
 from mloda.provider import (
@@ -19,13 +21,27 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
-from rag_integration.feature_groups.classification import RedactedClassification
+from rag_integration.feature_groups.classification import PassThroughClassification
 from rag_integration.feature_groups.empty_result import empty_result
 
 
-class BasePIIRedactor(RedactedClassification, FeatureChainParserMixin, FeatureGroup):
+def _covers_all_pii(value: Any) -> bool:
+    """True when ``pii_types`` includes ``ALL`` as ``_get_pii_types`` reads it: bare or in a list."""
+    return value == "ALL" or (isinstance(value, list) and "ALL" in value)
+
+
+def full_coverage_mapping(mapping: Mapping[Any, Any]) -> dict[Any, Any]:
+    """Copy of a redactor's PROPERTY_MAPPING that matches only full ``pii_types`` coverage (absent or ``ALL``)."""
+    pii_types = BasePIIRedactor.PII_TYPES
+    return {**mapping, pii_types: dataclasses.replace(mapping[pii_types], match_guard=_covers_all_pii)}
+
+
+class BasePIIRedactor(PassThroughClassification, FeatureChainParserMixin, FeatureGroup):
     """
     Base class for PII redaction feature groups.
+
+    Declares ``public`` without masking, so outputs keep their inputs' level: a narrowed ``pii_types`` leaves
+    residual PII. Each redactor's ``FullCoverage*`` subclass matches only full coverage and lowers the level.
 
     Redacts personally identifiable information from text documents.
 
