@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet
 from mloda.user import FeatureName, Options
@@ -29,6 +29,8 @@ class BaseDocumentSource(FeatureGroup):
     Usage:
         features = ["docs"]  # Returns raw documents
     """
+
+    EMPTY_SCHEMA_COLUMNS: ClassVar[tuple[str, ...]] = ("doc_id", "text")
 
     @classmethod
     def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
@@ -63,10 +65,13 @@ class BaseDocumentSource(FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Load and return documents with a uniform key schema."""
         for feature in features.features:
             rows = homogenize_rows(cls._load_documents(feature.options))
+            if not rows:
+                # Zero rows still need a schema; mloda rejects a zero-column result.
+                return {str(feature.name): [], **{column: [] for column in cls.EMPTY_SCHEMA_COLUMNS}}
             # mloda requires a column named after the requested feature.
             return [{**row, str(feature.name): row.get("text")} for row in rows]
         return []

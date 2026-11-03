@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 from mloda.user import Options
@@ -91,3 +92,14 @@ class TestFlickr30kDatasetSource:
                 assert q["caption"] in ["A red square.", "A tiny image."]
         finally:
             tmp.cleanup()
+
+    def test_empty_dataset_returns_schema(self) -> None:
+        """Zero loaded rows yield a schema, not a zero-column result."""
+        feature = MagicMock()
+        feature.name = "eval_images"
+        feature.options = Options()
+        features = MagicMock()
+        features.features = [feature]
+        with patch.object(Flickr30kDatasetSource, "_load_dataset", return_value=[]):
+            result = Flickr30kDatasetSource.calculate_feature([], features)
+        assert result == {"eval_images": [], "image_id": [], "image_data": [], "format": [], "row_type": []}
