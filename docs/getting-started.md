@@ -72,7 +72,7 @@ docs__pii_redacted__chunked__deduped__embedded  # vector embeddings
 providers = {
     DictDocumentSource,
     RegexPIIRedactor,
-    FullCoverageRegexPIIRedactor,  # lowers the classification only for full pii_types coverage
+    FullCoverageRegexPIIRedactor,
     FixedSizeChunker,
     ExactHashDeduplicator,
     MockEmbedder,

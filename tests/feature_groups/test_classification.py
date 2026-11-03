@@ -24,7 +24,10 @@ from rag_integration.feature_groups.rag_pipeline.pii_redaction import (
     FullCoveragePresidioPIIRedactor,
     FullCoverageRegexPIIRedactor,
     FullCoverageSimplePIIRedactor,
+    PatternPIIRedactor,
+    PresidioPIIRedactor,
     RegexPIIRedactor,
+    SimplePIIRedactor,
 )
 from rag_integration.feature_groups.rag_pipeline.vector_store.base import BaseVectorStore
 from tests.feature_groups.test_property_mapping_defaults import _all_feature_groups
@@ -70,26 +73,37 @@ def test_every_feature_group_declares_a_valid_level_or_none() -> None:
             assert level is None, group
 
 
+PII_REDACTOR_PAIRS = [
+    ("regex", RegexPIIRedactor, FullCoverageRegexPIIRedactor),
+    ("simple", SimplePIIRedactor, FullCoverageSimplePIIRedactor),
+    ("pattern", PatternPIIRedactor, FullCoveragePatternPIIRedactor),
+    ("presidio", PresidioPIIRedactor, FullCoveragePresidioPIIRedactor),
+]
+
+
+@pytest.mark.parametrize(("method", "plain", "full"), PII_REDACTOR_PAIRS)
 @pytest.mark.parametrize(
-    ("pii_types", "expected"),
+    ("pii_types", "masks"),
     [
-        (None, FullCoverageRegexPIIRedactor),
-        (["ALL"], FullCoverageRegexPIIRedactor),
-        ("ALL", FullCoverageRegexPIIRedactor),
-        (["ALL", "EMAIL"], FullCoverageRegexPIIRedactor),
-        (["EMAIL"], RegexPIIRedactor),
-        (["EMAIL", "PHONE"], RegexPIIRedactor),
+        (None, True),
+        (["ALL"], True),
+        ("ALL", True),
+        (["ALL", "EMAIL"], True),
+        (["EMAIL"], False),
+        (["EMAIL", "PHONE"], False),
     ],
 )
-def test_only_full_pii_coverage_resolves_to_the_masking_redactor(pii_types: object, expected: type) -> None:
+def test_only_full_pii_coverage_resolves_to_the_masking_redactor(
+    pii_types: object, masks: bool, method: str, plain: type[FeatureGroup], full: type[FeatureGroup]
+) -> None:
     """A narrowed ``pii_types`` leaves residual PII, so it must not reach the group that lowers the level."""
-    context: dict[str, object] = {"redaction_method": "regex", "in_features": "docs"}
+    context: dict[str, object] = {"redaction_method": method, "in_features": "docs"}
     if pii_types is not None:
         context["pii_types"] = pii_types
     resolved = resolve_feature(
         "docs__pii_redacted",
         options=Options(context=context),
-        plugin_collector=PluginCollector.enabled_feature_groups({RegexPIIRedactor, FullCoverageRegexPIIRedactor}),
+        plugin_collector=PluginCollector.enabled_feature_groups({plain, full}),
     )
     assert resolved.error is None, resolved.error
-    assert resolved.feature_group is expected
+    assert resolved.feature_group is (full if masks else plain)

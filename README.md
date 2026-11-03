@@ -67,7 +67,7 @@ from rag_integration.feature_groups.rag_pipeline import (
 providers = {
     DictDocumentSource,
     RegexPIIRedactor,
-    FullCoverageRegexPIIRedactor,  # lowers the classification only for full pii_types coverage
+    FullCoverageRegexPIIRedactor,
     FixedSizeChunker,
     ExactHashDeduplicator,
     MockEmbedder,

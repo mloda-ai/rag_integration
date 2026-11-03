@@ -26,8 +26,8 @@ from rag_integration.feature_groups.empty_result import empty_result
 
 
 def _covers_all_pii(value: Any) -> bool:
-    """True when ``pii_types`` includes ``ALL``, as ``_get_pii_types`` reads it (bare or in a container)."""
-    return value == "ALL" or (isinstance(value, (list, tuple, set, frozenset)) and "ALL" in value)
+    """True when ``pii_types`` includes ``ALL`` as ``_get_pii_types`` reads it: bare or in a list."""
+    return value == "ALL" or (isinstance(value, list) and "ALL" in value)
 
 
 def full_coverage_mapping(mapping: Mapping[Any, Any]) -> dict[Any, Any]:
