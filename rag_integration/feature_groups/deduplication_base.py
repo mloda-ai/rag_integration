@@ -24,6 +24,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.classification import PassThroughClassification
+from rag_integration.feature_groups.empty_result import empty_result
 
 
 class BaseRowDeduplicator(PassThroughClassification, FeatureChainParserMixin, FeatureGroup):
@@ -84,7 +85,7 @@ class BaseRowDeduplicator(PassThroughClassification, FeatureChainParserMixin, Fe
         return len(item)
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Deduplicate rows: attach duplicate metadata and filter by keep strategy.
 
         Exactly one distinct feature is processed per call. Unlike column-adding feature
@@ -101,7 +102,7 @@ class BaseRowDeduplicator(PassThroughClassification, FeatureChainParserMixin, Fe
 
         features_by_name = {feature.name: feature for feature in features.features}
         if not features_by_name:
-            return rows
+            return rows or empty_result(data, features)
         if len(features_by_name) > 1:
             names = sorted(str(name) for name in features_by_name)
             raise ValueError(
@@ -138,6 +139,8 @@ class BaseRowDeduplicator(PassThroughClassification, FeatureChainParserMixin, Fe
         if keep_strategy == cls.KEEP_LARGEST_STRATEGY:
             result = cls._keep_largest_per_group(result, items)
 
+        if not result:
+            return empty_result(data, features, ("is_duplicate", "duplicate_of"))
         return result
 
     @classmethod

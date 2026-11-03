@@ -20,6 +20,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.classification import RedactedClassification
+from rag_integration.feature_groups.empty_result import empty_result
 
 
 class BasePIIRedactor(RedactedClassification, FeatureChainParserMixin, FeatureGroup):
@@ -196,10 +197,12 @@ class BasePIIRedactor(RedactedClassification, FeatureChainParserMixin, FeatureGr
         )
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Perform PII redaction on the source feature."""
         # mloda 0.9.0 delivers columnar data; read it row-wise.
         rows = columnar_to_rows(data)
+        if not rows:
+            return empty_result(data, features)
 
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)

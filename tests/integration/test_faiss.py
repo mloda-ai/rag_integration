@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+import pytest
 from mloda.provider import DataCreatorFeatureGroup, FeatureGroup
 from mloda.user import Domain, Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
@@ -25,6 +26,7 @@ from rag_integration.feature_groups.rag_pipeline import (
     ExactHashDeduplicator,
     FaissFlatIndexer,
     FaissRetriever,
+    FileDocumentSource,
     FixedSizeChunker,
     MockEmbedder,
     RegexPIIRedactor,
@@ -104,6 +106,20 @@ class TestVectorStorePipeline:
         for row in rows:
             feature_value = row.get(feature_name)
             assert isinstance(feature_value, int), f"Feature value should be int (vector_id), got {type(feature_value)}"
+
+    def test_empty_corpus_through_indexed(self, tmp_path: Path) -> None:
+        """An empty corpus reaches the indexer as zero rows, which refuses it with a clear error."""
+        corpus_file = tmp_path / "docs.json"
+        corpus_file.write_text("[]")
+        feature_name = "docs__pii_redacted__chunked__deduped__embedded__indexed"
+        providers = get_test_providers() - {MockDocumentDataCreator} | {FileDocumentSource}
+
+        with pytest.raises(ValueError, match="cannot build an index from zero input rows"):
+            mlodaAPI.run_all(
+                features=[Feature(feature_name, options=Options(group={"file_path": str(corpus_file)}))],
+                compute_frameworks=[PythonDictFramework],
+                plugin_collector=PluginCollector.enabled_feature_groups(providers),
+            )
 
     def test_indexed_with_artifact_persistence(self) -> None:
         """FAISS index should be saved to disk via artifact persistence."""

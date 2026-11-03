@@ -111,6 +111,9 @@ class BaseVectorStore(PassThroughClassification, FeatureChainParserMixin, Featur
 
         # mloda 0.9.0 delivers columnar data; read it row-wise.
         rows = columnar_to_rows(data)
+        if not rows:
+            # The index artifact must be saved, and FAISS needs at least one vector to fix its dimension.
+            raise ValueError(f"{cls.__name__} cannot build an index from zero input rows.")
 
         for feature in features.features:
             source_feature = cls._get_source_feature_name(feature)

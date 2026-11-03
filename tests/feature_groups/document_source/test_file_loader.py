@@ -1,9 +1,13 @@
 """Tests for FileDocumentSource."""
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
-from mloda.user import Options
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
 
 from rag_integration.feature_groups.rag_pipeline.document_source import FileDocumentSource
 from rag_integration.feature_groups.rag_pipeline.document_source.base import BaseDocumentSource
@@ -65,3 +69,21 @@ class TestFileDocumentSource(DocumentSourceTestBase):
         docs = FileDocumentSource._load_documents(Options(context={"file_path": str(json_file)}))
         assert docs[0]["author"] == "Alice"
         assert docs[0]["category"] == "test"
+
+    def test_empty_file_returns_schema(self, tmp_path: Path) -> None:
+        """An empty corpus yields zero rows with a schema, not an EmptyResultError."""
+        json_file = tmp_path / "docs.json"
+        json_file.write_text("[]")
+        feature = MagicMock()
+        feature.name = "docs"
+        feature.options = Options(context={"file_path": str(json_file)})
+        features = MagicMock()
+        features.features = [feature]
+        assert FileDocumentSource.calculate_feature([], features) == {"docs": [], "doc_id": [], "text": []}
+
+        result = mlodaAPI.run_all(
+            features=[Feature("docs", options=Options(context={"file_path": str(json_file)}))],
+            compute_frameworks=[PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups({FileDocumentSource}),
+        )
+        assert result == [{"docs": []}]

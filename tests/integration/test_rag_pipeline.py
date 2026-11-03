@@ -25,6 +25,7 @@ from rag_integration.feature_groups.classification import CLASSIFICATION_KEY
 from rag_integration.feature_groups.rag_pipeline import (
     DictDocumentSource,
     ExactHashDeduplicator,
+    FileDocumentSource,
     FixedSizeChunker,
     HashEmbedder,
     MockEmbedder,
@@ -159,6 +160,22 @@ class TestFullPipelineIntegration:
             # Check unit normalization
             magnitude = math.sqrt(sum(x * x for x in embedding))
             assert abs(magnitude - 1.0) < 0.001, f"Embedding should be unit length, got {magnitude}"
+
+    def test_empty_corpus_flows_through_every_stage(self, tmp_path: Path) -> None:
+        """An empty corpus yields zero rows at every stage instead of EmptyResultError."""
+        corpus_file = tmp_path / "docs.json"
+        corpus_file.write_text("[]")
+        feature = "docs__pii_redacted__chunked__deduped__embedded"
+
+        raw_result = mlodaAPI.run_all(
+            features=[Feature(feature, options=Options(group={"file_path": str(corpus_file)}))],
+            compute_frameworks=[PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups(
+                {FileDocumentSource, RegexPIIRedactor, FixedSizeChunker, ExactHashDeduplicator, MockEmbedder}
+            ),
+        )
+
+        assert raw_result == [{feature: []}]
 
 
 # =============================================================================

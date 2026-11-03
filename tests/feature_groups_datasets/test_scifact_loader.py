@@ -78,3 +78,14 @@ class TestScifactDatasetSource:
         q0 = next(r for r in query_rows if r["doc_id"] == "0")
         assert "4983" in q0["relevant_doc_ids"]
         assert q0["relevance_scores"]["4983"] == 1
+
+    def test_empty_dataset_returns_schema(self) -> None:
+        """Zero loaded rows yield a schema, not a zero-column result."""
+        feature = MagicMock()
+        feature.name = "eval_docs"
+        feature.options = _make_options()
+        features = MagicMock()
+        features.features = [feature]
+        with patch.object(ScifactDatasetSource, "_load_dataset", return_value=[]):
+            result = ScifactDatasetSource.calculate_feature([], features)
+        assert result == {"eval_docs": [], "doc_id": [], "text": [], "row_type": []}

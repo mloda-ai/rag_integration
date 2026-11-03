@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, FeatureGroup, FeatureSet
 from mloda.user import FeatureName, Options
@@ -11,6 +11,8 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
     PythonDictFramework,
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import homogenize_rows
+
+from rag_integration.feature_groups.empty_result import empty_result
 
 
 class BaseImageDatasetSource(FeatureGroup):
@@ -34,6 +36,8 @@ class BaseImageDatasetSource(FeatureGroup):
     Usage:
         features = ["eval_images"]
     """
+
+    EMPTY_SCHEMA_COLUMNS: ClassVar[tuple[str, ...]] = ("image_id", "image_data", "format", "row_type")
 
     @classmethod
     def compute_framework_rule(cls) -> set[type[ComputeFramework]] | None:
@@ -65,10 +69,12 @@ class BaseImageDatasetSource(FeatureGroup):
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Load and return dataset rows with a uniform key schema."""
         for feature in features.features:
             rows = homogenize_rows(cls._load_dataset(feature.options))
+            if not rows:
+                return empty_result(None, features, cls.EMPTY_SCHEMA_COLUMNS)
             # mloda requires a column named after the requested feature.
             return [{**row, str(feature.name): row.get("image_data")} for row in rows]
         return []

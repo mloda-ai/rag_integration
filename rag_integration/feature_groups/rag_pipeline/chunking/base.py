@@ -20,6 +20,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.classification import PassThroughClassification
+from rag_integration.feature_groups.empty_result import empty_result
 
 
 class BaseChunker(PassThroughClassification, FeatureChainParserMixin, FeatureGroup):
@@ -145,7 +146,7 @@ class BaseChunker(PassThroughClassification, FeatureChainParserMixin, FeatureGro
         return cls._chunk_text(text, cls._get_chunk_size(feature), cls._get_chunk_overlap(feature))
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Perform chunking on the source feature."""
         result = []
 
@@ -178,4 +179,6 @@ class BaseChunker(PassThroughClassification, FeatureChainParserMixin, FeatureGro
                         new_row["chunk_id"] = f"{row['doc_id']}_chunk_{chunk_idx}"
                     result.append(new_row)
 
+        if not result:
+            return empty_result(data, features, ("chunk_index", "chunk_count", "chunk_id"))
         return result

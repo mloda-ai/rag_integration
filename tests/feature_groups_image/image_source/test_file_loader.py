@@ -2,9 +2,14 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
-from mloda.user import Options
+from mloda.user import Feature, Options, PluginCollector, mlodaAPI
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
 
 from rag_integration.feature_groups.image_pipeline.image_source import FileImageSource
 from rag_integration.feature_groups.image_pipeline.image_source.base import BaseImageSource
@@ -52,3 +57,20 @@ class TestFileImageSource(ImageSourceTestBase):
         """Should raise ValueError for nonexistent directory."""
         with pytest.raises(ValueError, match="Directory not found"):
             FileImageSource._load_images(Options(context={"image_dir": "/nonexistent/path"}))
+
+    def test_empty_dir_returns_schema(self, tmp_path: Path) -> None:
+        """An empty image directory yields zero rows with a schema, not an EmptyResultError."""
+        feature = MagicMock()
+        feature.name = "image_docs"
+        feature.options = Options(context={"image_dir": str(tmp_path)})
+        features = MagicMock()
+        features.features = [feature]
+        expected: dict[str, list[Any]] = {"image_docs": [], "image_id": [], "image_data": [], "format": []}
+        assert FileImageSource.calculate_feature([], features) == expected
+
+        result = mlodaAPI.run_all(
+            features=[Feature("image_docs", options=Options(context={"image_dir": str(tmp_path)}))],
+            compute_frameworks=[PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups({FileImageSource}),
+        )
+        assert result == [{"image_docs": []}]

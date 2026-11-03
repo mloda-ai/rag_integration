@@ -68,4 +68,5 @@ class TestDictImageSource(ImageSourceTestBase):
         features = MagicMock()
         features.features = [feature]
         rows = DictImageSource.calculate_feature([], features)
+        assert isinstance(rows, list)
         assert rows[0]["image_docs"] == rows[0]["image_data"] == b"\x89PNG_fake"

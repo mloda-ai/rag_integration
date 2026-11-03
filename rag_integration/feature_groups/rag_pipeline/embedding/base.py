@@ -22,6 +22,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.classification import PassThroughClassification
+from rag_integration.feature_groups.empty_result import empty_result
 
 
 class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGroup):
@@ -144,12 +145,16 @@ class BaseEmbedder(PassThroughClassification, FeatureChainParserMixin, FeatureGr
         ...
 
     @classmethod
-    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]]:
+    def calculate_feature(cls, data: Any, features: FeatureSet) -> list[dict[str, Any]] | dict[str, list[Any]]:
         """Generate embeddings for the source feature, with optional artifact support."""
         artifact_cls = cls.artifact()
 
         # mloda 0.9.0 delivers columnar data; read it row-wise.
         rows = columnar_to_rows(data)
+        if not rows:
+            if artifact_cls is not None:
+                HookContext.publish_result_attributes({"rag.embedding.artifact_reused": False})
+            return empty_result(data, features, ("embedding_dim", "embedding_model"))
         artifact_reused = False
 
         for feature in features.features:
