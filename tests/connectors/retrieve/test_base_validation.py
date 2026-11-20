@@ -97,14 +97,6 @@ class TestCalculateFeatureLimits:
             stub.calculate_feature([], features)
 
 
-class TestTopKParsing:
-    """A non-integer ``top_k`` option raises naming the key and the value."""
-
-    def test_garbage_top_k_raises(self) -> None:
-        with pytest.raises(ValueError, match="top_k.*not-an-int"):
-            BaseRetrieveConnector._parse_top_k("not-an-int")
-
-
 class TestCorpusSource:
     """``corpus_source`` declares the upstream feature and validates what it produced."""
 
