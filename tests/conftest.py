@@ -3,8 +3,18 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
+
+from rag_integration.feature_groups.rag_pipeline import artifact_storage
+
+
+@pytest.fixture(autouse=True)
+def _isolated_default_artifact_dir(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep artifacts saved without artifact_storage_path out of the real user cache."""
+    default_dir: Path = tmp_path_factory.mktemp("default_artifacts")
+    monkeypatch.setattr(artifact_storage, "default_storage_dir", lambda: default_dir)
 
 
 def _spacy_model_available(model_name: str) -> bool:

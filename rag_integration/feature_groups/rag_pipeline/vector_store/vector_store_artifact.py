@@ -2,42 +2,39 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
-import tempfile
+import threading
+import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import BaseArtifact, FeatureSet
+
+from rag_integration.feature_groups.rag_pipeline.artifact_storage import atomic_write, resolve_storage_dir
 
 
 class VectorStoreArtifact(BaseArtifact):
     """
     Artifact for storing FAISS vector indices with text metadata.
 
-    Uses native FAISS serialization (faiss.write_index/read_index) for the index
-    and a JSON sidecar file for the text/doc_id mapping.
+    Uses native FAISS serialization for the index and a JSON sidecar file for the
+    text/doc_id mapping, which records the SHA-256 of the index it belongs to.
 
     Files produced:
         - vector_store_{hash}.faiss: The FAISS index binary
         - vector_store_{hash}_metadata.json: Text and doc_id mapping
     """
 
+    # Serializes in-process reads and writes of an index and its sidecar.
+    _lock: ClassVar[threading.Lock] = threading.Lock()
+
     @classmethod
-    def _get_storage_path(cls, features: FeatureSet) -> Path:
-        """Get the storage directory from options or use temp directory."""
-        storage_path = None
-
+    def _get_storage_path(cls, features: FeatureSet, create: bool = True) -> Path:
+        """Get the storage directory from options or the private default."""
         options = cls.get_singular_option_from_options(features)
-        if options:
-            storage_path = options.get("artifact_storage_path")
-
-        if storage_path is None:
-            storage_path = tempfile.gettempdir()
-
-        storage_dir = Path(storage_path)
-        storage_dir.mkdir(parents=True, exist_ok=True)
-        return storage_dir
+        return resolve_storage_dir(options.get("artifact_storage_path") if options else None, create)
 
     @classmethod
     def _get_artifact_file_paths(cls, features: FeatureSet, artifact_key: str) -> tuple[Path, Path]:
@@ -75,14 +72,19 @@ class VectorStoreArtifact(BaseArtifact):
 
         for artifact_key, artifact_data in artifact.items():
             index_path, metadata_path = cls._get_artifact_file_paths(features, artifact_key)
-
-            # Save FAISS index using native serialization
-            faiss.write_index(artifact_data["index"], str(index_path))
-
-            # Save metadata sidecar as JSON
-            metadata = artifact_data.get("metadata", {})
-            with open(metadata_path, "w", encoding="utf-8") as f:
-                json.dump(metadata, f, ensure_ascii=False)
+            index_bytes = faiss.serialize_index(artifact_data["index"]).tobytes()
+            # The sidecar pins the index it belongs to, so a mixed pair is detected on load.
+            metadata = {
+                **artifact_data.get("metadata", {}),
+                "index_sha256": hashlib.sha256(index_bytes).hexdigest(),
+            }
+            with cls._lock:
+                atomic_write(
+                    {
+                        index_path: functools.partial(_write_bytes, index_bytes),
+                        metadata_path: functools.partial(_write_json, metadata),
+                    }
+                )
 
             saved_paths[artifact_key] = {
                 "index_path": str(index_path),
@@ -94,15 +96,20 @@ class VectorStoreArtifact(BaseArtifact):
     @classmethod
     def custom_loader(cls, features: FeatureSet) -> Any | None:
         """
-        Load all FAISS index artifacts from the storage directory.
+        Load all FAISS index artifacts from the storage directory; a mismatched pair there is skipped.
 
         Returns:
             Dictionary of {artifact_key: {"index": faiss.Index, "metadata": dict}}
         """
         loaded_artifacts: dict[str, Any] = {}
+        storage_dir = cls._get_storage_path(features, create=False)
 
-        for index_path in cls._get_storage_path(features).glob("vector_store_*.faiss"):
-            loaded = cls._load_files(index_path)
+        for index_path in storage_dir.glob("vector_store_*.faiss") if storage_dir.exists() else ():
+            try:
+                loaded = cls._load_files(index_path)
+            except ValueError as e:
+                warnings.warn(f"Skipping vector store artifact: {e}", stacklevel=2)
+                continue
             loaded_artifacts[loaded["metadata"].get("artifact_key", index_path.stem)] = loaded
 
         # The saved paths this feature was given, via Options or run(artifacts=...), win for its key.
@@ -115,18 +122,24 @@ class VectorStoreArtifact(BaseArtifact):
 
         return loaded_artifacts or None
 
-    @staticmethod
-    def _load_files(index_path: Path, metadata_path: Path | None = None) -> dict[str, Any]:
+    @classmethod
+    def _load_files(cls, index_path: Path, metadata_path: Path | None = None) -> dict[str, Any]:
         """Read one FAISS index and its optional metadata sidecar (default: next to the index)."""
         import faiss
+        import numpy as np
 
         if metadata_path is None:
             metadata_path = index_path.with_name(f"{index_path.stem}_metadata.json")
         metadata: dict[str, Any] = {}
-        if metadata_path.exists():
-            with open(metadata_path, encoding="utf-8") as f:
-                metadata = json.load(f)
-        return {"index": faiss.read_index(str(index_path)), "metadata": metadata}
+        with cls._lock:
+            if metadata_path.exists():
+                with open(metadata_path, encoding="utf-8") as f:
+                    metadata = json.load(f)
+            index_bytes = index_path.read_bytes()
+        expected = metadata.get("index_sha256")
+        if expected is not None and expected != hashlib.sha256(index_bytes).hexdigest():
+            raise ValueError(f"sidecar {metadata_path} belongs to a different index than {index_path}")
+        return {"index": faiss.deserialize_index(np.frombuffer(index_bytes, dtype=np.uint8)), "metadata": metadata}
 
     @classmethod
     def save_vector_store_artifact(
@@ -187,3 +200,12 @@ class VectorStoreArtifact(BaseArtifact):
             artifacts = cls.custom_loader(features)
             return artifacts is not None and artifact_key in artifacts
         return False
+
+
+def _write_bytes(data: bytes, path: str) -> None:
+    Path(path).write_bytes(data)
+
+
+def _write_json(data: dict[str, Any], path: str) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)

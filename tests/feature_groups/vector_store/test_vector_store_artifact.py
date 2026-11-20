@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import faiss
 import numpy as np
 import pytest
 
+from rag_integration.feature_groups.rag_pipeline import artifact_storage
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
@@ -156,3 +157,60 @@ class TestVectorStoreArtifact:
         VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
 
         assert VectorStoreArtifact.check_artifact_exists(mock_features, artifact_key)
+
+    def _save_one(self, mock_features: MagicMock, key: str, vector: list[float]) -> dict[str, str]:
+        index = faiss.IndexFlatL2(len(vector))
+        index.add(np.array([vector], dtype=np.float32))
+        mock_features.save_artifact = {}
+        VectorStoreArtifact.save_vector_store_artifact(mock_features, key, index, [key], [key])
+        saved = VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
+        assert saved is not None
+        return dict(saved[key])
+
+    def test_sidecar_from_another_index_is_rejected(self, tmp_path: Path) -> None:
+        """An index paired with another save's sidecar is skipped in the dir scan and raises when passed in."""
+        mock_features = self._make_mock_features(tmp_path)
+        mixed = self._save_one(mock_features, "mixed", [1.0, 0.0])
+        other = self._save_one(mock_features, "other", [0.0, 1.0])
+        Path(mixed["index_path"]).write_bytes(Path(other["index_path"]).read_bytes())
+
+        mock_features.artifact_to_load = True
+        with pytest.warns(UserWarning, match="different index"):
+            loaded = VectorStoreArtifact.custom_loader(mock_features)
+        assert loaded is not None
+        assert set(loaded) == {"other"}
+
+        mock_features.artifact_to_load = "mixed"
+        mock_features.artifact_value = mixed
+        with pytest.warns(UserWarning), pytest.raises(ValueError, match="different index"):
+            VectorStoreArtifact.custom_loader(mock_features)
+
+    def test_failed_save_keeps_previous_pair(self, tmp_path: Path) -> None:
+        """A save that fails on the sidecar replaces neither file and leaves no temp file behind."""
+        mock_features = self._make_mock_features(tmp_path)
+        saved = self._save_one(mock_features, "key", [1.0, 0.0])
+
+        with (
+            patch(f"{VectorStoreArtifact.__module__}._write_json", side_effect=OSError("disk full")),
+            pytest.raises(OSError, match="disk full"),
+        ):
+            self._save_one(mock_features, "key", [0.0, 1.0])
+
+        mock_features.artifact_to_load = True
+        loaded = VectorStoreArtifact.load_vector_store_artifact(mock_features, "key")
+        assert loaded is not None
+        assert loaded["index"].reconstruct(0).tolist() == [1.0, 0.0]
+        assert sorted(p.name for p in tmp_path.iterdir()) == sorted(Path(p).name for p in saved.values())
+
+    def test_default_storage_is_not_created_by_load(self) -> None:
+        """Without artifact_storage_path the private default dir is used, and loading does not create it."""
+        mock_feature = MagicMock()
+        mock_feature.options.get.return_value = None
+        mock_features = MagicMock(features=[mock_feature], artifact_to_load=True)
+        default_dir = artifact_storage.default_storage_dir()
+        default_dir.rmdir()
+
+        assert VectorStoreArtifact.custom_loader(mock_features) is None
+        assert not default_dir.exists()
+        assert VectorStoreArtifact._get_storage_path(mock_features) == default_dir
+        assert default_dir.is_dir()

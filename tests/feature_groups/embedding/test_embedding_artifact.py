@@ -1,10 +1,14 @@
 """Tests for EmbeddingArtifact."""
 
+import stat
+import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import joblib
 import pytest
 
+from rag_integration.feature_groups.rag_pipeline import artifact_storage
 from rag_integration.feature_groups.rag_pipeline.embedding.embedding_artifact import EmbeddingArtifact
 
 
@@ -215,3 +219,54 @@ class TestEmbeddingArtifact:
         assert loaded1["model_name"] == "model1"
         assert loaded2["embeddings"] == [[3.0, 4.0, 5.0]]
         assert loaded2["model_name"] == "model2"
+
+    def test_default_storage_is_private_user_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Without artifact_storage_path, files go to a 0o700 user cache dir and the system temp dir is never read."""
+        monkeypatch.undo()  # drop the conftest redirect to exercise the real default
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
+        shared_tmp = tmp_path / "shared_tmp"
+        shared_tmp.mkdir()
+        monkeypatch.setattr(tempfile, "tempdir", str(shared_tmp))
+        joblib.dump({"artifact_key": "planted"}, shared_tmp / "embedding_artifact_planted.joblib")
+
+        mock_feature = MagicMock()
+        mock_feature.options.get.return_value = None
+        mock_features = MagicMock(features=[mock_feature], artifact_to_save=True, artifact_to_load=True)
+        mock_features.save_artifact = {}
+
+        EmbeddingArtifact.save_embedding_artifact(mock_features, "key", {"embeddings": [[0.1]]})
+        saved_paths = EmbeddingArtifact.custom_saver(mock_features, mock_features.save_artifact)
+        assert saved_paths is not None
+        saved = Path(saved_paths["key"])
+
+        default_dir = tmp_path / "cache" / "rag_integration" / "artifacts"
+        assert saved.parent == default_dir
+        assert stat.S_IMODE(default_dir.stat().st_mode) == 0o700
+        assert set(EmbeddingArtifact.custom_loader(mock_features) or {}) == {"key"}
+
+        default_dir.chmod(0o755)
+        with pytest.raises(PermissionError, match="not shared"):
+            EmbeddingArtifact.custom_loader(mock_features)
+
+        monkeypatch.setenv("XDG_CACHE_HOME", "relative/cache")
+        assert artifact_storage.default_storage_dir() == Path.home() / ".cache" / "rag_integration" / "artifacts"
+
+    def test_failed_save_keeps_previous_file(self, tmp_path: Path) -> None:
+        """A save that fails midway leaves the previous artifact intact and no temp file behind."""
+        mock_feature = MagicMock()
+        mock_feature.options.get.side_effect = lambda key: str(tmp_path) if key == "artifact_storage_path" else None
+        mock_features = MagicMock(features=[mock_feature], artifact_to_load=True)
+
+        EmbeddingArtifact.custom_saver(mock_features, {"key": {"artifact_key": "key", "embeddings": [[1.0]]}})
+
+        def torn_dump(value: object, filename: str) -> None:
+            Path(filename).write_bytes(b"partial")
+            raise OSError("disk full")
+
+        with patch("joblib.dump", side_effect=torn_dump), pytest.raises(OSError, match="disk full"):
+            EmbeddingArtifact.custom_saver(mock_features, {"key": {"artifact_key": "key", "embeddings": [[2.0]]}})
+
+        loaded = EmbeddingArtifact.load_embedding_artifact(mock_features, "key")
+        assert loaded is not None
+        assert loaded["embeddings"] == [[1.0]]
+        assert [p.name for p in tmp_path.iterdir()] == [p.name for p in tmp_path.glob("embedding_artifact_*.joblib")]
