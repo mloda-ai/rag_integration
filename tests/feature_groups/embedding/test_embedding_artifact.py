@@ -244,6 +244,10 @@ class TestEmbeddingArtifact:
         assert stat.S_IMODE(default_dir.stat().st_mode) == 0o700
         assert set(EmbeddingArtifact.custom_loader(mock_features) or {}) == {"key"}
 
+        default_dir.chmod(0o755)
+        with pytest.raises(PermissionError, match="not shared"):
+            EmbeddingArtifact.custom_loader(mock_features)
+
         monkeypatch.setenv("XDG_CACHE_HOME", "relative/cache")
         assert artifact_storage.default_storage_dir() == Path.home() / ".cache" / "rag_integration" / "artifacts"
 
