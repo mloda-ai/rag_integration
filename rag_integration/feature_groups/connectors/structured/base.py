@@ -34,7 +34,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.errors import InvalidOptionError, SqlSafetyError
-from rag_integration.feature_groups.connectors.mixins import OptionsMixin, SingleQueryPerRunMixin
+from rag_integration.feature_groups.connectors.mixins import OptionsMixin, SingleQueryPerRunMixin, backend_selected
 
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -85,8 +85,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, DataCreatorF
         """Match the root feature name only for a backend this concrete declares."""
         if str(feature_name) != cls.ROOT_FEATURE_NAME:
             return False
-        backend = options.get(cls.STRUCTURED_BACKEND)
-        return backend in cls.STRUCTURED_BACKENDS
+        return backend_selected(cls.get_class_name(), options, cls.STRUCTURED_BACKEND, cls.STRUCTURED_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (the table arrives via Options)."""

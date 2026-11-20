@@ -39,6 +39,7 @@ from rag_integration.feature_groups.connectors.mixins import (
     OptionsMixin,
     SingleQueryPerRunMixin,
     TopKMixin,
+    backend_selected,
 )
 
 
@@ -91,8 +92,7 @@ class BaseOrchestratorConnector(
         """Match the root feature name only for a backend this concrete declares."""
         if str(feature_name) != cls.ROOT_FEATURE_NAME:
             return False
-        backend = options.get(cls.ORCHESTRATOR_BACKEND)
-        return backend in cls.ORCHESTRATOR_BACKENDS
+        return backend_selected(cls.get_class_name(), options, cls.ORCHESTRATOR_BACKEND, cls.ORCHESTRATOR_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (the corpus arrives via Options)."""

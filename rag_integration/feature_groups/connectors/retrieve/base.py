@@ -45,6 +45,7 @@ from rag_integration.feature_groups.connectors.mixins import (
     SingleQueryPerRunMixin,
     SingleRowSourceMixin,
     TopKMixin,
+    backend_selected,
 )
 
 
@@ -141,8 +142,7 @@ class BaseRetrieveConnector(
         """
         if str(feature_name) != cls.ROOT_FEATURE_NAME:
             return False
-        backend = options.get(cls.RETRIEVE_BACKEND)
-        return backend in cls.RETRIEVE_BACKENDS
+        return backend_selected(cls.get_class_name(), options, cls.RETRIEVE_BACKEND, cls.RETRIEVE_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> set[Feature] | None:
         """Declare the corpus-source feature as input when ``CORPUS_SOURCE`` is set.

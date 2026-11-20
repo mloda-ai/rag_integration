@@ -33,7 +33,12 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.errors import DuplicateDocIdError, GroundingError
-from rag_integration.feature_groups.connectors.mixins import DocCollectionMixin, OptionsMixin, SingleQueryPerRunMixin
+from rag_integration.feature_groups.connectors.mixins import (
+    DocCollectionMixin,
+    OptionsMixin,
+    SingleQueryPerRunMixin,
+    backend_selected,
+)
 
 
 class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionMixin, DataCreatorFeatureGroup):
@@ -84,8 +89,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
         """Match the root feature name only for a backend this concrete declares."""
         if str(feature_name) != cls.ROOT_FEATURE_NAME:
             return False
-        backend = options.get(cls.GENERATE_BACKEND)
-        return backend in cls.GENERATE_BACKENDS
+        return backend_selected(cls.get_class_name(), options, cls.GENERATE_BACKEND, cls.GENERATE_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (passages arrive via Options)."""
