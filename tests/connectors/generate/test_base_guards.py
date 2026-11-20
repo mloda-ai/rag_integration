@@ -137,7 +137,7 @@ class TestGenerateOptionGuards:
             }
         )
         with pytest.raises(ValueError, match="duplicate passage doc_id 'd0'"):
-            _WellBehavedStub._get_passages(options)
+            _WellBehavedStub._get_passages(None, options)
 
     def test_explicit_doc_id_colliding_with_positional_fallback_raises(self) -> None:
         # The first passage falls back to its positional index "0"; the second
@@ -151,4 +151,4 @@ class TestGenerateOptionGuards:
             }
         )
         with pytest.raises(ValueError, match="duplicate passage doc_id '0'"):
-            _WellBehavedStub._get_passages(options)
+            _WellBehavedStub._get_passages(None, options)

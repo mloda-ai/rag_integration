@@ -1,13 +1,15 @@
-"""Shared connector mixins and error types: every error is a ``ValueError``, and
-``query_text`` / ``top_k`` run values parse uniformly across the families."""
+"""Shared connector mixins and error types: every error is a ``ValueError``,
+``query_text`` / ``top_k`` run values parse uniformly across the families, and
+an upstream ``{doc_id, text}`` source is consumed the same way in each family that takes one."""
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from mloda.user import Options
+from mloda.user import FeatureName, Options
 
 from rag_integration.feature_groups.connectors.errors import (
     ConnectorError,
@@ -19,11 +21,14 @@ from rag_integration.feature_groups.connectors.errors import (
     SqlSafetyError,
 )
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
+from rag_integration.feature_groups.connectors.generate.extractive_responder import ExtractiveResponder
 from rag_integration.feature_groups.connectors.graph_rag.base import BaseGraphRagConnector
 from rag_integration.feature_groups.connectors.mixins import OptionsMixin, TopKMixin
 from rag_integration.feature_groups.connectors.orchestrator.base import BaseOrchestratorConnector
 from rag_integration.feature_groups.connectors.rerank.base import BaseRerankConnector
+from rag_integration.feature_groups.connectors.rerank.lexical_reranker import LexicalReranker
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
+from rag_integration.feature_groups.connectors.retrieve.tfidf_retriever import TfidfRetriever
 
 
 class TestErrorHierarchy:
@@ -101,3 +106,111 @@ class TestSharedRunQuery:
     def test_non_string_query_raises(self, base: type[OptionsMixin]) -> None:
         with pytest.raises(InvalidOptionError, match="query_text.*must be a string, got int"):
             base._run_query(*_run({"query_text": 42}), "query_text")
+
+
+_SOURCE = "upstream_docs"
+_DOCS: list[dict[str, Any]] = [
+    {"doc_id": "d0", "text": "alpha"},
+    {"doc_id": "d1", "text": "beta"},
+    {"doc_id": "d2", "text": "gamma"},
+]
+# (connector, backend selector, inline key, source key, empty result)
+_SOURCE_FAMILIES = [
+    pytest.param(TfidfRetriever, {"retrieve_backend": "tfidf"}, "corpus", "corpus_source", [], id="retrieve"),
+    pytest.param(LexicalReranker, {"rerank_backend": "lexical"}, "candidates", "candidates_source", [], id="rerank"),
+    pytest.param(
+        ExtractiveResponder,
+        {"generate_backend": "extractive"},
+        "passages",
+        "passages_source",
+        {"answer": "", "citations": []},
+        id="generate",
+    ),
+]
+
+
+def _source_options(
+    backend: dict[str, str], source_key: str, category: str = "context", extra: dict[str, Any] | None = None
+) -> Options:
+    values = {**backend, "query_text": "alpha", source_key: _SOURCE, "tenant": "acme", **(extra or {})}
+    return Options(context=values) if category == "context" else Options(group=values)
+
+
+def _feature_set(options: Options) -> Any:
+    feature = MagicMock()
+    feature.options = options
+    features = MagicMock()
+    features.features = [feature]
+    features.runtime_parameter.side_effect = lambda key, feat: feat.options.get(key)
+    features.runtime_parameters = ("query_text", "top_k")
+    return features
+
+
+@pytest.mark.parametrize(("connector", "backend", "inline_key", "source_key", "empty"), _SOURCE_FAMILIES)
+class TestSharedDocSource:
+    """A ``*_source`` option declares the upstream feature and validates what it produced."""
+
+    def test_no_source_stays_root(
+        self, connector: Any, backend: dict[str, str], inline_key: str, source_key: str, empty: Any
+    ) -> None:
+        assert connector().input_features(Options(context=backend), FeatureName(connector.ROOT_FEATURE_NAME)) is None
+
+    @pytest.mark.parametrize("category", ["context", "group"])
+    def test_declares_source_forwarding_options_without_family_keys(
+        self, connector: Any, backend: dict[str, str], inline_key: str, source_key: str, empty: Any, category: str
+    ) -> None:
+        options = _source_options(backend, source_key, category)
+        inputs = connector().input_features(options, FeatureName(connector.ROOT_FEATURE_NAME))
+        assert inputs is not None
+        (feature,) = inputs
+        assert str(feature.name) == _SOURCE
+        assert getattr(feature.options, category).get("tenant") == "acme"
+        assert {source_key, inline_key, "query_text", *backend} <= connector.FAMILY_OPTION_KEYS
+        for family_key in connector.FAMILY_OPTION_KEYS:
+            assert feature.options.get(family_key) is None
+        assert feature.forward_group_exclude == connector.FAMILY_OPTION_KEYS
+
+    def test_source_with_inline_raises(
+        self, connector: Any, backend: dict[str, str], inline_key: str, source_key: str, empty: Any
+    ) -> None:
+        options = _source_options(backend, source_key, extra={inline_key: _DOCS})
+        with pytest.raises(InvalidOptionError, match=f"one {inline_key} only"):
+            connector.calculate_feature({}, _feature_set(options))
+
+    def test_source_without_upstream_row_raises(
+        self, connector: Any, backend: dict[str, str], inline_key: str, source_key: str, empty: Any
+    ) -> None:
+        with pytest.raises(InvalidOptionError, match="produced no row"):
+            connector.calculate_feature({}, _feature_set(_source_options(backend, source_key)))
+
+    @pytest.mark.parametrize(
+        ("rows", "detail", "absent"),
+        [
+            ([{"doc_id": "d0", "text": "alpha"}], re.escape("{'doc_id': 'd0', 'text': 'alpha'}"), None),
+            ([{"doc_id": "d0", "text": "z" * 500}], re.escape("..."), "z" * 100),
+            ([_DOCS[:1], _DOCS[1:]], "got 2 rows", "alpha"),
+        ],
+        ids=["non_list_payload", "large_payload_truncated", "multiple_rows"],
+    )
+    def test_source_not_one_list_row_raises(
+        self,
+        connector: Any,
+        backend: dict[str, str],
+        inline_key: str,
+        source_key: str,
+        empty: Any,
+        rows: list[Any],
+        detail: str,
+        absent: str | None,
+    ) -> None:
+        options = _source_options(backend, source_key)
+        with pytest.raises(InvalidOptionError, match="single row holding a list") as exc_info:
+            connector.calculate_feature({_SOURCE: rows}, _feature_set(options))
+        assert re.search(detail, str(exc_info.value))
+        assert absent is None or absent not in str(exc_info.value)
+
+    def test_source_with_empty_list_returns_empty(
+        self, connector: Any, backend: dict[str, str], inline_key: str, source_key: str, empty: Any
+    ) -> None:
+        result = connector.calculate_feature({_SOURCE: [[]]}, _feature_set(_source_options(backend, source_key)))
+        assert result == [{connector.ROOT_FEATURE_NAME: empty}]

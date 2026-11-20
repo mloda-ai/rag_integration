@@ -76,10 +76,8 @@ class BaseRetrieveConnector(
     Reuse note for sibling families (rerank, generate, ...): the carry-over is
     the *shape* (the ``RETRIEVE_BACKENDS`` selector dict, the
     ``match_feature_group_criteria`` gating, and the ``_rank`` hoist), not this
-    class. The root/corpus handling below is
-    retrieve-specific: rerank consumes candidate passages as input features
-    rather than an inline corpus, so a sibling family copies this pattern, it
-    does not subclass ``BaseRetrieveConnector``.
+    class: rerank takes candidates, not a corpus, so a sibling family copies
+    this pattern, it does not subclass ``BaseRetrieveConnector``.
     """
 
     ROOT_FEATURE_NAME = "retrieved_passages"
@@ -149,39 +147,8 @@ class BaseRetrieveConnector(
         return backend_selected(cls.get_class_name(), options, cls.RETRIEVE_BACKEND, cls.RETRIEVE_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> set[Feature] | None:
-        """Declare the corpus-source feature as input when ``CORPUS_SOURCE`` is set.
-
-        Without it this is a root feature (corpus arrives via Options). With
-        it, the source gets the parent's group and context options minus
-        ``FAMILY_OPTION_KEYS``: context keys do not propagate on their own, and
-        ``forward_group_exclude`` keeps the engine's default group forwarding
-        from re-adding query-specific keys to the source.
-        """
-        source = options.get(self.CORPUS_SOURCE)
-        if source is None:
-            return None
-        forwarded_group = {key: value for key, value in options.group.items() if key not in self.FAMILY_OPTION_KEYS}
-        forwarded_context = {key: value for key, value in options.context.items() if key not in self.FAMILY_OPTION_KEYS}
-        return {
-            Feature(
-                str(source),
-                options=Options(group=forwarded_group, context=forwarded_context),
-                forward_group_exclude=self.FAMILY_OPTION_KEYS,
-            )
-        }
-
-    @classmethod
-    def _corpus_from_source(cls, data: Any, source_name: str) -> list[dict[str, Any]]:
-        """Read the corpus list the corpus-source feature produced in its single row."""
-        return list(
-            cls._single_row_payload(
-                data,
-                source_name,
-                label="corpus",
-                expected="a list of {doc_id, text} dicts",
-                is_valid=lambda payload: isinstance(payload, (list, tuple)),
-            )
-        )
+        """The corpus-source feature when ``CORPUS_SOURCE`` is set, else none (root feature)."""
+        return self._source_input_features(options, self.CORPUS_SOURCE)
 
     @classmethod
     @abstractmethod
@@ -276,16 +243,7 @@ class BaseRetrieveConnector(
         for feature in features.features:
             options = feature.options
             query = cls._run_query(features, feature, cls.QUERY_TEXT)
-            source = options.get(cls.CORPUS_SOURCE)
-            if source is not None:
-                if options.get(cls.CORPUS) is not None:
-                    raise InvalidOptionError(
-                        f"{cls.__name__} got both '{cls.CORPUS_SOURCE}' and inline '{cls.CORPUS}'; "
-                        f"pass one corpus only."
-                    )
-                corpus = cls._corpus_from_source(data, str(source))
-            else:
-                corpus = cls._require_doc_list(options, cls.CORPUS)
+            corpus = cls._doc_list(data, options, cls.CORPUS, cls.CORPUS_SOURCE)
             top_k = cls._run_top_k(features, feature)
             passages = cls._retrieve(query, corpus, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]

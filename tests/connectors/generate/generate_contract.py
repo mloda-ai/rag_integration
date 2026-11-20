@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import pytest
+from mloda.provider import FeatureGroup
 from mloda.user import Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -17,6 +18,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.generate.base import BaseGenerateConnector
+from tests.connectors.retrieve.retrieve_contract import ScopedCorpusSource
 
 
 class GenerateConnectorContractBase(ABC):
@@ -71,20 +73,39 @@ class GenerateConnectorContractBase(ABC):
     @classmethod
     def _run_all(cls, query: str, passages: list[dict[str, Any]]) -> dict[str, Any]:
         connector = cls.connector_class()
-        feature = Feature(
-            connector.ROOT_FEATURE_NAME,
-            options=Options(
-                context={
-                    connector.GENERATE_BACKEND: cls.backend_value(),
-                    connector.QUERY_TEXT: query,
-                    connector.PASSAGES: passages,
-                }
-            ),
-        )
+        context = {
+            connector.GENERATE_BACKEND: cls.backend_value(),
+            connector.QUERY_TEXT: query,
+            connector.PASSAGES: passages,
+        }
+        return cls._run_options(Options(context=context))
+
+    @classmethod
+    def _run_from_source(
+        cls, passages: list[dict[str, Any]], allowed_doc_ids: list[str], category: str
+    ) -> dict[str, Any]:
+        """Run with the passages taken from ``ScopedCorpusSource`` via ``passages_source``."""
+        connector = cls.connector_class()
+        values: dict[str, Any] = {
+            connector.GENERATE_BACKEND: cls.backend_value(),
+            connector.PASSAGES_SOURCE: ScopedCorpusSource.ROOT_FEATURE_NAME,
+            ScopedCorpusSource.DOCUMENTS: passages,
+            ScopedCorpusSource.ALLOWED_DOC_IDS: allowed_doc_ids,
+        }
+        runtime = {connector.QUERY_TEXT: cls.sample_query()}
+        if category == "context":
+            options = Options(context={**values, **runtime})
+        else:
+            options = Options(group=values, context=runtime)  # runtime keys are context only
+        return cls._run_options(options, ScopedCorpusSource)
+
+    @classmethod
+    def _run_options(cls, options: Options, *upstream: type[FeatureGroup]) -> dict[str, Any]:
+        connector = cls.connector_class()
         result = mlodaAPI.run_all(
-            [feature],
+            [Feature(connector.ROOT_FEATURE_NAME, options=options)],
             compute_frameworks=[PythonDictFramework],
-            plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+            plugin_collector=PluginCollector.enabled_feature_groups({connector, *upstream}),
         )
         return cls._answer_row(result)
 
@@ -183,6 +204,18 @@ class GenerateConnectorContractBase(ABC):
         result = self._run_all(self.sample_query(), self.sample_passages())
         assert self.expected_citation_doc_id() in result["citations"]
         assert self.expected_answer_substring() in result["answer"]
+
+    @pytest.mark.parametrize("category", ["context", "group"])
+    def test_end_to_end_passages_source(self, category: str) -> None:
+        """Passages can come from an upstream feature; a doc it filters out is never cited."""
+        passages = self.sample_passages()
+        doc_ids = [str(doc["doc_id"]) for doc in passages]
+        cited = self.expected_citation_doc_id()
+
+        assert self._run_from_source(passages, doc_ids, category) == self._answer(self.sample_query(), passages)
+
+        answer = self._run_from_source(passages, [doc_id for doc_id in doc_ids if doc_id != cited], category)
+        assert cited not in answer["citations"]
 
     def test_prepared_session_serves_a_query_per_run(self) -> None:
         connector = self.connector_class()

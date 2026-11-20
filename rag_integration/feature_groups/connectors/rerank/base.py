@@ -2,13 +2,11 @@
 
 Contract: ``query_text + candidates + top_k -> reordered passages with scores``.
 
-A rerank connector takes a set of candidate passages (already retrieved, e.g.
-by the ``retrieve`` family) and reorders them by relevance to the query,
-returning the top_k after reranking. It is a ROOT FeatureGroup here: candidates
-are passed inline through ``Options`` so the family is self-contained and
-contract-testable without a network or an upstream stage. In a two-stage
-pipeline the candidates would come from a retrieve connector; the rerank logic
-is identical either way.
+A rerank connector takes a set of candidate passages and reorders them by
+relevance to the query, returning the top_k after reranking. Candidates arrive
+inline through ``Options``, or ``candidates_source`` names an upstream feature
+(e.g. ``retrieved_passages``) whose single row carries them, declared as the
+connector's input. The rerank logic is identical either way.
 
 Output (single row, keyed by the root feature name)::
 
@@ -30,7 +28,7 @@ from abc import abstractmethod
 from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureSet, property_spec
-from mloda.user import FeatureName, Options
+from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -40,15 +38,22 @@ from rag_integration.feature_groups.connectors.mixins import (
     OptionsMixin,
     RankingValidationMixin,
     SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
     TopKMixin,
     backend_selected,
 )
 
 
 class BaseRerankConnector(
-    SingleQueryPerRunMixin, OptionsMixin, TopKMixin, DocCollectionMixin, RankingValidationMixin, DataCreatorFeatureGroup
+    SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
+    OptionsMixin,
+    TopKMixin,
+    DocCollectionMixin,
+    RankingValidationMixin,
+    DataCreatorFeatureGroup,
 ):
-    """Root FeatureGroup for rerank-connector backends.
+    """FeatureGroup for rerank-connector backends.
 
     A concrete backend declares its selector value in ``RERANK_BACKENDS`` and
     implements :meth:`_rank` (the only per-backend logic); the base owns the
@@ -66,11 +71,20 @@ class BaseRerankConnector(
     RERANK_BACKEND = "rerank_backend"
     QUERY_TEXT = "query_text"
     CANDIDATES = "candidates"
+    CANDIDATES_SOURCE = "candidates_source"
+
+    FAMILY_OPTION_KEYS = frozenset({RERANK_BACKEND, CANDIDATES_SOURCE, QUERY_TEXT, TopKMixin.TOP_K, CANDIDATES})
 
     # Filled per concrete: {backend_value: human-readable description}. Disjoint
     # across backends; empty on the base so it never matches.
     RERANK_BACKENDS: ClassVar[dict[str, str]] = {}
 
+    CANDIDATES_SOURCE_SPEC = property_spec(
+        "Name of an upstream feature whose single row carries the candidates as a list of {doc_id, text} dicts."
+        " Optional: replaces the inline candidates",
+        context=False,
+        default=None,
+    )
     # Runtime: a prepared session takes a new query per run via ``session.run(parameters=...)``.
     QUERY_TEXT_SPEC = property_spec("Query the candidates are reranked against", default=None, runtime=True)
     TOP_K_SPEC = property_spec(
@@ -87,6 +101,7 @@ class BaseRerankConnector(
         CANDIDATES: property_spec(
             "Candidate passages to rerank: a list of {doc_id, text} dicts", context=False, default=None
         ),
+        CANDIDATES_SOURCE: CANDIDATES_SOURCE_SPEC,
     }
 
     @classmethod
@@ -113,9 +128,9 @@ class BaseRerankConnector(
             return False
         return backend_selected(cls.get_class_name(), options, cls.RERANK_BACKEND, cls.RERANK_BACKENDS)
 
-    def input_features(self, options: Options, feature_name: FeatureName) -> None:
-        """Root feature: no input features (candidates arrive via Options)."""
-        return
+    def input_features(self, options: Options, feature_name: FeatureName) -> set[Feature] | None:
+        """The candidates-source feature when ``CANDIDATES_SOURCE`` is set, else none (root feature)."""
+        return self._source_input_features(options, self.CANDIDATES_SOURCE)
 
     @classmethod
     @abstractmethod
@@ -167,7 +182,7 @@ class BaseRerankConnector(
         for feature in features.features:
             options = feature.options
             query = cls._run_query(features, feature, cls.QUERY_TEXT)
-            candidates = cls._require_doc_list(options, cls.CANDIDATES)
+            candidates = cls._doc_list(data, options, cls.CANDIDATES, cls.CANDIDATES_SOURCE)
             top_k = cls._run_top_k(features, feature)
             passages = cls._rerank(query, candidates, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]
