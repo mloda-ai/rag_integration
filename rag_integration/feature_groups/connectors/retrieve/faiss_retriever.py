@@ -35,12 +35,8 @@ class FaissDenseRetriever(BaseRetrieveConnector):
 
     PROPERTY_MAPPING: ClassVar = {
         BaseRetrieveConnector.RETRIEVE_BACKEND: property_spec("Use 'faiss' for dense FAISS retrieval", context=False),
-        BaseRetrieveConnector.QUERY_TEXT: property_spec(
-            "Raw text query to search the corpus", context=False, default=None
-        ),
-        BaseRetrieveConnector.TOP_K: property_spec(
-            f"Number of passages to return (default {BaseRetrieveConnector.DEFAULT_TOP_K})", context=False, default=None
-        ),
+        BaseRetrieveConnector.QUERY_TEXT: BaseRetrieveConnector.QUERY_TEXT_SPEC,
+        BaseRetrieveConnector.TOP_K: BaseRetrieveConnector.TOP_K_SPEC,
         BaseRetrieveConnector.CORPUS: property_spec(
             "Inline corpus: a list of {doc_id, text} dicts", context=False, default=None
         ),

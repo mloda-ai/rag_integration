@@ -114,6 +114,9 @@ def test_group_context_split_is_stable() -> None:
         for key, spec in (feature_group.PROPERTY_MAPPING or {}).items():
             assert isinstance(spec, PropertySpec), f"{owner}.{key} is a {type(spec).__name__}, not a PropertySpec"
             is_context = spec.context
+            if spec.runtime:
+                # Runtime parameters are context everywhere; mloda refuses a group one at class definition.
+                continue
             if is_context is is_connector:
                 expected = "group (pass context=False)" if is_connector else "context"
                 misplaced.append(f"{owner}.{key}: expected {expected}")

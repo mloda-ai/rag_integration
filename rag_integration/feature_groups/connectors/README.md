@@ -95,6 +95,19 @@ results = mlodaAPI.run_all(
 )
 ```
 
+`query_text` and `top_k` are runtime parameters (context only): prepare once, then pass each query per run.
+
+```python
+from mloda.user import mloda
+
+session = mloda.prepare(
+    [feature], [PythonDictFramework], plugin_collector=PluginCollector.enabled_feature_groups({Bm25sRetriever})
+)
+results = session.run(parameters={"query_text": "engine oil", "top_k": 1})
+```
+
+The value applies to every retrieve connector step in the plan (the `retrieval` stage keeps its own `query_text`). One run answers one query; run the session again for the next.
+
 ### `rerank` -- `query_text + candidates + top_k -> reordered passages`
 
 Takes *candidates* in (already retrieved), not a corpus. `LexicalReranker`
