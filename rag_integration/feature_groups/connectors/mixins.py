@@ -27,7 +27,7 @@ from rag_integration.feature_groups.connectors.errors import (
 
 
 def backend_selected(owner: str, options: Options, key: str, backends: Mapping[str, str]) -> bool:
-    """True when `key` names one of `backends`; otherwise record why, except on an inert base (no backends)."""
+    """True when ``key`` names one of ``backends``; otherwise record why, except on an inert base (no backends)."""
     backend = options.get(key)
     if backend in backends:
         return True
@@ -38,7 +38,9 @@ def backend_selected(owner: str, options: Options, key: str, backends: Mapping[s
             owner, f"required option '{key}' is absent", stage=NAME_STAGE, code=CoreDeclineCode.REQUIRED_OPTION_ABSENT
         )
     else:
-        record_match_rejection(owner, f"{key} {backend!r} not one of: {', '.join(backends)}", stage=NAME_STAGE)
+        record_match_rejection(
+            owner, f"{key} {reprlib.repr(backend)} not one of: {', '.join(backends)}", stage=NAME_STAGE
+        )
     return False
 
 

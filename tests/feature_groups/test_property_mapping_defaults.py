@@ -19,7 +19,14 @@ import pytest
 # mloda 0.20 ships these checks under the private _testing package only.
 from mloda._testing.feature_group_shape import check_feature_group_shape
 from mloda._testing.subclass_scope import check_subclass_scope
-from mloda.provider import FeatureChainParser, FeatureChainParserMixin, FeatureGroup, PropertySpec, is_no_default
+from mloda.provider import (
+    FeatureChainParser,
+    FeatureChainParserMixin,
+    FeatureGroup,
+    PropertySpec,
+    collect_match_rejections,
+    is_no_default,
+)
 from mloda.user import Options
 
 import rag_integration.feature_groups
@@ -157,7 +164,7 @@ _FIXED_CASES: dict[str, tuple[list[str], dict[str, Any]]] = {
     "BaseRetriever": (["retrieved", "retrieved_passages"], {"index_path": "index"}),
 }
 
-_INERT = ("names:", "required:")
+_INERT = ("names: cannot build a matching request",)
 # {group: (reason, prefixes every failure must start with)}; a waived group that passes is stale.
 _SHAPE_WAIVERS: dict[str, tuple[str, tuple[str, ...]]] = {
     **{
@@ -172,7 +179,13 @@ _SHAPE_WAIVERS: dict[str, tuple[str, tuple[str, ...]]] = {
             "BaseStructuredConnector",
         )
     },
-    "BaseRowDeduplicator": ("shared abstract base without a pattern", ("names:", "inputs:")),
+    "BaseRowDeduplicator": (
+        "shared abstract base without a pattern",
+        (
+            "names: 'BaseRowDeduplicator' is declared",
+            "inputs: 'BaseRowDeduplicator' input_features raised: Input features not found",
+        ),
+    ),
 }
 
 # Siblings the scope check cannot cover, with why.
@@ -215,8 +228,8 @@ def _shape_case(fg: type[FeatureGroup]) -> tuple[list[str] | None, Options | Non
     """The request names and base options a group's shape check needs."""
     for base in fg.__mro__:
         if base.__name__ in _FIXED_CASES:
-            names, group = _FIXED_CASES[base.__name__]
-            return names, Options(group=group) if group else None
+            names, context = _FIXED_CASES[base.__name__]
+            return names, Options(context=context) if context else None
     key = _backend_key(fg)
     if key is not None:
         backends = _backends(fg, key)
@@ -254,6 +267,7 @@ def test_backend_siblings_stay_in_scope() -> None:
     checked = 0
     for sub in groups:
         parent = next((b for b in sub.__mro__[1:] if b in inside), None)
+        # Connector siblings are pinned by test_connector_backend_values_are_disjoint: their inert base resolves nothing.
         if parent is None or _backend_key(sub) is not None:
             continue
         if sub.__name__ in _SCOPE_WAIVERS:
@@ -278,6 +292,7 @@ def test_backend_siblings_stay_in_scope() -> None:
             if all(spec.deferred_binding for spec in selector.values())
         }
         failures += [f"{sub.__name__} < {parent.__name__}: {f}" for f in result.failures if f not in tolerated]
+        failures += [f"{sub.__name__}: tolerated steal not reported: {t}" for t in tolerated - set(result.failures)]
         checked += 1
 
     assert not failures, "siblings claiming requests outside their discriminator:\n" + "\n".join(failures)
@@ -287,21 +302,33 @@ def test_backend_siblings_stay_in_scope() -> None:
 
 
 def test_connector_backend_values_are_disjoint() -> None:
-    """Connector siblings are selected by ``backend in BACKENDS``, so disjoint value sets keep them exclusive."""
-    families: dict[type[FeatureGroup], Counter[str]] = {}
+    """Connector siblings are selected by backend value: each claims only its own, and the inert base stays silent."""
+    families: dict[type[FeatureGroup], list[type[FeatureGroup]]] = {}
     for feature_group in _all_feature_groups():
         key = _backend_key(feature_group)
         if key is None:
             continue
         base = next(b for b in reversed(feature_group.__mro__) if key in (getattr(b, "PROPERTY_MAPPING", None) or {}))
-        if base is feature_group:
-            assert not _backends(feature_group, key), f"{feature_group.__name__}: a family base must stay inert"
-            families.setdefault(feature_group, Counter())
-            continue
-        backends = _backends(feature_group, key)
-        assert backends, f"{feature_group.__name__} declares no {key} value"
-        families.setdefault(base, Counter()).update(list(backends))
+        concretes = families.setdefault(base, [])
+        if base is not feature_group:
+            concretes.append(feature_group)
 
-    shared = [f"{base.__name__}: {value}" for base, counts in families.items() for value, n in counts.items() if n > 1]
-    assert not shared, "backend values claimed by more than one sibling:\n" + "\n".join(shared)
+    failures: list[str] = []
+    for base, concretes in families.items():
+        key = _backend_key(base)
+        assert key is not None
+        name = sorted(base.feature_names_supported())[0]
+        values = Counter(v for c in concretes for v in _backends(c, key))
+        failures += [f"{base.__name__}: {v!r} claimed by {n} siblings" for v, n in values.items() if n > 1]
+        with collect_match_rejections() as reasons:
+            matched = base.match_feature_group_criteria(name, Options(group={key: next(iter(values))}))
+        if matched or reasons or _backends(base, key):
+            failures.append(f"{base.__name__}: the family base must stay inert and silent")
+        for concrete in concretes:
+            own = set(_backends(concrete, key))
+            for value in values:
+                if concrete.match_feature_group_criteria(name, Options(group={key: value})) != (value in own):
+                    failures.append(f"{concrete.__name__}: wrong match for {key}={value!r}")
+
+    assert not failures, "connector siblings not kept apart by their backend value:\n" + "\n".join(failures)
     assert len(families) >= 7, f"connector family discovery looks broken, found {len(families)}"
