@@ -183,7 +183,7 @@ class SingleRowSourceMixin(DocCollectionMixin):
             str(source),
             label=inline_key,
             expected="a list of {doc_id, text} dicts",
-            is_valid=lambda value: isinstance(value, (list, tuple)),
+            is_valid=lambda value: isinstance(value, (list, tuple)) and all(isinstance(d, dict) for d in value),
         )
         return list(payload)
 

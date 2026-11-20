@@ -108,7 +108,7 @@ results = session.run(parameters={"query_text": "engine oil", "top_k": 1})
 
 A run value applies to every connector step in the plan (the `retrieval` stage keeps its own `query_text`). To keep a different `top_k` per family, set it as a prepare-time context option on each feature and pass only `query_text` per run. One run answers one query; run the session again for the next.
 
-The source options chain the families: `generated_answer` with `passages_source="reranked_passages"`, `candidates_source="retrieved_passages"`, the retrieve backend and corpus in one options dict, prepared once, answers each run's `query_text`. Family keys stay off the upstream steps, so a chain takes `query_text` per run only, and a `top_k` reaches the retrieve step only as a run value (it then applies to every ranking step). Retrieve backends build their index once per corpus and reuse it across runs; `BaseRetrieveConnector.clear_index_cache()` drops the cached indexes.
+The source options chain the families: `generated_answer` with `passages_source="reranked_passages"`, `candidates_source="retrieved_passages"`, the retrieve backend and corpus in one options dict, prepared once, answers each run's `query_text`. Family keys stay off the upstream steps, so a chain needs `mloda.prepare` plus `session.run(parameters={"query_text": ...})`; `run_all` cannot drive it. A run `top_k` applies to every ranking step; a prepare-time `top_k` reaches rerank only, and retrieve keeps its default. Retrieve backends build their index once per corpus and reuse it across runs; `BaseRetrieveConnector.clear_index_cache()` drops the cached indexes.
 
 ### `rerank` -- `query_text + candidates + top_k -> reordered passages`
 
@@ -124,7 +124,8 @@ and is skipped on CI.
 
 Returns prose plus citations, grounded by construction (every citation is one of
 the supplied passages). Passages arrive inline (`passages`) or, with
-`passages_source`, from an upstream feature such as `reranked_passages`. `ExtractiveResponder` (`generate_backend="extractive"`)
+`passages_source`, from an upstream feature such as `reranked_passages`.
+`ExtractiveResponder` (`generate_backend="extractive"`)
 does pure-Python sentence extraction with a single citation. `TemplateResponder`
 (`generate_backend="template"`) selects top query-relevant sentences across
 passages into a fixed template and cites every passage it drew from. LLM-backed

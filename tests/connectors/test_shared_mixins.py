@@ -189,8 +189,9 @@ class TestSharedDocSource:
             ([{"doc_id": "d0", "text": "alpha"}], re.escape("{'doc_id': 'd0', 'text': 'alpha'}"), None),
             ([{"doc_id": "d0", "text": "z" * 500}], re.escape("..."), "z" * 100),
             ([_DOCS[:1], _DOCS[1:]], "got 2 rows", "alpha"),
+            ([["alpha", "beta"]], re.escape("['alpha', 'beta']"), None),
         ],
-        ids=["non_list_payload", "large_payload_truncated", "multiple_rows"],
+        ids=["non_list_payload", "large_payload_truncated", "multiple_rows", "non_dict_entries"],
     )
     def test_source_not_one_list_row_raises(
         self,
