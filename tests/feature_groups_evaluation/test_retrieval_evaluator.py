@@ -62,9 +62,10 @@ class TestRetrievalEvaluator:
         data = _make_data(source)
         features = _make_features(source)
 
+        context = make_hook_context()
         with (
             patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]),
-            make_hook_context().activate() as context,
+            context.activate(),
         ):
             result = RetrievalEvaluator.calculate_feature(data, features)
 
@@ -115,9 +116,10 @@ class TestRetrievalEvaluator:
         )
         features = _make_features(source)
 
+        context = make_hook_context()
         with (
             patch.object(RetrievalEvaluator, "_extract_source_features", return_value=[source]),
-            make_hook_context().activate() as context,
+            context.activate(),
         ):
             result = RetrievalEvaluator.calculate_feature(data, features)
 

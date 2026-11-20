@@ -110,6 +110,10 @@ class EmbeddingArtifact(BaseArtifact):
         except ImportError:
             raise ImportError("joblib is required for EmbeddingArtifact. Install with: pip install joblib")
 
+        # The saved file this feature was given, via Options or run(artifacts=...).
+        if isinstance(features.artifact_value, str):
+            return {features.artifact_to_load: joblib.load(features.artifact_value)}
+
         # Get storage path
         storage_path = None
 

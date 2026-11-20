@@ -99,7 +99,10 @@ class VectorStoreArtifact(BaseArtifact):
         Returns:
             Dictionary of {artifact_key: {"index": faiss.Index, "metadata": dict}}
         """
-        import faiss
+        # The saved paths this feature was given, via Options or run(artifacts=...).
+        saved = features.artifact_value
+        if isinstance(saved, dict) and "index_path" in saved:
+            return {features.artifact_to_load: cls._load_files(Path(saved["index_path"]), Path(saved["metadata_path"]))}
 
         storage_dir = cls._get_storage_path(features)
         if not storage_dir.exists():
@@ -108,26 +111,24 @@ class VectorStoreArtifact(BaseArtifact):
         loaded_artifacts: dict[str, Any] = {}
 
         for index_path in storage_dir.glob("vector_store_*.faiss"):
-            # Find the corresponding metadata file
             stem = index_path.stem  # e.g. vector_store_abc123
-            metadata_path = index_path.parent / f"{stem}_metadata.json"
-
-            index = faiss.read_index(str(index_path))
-
-            metadata: dict[str, Any] = {}
-            if metadata_path.exists():
-                with open(metadata_path, encoding="utf-8") as f:
-                    metadata = json.load(f)
-
-            artifact_key = metadata.get("artifact_key", stem)
-            loaded_artifacts[artifact_key] = {
-                "index": index,
-                "metadata": metadata,
-            }
+            loaded = cls._load_files(index_path, index_path.parent / f"{stem}_metadata.json")
+            loaded_artifacts[loaded["metadata"].get("artifact_key", stem)] = loaded
 
         if loaded_artifacts:
             return loaded_artifacts
         return None
+
+    @staticmethod
+    def _load_files(index_path: Path, metadata_path: Path) -> dict[str, Any]:
+        """Read one FAISS index and its optional metadata sidecar."""
+        import faiss
+
+        metadata: dict[str, Any] = {}
+        if metadata_path.exists():
+            with open(metadata_path, encoding="utf-8") as f:
+                metadata = json.load(f)
+        return {"index": faiss.read_index(str(index_path)), "metadata": metadata}
 
     @classmethod
     def save_vector_store_artifact(
