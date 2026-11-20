@@ -63,12 +63,12 @@ class TestHaystackOrchestrator(OrchestratorConnectorContractBase):
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
         connector.clear_pipeline_cache()
-        session.run(parameters={connector.QUERY_TEXT: self.sample_query(), connector.TOP_K: 1})
+        # The query matches every doc, so the document count shows each run's top_k.
+        query = {connector.QUERY_TEXT: "cat dogs cars"}
+        first = self._answer_row(session.run(parameters={**query, connector.TOP_K: 1}))
         built = _cached_pipeline.cache_info()
-        second = self._answer_row(
-            session.run(parameters={connector.QUERY_TEXT: "loyal energetic companions", connector.TOP_K: 3})
-        )
+        second = self._answer_row(session.run(parameters={**query, connector.TOP_K: 3}))
         reused = _cached_pipeline.cache_info()
         assert (built.misses, built.hits) == (1, 0)
         assert (reused.misses, reused.hits) == (1, 1)
-        assert second["documents"][0]["doc_id"] == "d2"
+        assert (len(first["documents"]), len(second["documents"])) == (1, 3)

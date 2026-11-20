@@ -54,7 +54,7 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
         if not query.strip() or not any(text.strip() for _, text in entries) or effective_k <= 0:
             return "", []
 
-        result = _cached_pipeline(tuple(entries)).run({"retriever": {"query": query, "top_k": effective_k}})
+        result = _cached_pipeline(cls, tuple(entries)).run({"retriever": {"query": query, "top_k": effective_k}})
 
         # document.score is float | None; the BM25 retriever filters out
         # non-positive scores, so every surfaced document carries a float score.
@@ -65,32 +65,36 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
         answer = documents[0]["text"] if documents else ""
         return answer, documents
 
+    @classmethod
+    def _build_pipeline(cls, entries: tuple[tuple[str, str], ...]) -> Any:
+        """A BM25 pipeline over ``entries``; ``Pipeline.run`` keeps per-run state local, so runs may share it."""
+        # Haystack evaluates telemetry at first import (and Pipeline.run() would
+        # otherwise POST a PostHog event and write ~/.haystack/config.yaml), so
+        # opt out before the lazy import to keep runs offline and deterministic.
+        os.environ.setdefault("HAYSTACK_TELEMETRY_ENABLED", "False")
+
+        from haystack import Document, Pipeline
+        from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
+        from haystack.document_stores.in_memory import InMemoryDocumentStore
+
+        # Not shared: a shared store lives in process-global storage and outlives its cache entry.
+        store = InMemoryDocumentStore(shared=False)
+        store.write_documents([Document(id=doc_id, content=text) for doc_id, text in entries])
+        pipeline = Pipeline()
+        pipeline.add_component("retriever", InMemoryBM25Retriever(document_store=store))
+        return pipeline
+
     @staticmethod
     def clear_pipeline_cache() -> None:
         """Drop every cached pipeline (the cache holds corpus text in process memory)."""
         _cached_pipeline.cache_clear()
 
 
-# Up to PIPELINE_CACHE_SIZE corpora stay cached process-wide, least recently used evicted first.
-# A concurrent miss may build the same pipeline twice.
+# Up to PIPELINE_CACHE_SIZE (backend, corpus) pipelines stay cached process-wide, least recently used
+# evicted first. A concurrent miss may build the same pipeline twice.
 PIPELINE_CACHE_SIZE = 8
 
 
 @functools.lru_cache(maxsize=PIPELINE_CACHE_SIZE)
-def _cached_pipeline(entries: tuple[tuple[str, str], ...]) -> Any:
-    """A BM25 pipeline over ``entries``; ``Pipeline.run`` keeps per-run state local, so runs may share it."""
-    # Haystack evaluates telemetry at first import (and Pipeline.run() would
-    # otherwise POST a PostHog event and write ~/.haystack/config.yaml), so
-    # opt out before the lazy import to keep runs offline and deterministic.
-    os.environ.setdefault("HAYSTACK_TELEMETRY_ENABLED", "False")
-
-    from haystack import Document, Pipeline
-    from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
-    from haystack.document_stores.in_memory import InMemoryDocumentStore
-
-    # Not shared: a shared store lives in process-global storage and outlives its cache entry.
-    store = InMemoryDocumentStore(shared=False)
-    store.write_documents([Document(id=doc_id, content=text) for doc_id, text in entries])
-    pipeline = Pipeline()
-    pipeline.add_component("retriever", InMemoryBM25Retriever(document_store=store))
-    return pipeline
+def _cached_pipeline(connector: type[HaystackOrchestrator], entries: tuple[tuple[str, str], ...]) -> Any:
+    return connector._build_pipeline(entries)

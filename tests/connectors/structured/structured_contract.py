@@ -234,6 +234,13 @@ class StructuredConnectorContractBase(ABC):
         assert answers[0] != answers[1]
         with pytest.raises(ValueError, match=connector.QUESTION):
             session.run()
+        # A prepare-time context question is the baseline a run may override.
+        baseline = Options(context={**table, connector.QUESTION: self.count_question()})
+        session = mloda.prepare(
+            [Feature(connector.ROOT_FEATURE_NAME, options=baseline)], [PythonDictFramework], plugin_collector=plugins
+        )
+        assert self._answer_row(session.run()) == answers[0]
+        assert self._answer_row(session.run(parameters={connector.QUESTION: self.filter_question()})) == answers[1]
         grouped = Options(group={**table, connector.QUESTION: self.count_question()})
         with pytest.raises(ValueError, match=connector.QUESTION):
             mloda.prepare(
