@@ -12,9 +12,10 @@ ahead of ``FeatureGroup`` in a base, so mloda discovery still sees only the
 from __future__ import annotations
 
 import reprlib
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
+from mloda.provider import NAME_STAGE, CoreDeclineCode, record_match_rejection
 from mloda.user import Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
@@ -23,6 +24,22 @@ from rag_integration.feature_groups.connectors.errors import (
     MissingOptionError,
     RankingContractError,
 )
+
+
+def backend_selected(owner: str, options: Options, key: str, backends: Mapping[str, str]) -> bool:
+    """True when `key` names one of `backends`; otherwise record why, except on an inert base (no backends)."""
+    backend = options.get(key)
+    if backend in backends:
+        return True
+    if not backends:
+        return False
+    if backend is None:
+        record_match_rejection(
+            owner, f"required option '{key}' is absent", stage=NAME_STAGE, code=CoreDeclineCode.REQUIRED_OPTION_ABSENT
+        )
+    else:
+        record_match_rejection(owner, f"{key} {backend!r} not one of: {', '.join(backends)}", stage=NAME_STAGE)
+    return False
 
 
 class SingleQueryPerRunMixin:

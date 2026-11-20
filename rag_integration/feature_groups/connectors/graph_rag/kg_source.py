@@ -21,7 +21,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 
 from rag_integration.feature_groups.connectors.errors import InvalidOptionError
-from rag_integration.feature_groups.connectors.mixins import OptionsMixin, SingleQueryPerRunMixin
+from rag_integration.feature_groups.connectors.mixins import OptionsMixin, SingleQueryPerRunMixin, backend_selected
 
 
 class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, DataCreatorFeatureGroup):
@@ -65,8 +65,7 @@ class BaseKnowledgeGraphSource(SingleQueryPerRunMixin, OptionsMixin, DataCreator
         """Match the root feature name only for a backend this concrete declares."""
         if str(feature_name) != cls.ROOT_FEATURE_NAME:
             return False
-        backend = options.get(cls.KG_BACKEND)
-        return backend in cls.KG_BACKENDS
+        return backend_selected(cls.get_class_name(), options, cls.KG_BACKEND, cls.KG_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (the graph definition arrives via Options)."""

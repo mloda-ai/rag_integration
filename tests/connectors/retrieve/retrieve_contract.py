@@ -16,7 +16,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureGroup, FeatureSet
+from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureGroup, FeatureSet, collect_match_rejections
 from mloda.user import Feature, Options, PluginCollector, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -186,7 +186,9 @@ class RetrieveConnectorContractBase(ABC):
         """Honest surface: the connector does not claim a backend it cannot serve."""
         connector = self.connector_class()
         opts = Options(context={connector.RETRIEVE_BACKEND: "definitely_not_a_backend_xyz"})
-        assert connector.match_feature_group_criteria(connector.ROOT_FEATURE_NAME, opts) is False
+        with collect_match_rejections() as reasons:
+            assert connector.match_feature_group_criteria(connector.ROOT_FEATURE_NAME, opts) is False
+        assert "'definitely_not_a_backend_xyz' not one of" in reasons[connector.get_class_name()].reason
 
     def test_backend_declared_in_supported_set(self) -> None:
         connector = self.connector_class()

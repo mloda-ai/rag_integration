@@ -41,6 +41,7 @@ from rag_integration.feature_groups.connectors.mixins import (
     RankingValidationMixin,
     SingleQueryPerRunMixin,
     TopKMixin,
+    backend_selected,
 )
 
 
@@ -108,8 +109,7 @@ class BaseRerankConnector(
         """
         if str(feature_name) != cls.ROOT_FEATURE_NAME:
             return False
-        backend = options.get(cls.RERANK_BACKEND)
-        return backend in cls.RERANK_BACKENDS
+        return backend_selected(cls.get_class_name(), options, cls.RERANK_BACKEND, cls.RERANK_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> None:
         """Root feature: no input features (candidates arrive via Options)."""
