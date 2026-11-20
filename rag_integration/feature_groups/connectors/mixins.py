@@ -116,7 +116,7 @@ class OptionsMixin:
         """The run's query string for runtime key ``key``."""
         query = cls._require_value(run_value(features, feature, key), key, "options or run(parameters=...)")
         if not isinstance(query, str):
-            raise InvalidOptionError(f"{cls.__name__} option '{key}' must be a string, got {type(query).__name__}.")
+            raise InvalidOptionError(f"{cls.__name__} '{key}' must be a string, got {type(query).__name__}.")
         return query
 
 

@@ -203,3 +203,10 @@ class GenerateConnectorContractBase(ABC):
         assert answers[0] != answers[1]
         with pytest.raises(ValueError, match=connector.QUERY_TEXT):
             session.run()
+        grouped = Options(group={**options.context, connector.QUERY_TEXT: self.sample_query()})
+        with pytest.raises(ValueError, match=connector.QUERY_TEXT):
+            mloda.prepare(
+                [Feature(connector.ROOT_FEATURE_NAME, options=grouped)],
+                [PythonDictFramework],
+                plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+            )

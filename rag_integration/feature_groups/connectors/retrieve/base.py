@@ -310,8 +310,9 @@ class BaseRetrieveConnector(
         _cached_index.cache_clear()
 
 
-# Up to INDEX_CACHE_SIZE corpora stay indexed process-wide, least recently used evicted first.
-# A concurrent miss may build the same index twice.
+# Up to INDEX_CACHE_SIZE (backend, corpus) indexes stay cached process-wide, least recently used
+# evicted first; hybrid_rrf takes two (bm25s and faiss). Fixed at import. A concurrent miss may
+# build the same index twice.
 INDEX_CACHE_SIZE = 8
 
 

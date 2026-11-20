@@ -95,7 +95,7 @@ results = mlodaAPI.run_all(
 )
 ```
 
-In every query-taking family (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run.
+In every family that takes `query_text` (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run.
 
 ```python
 from mloda.user import mloda

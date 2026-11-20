@@ -61,24 +61,24 @@ class TfidfRetriever(BaseRetrieveConnector):
 
     @classmethod
     def _build_index(cls, texts: tuple[str, ...]) -> Any:
-        """The tokenized corpus and each term's document frequency."""
-        tokenized = tuple(TfidfEmbedder._tokenize(text) for text in texts)
-        return tokenized, Counter(term for tokens in tokenized for term in set(tokens))
+        """Each document's hashed term frequencies and each term's document frequency."""
+        docs = tuple(TfidfEmbedder._hashed_tf(TfidfEmbedder._tokenize(text), cls._TFIDF_DIM) for text in texts)
+        return docs, Counter(word for terms in docs for word, _, _ in terms)
 
     @classmethod
     def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
-        # IDF spans the corpus plus the query (one shared space), so every document is
-        # re-embedded per query; only tokenization and document frequencies are reused.
-        tokenized, doc_freq = cls._index(texts)
-        query_tokens = TfidfEmbedder._tokenize(query)
-        query_terms = set(query_tokens)
-        n_docs = len(tokenized) + 1
+        # IDF spans the corpus plus the query (one shared space), so each query re-weighs every
+        # document; tokenizing, term frequencies and hashing are reused.
+        docs, doc_freq = cls._index(texts)
+        query_terms = TfidfEmbedder._hashed_tf(TfidfEmbedder._tokenize(query), cls._TFIDF_DIM)
+        query_words = {word for word, _, _ in query_terms}
+        n_docs = len(docs) + 1
         idf = {
-            term: TfidfEmbedder._idf(n_docs, doc_freq.get(term, 0) + (term in query_terms))
-            for term in doc_freq.keys() | query_terms
+            word: TfidfEmbedder._idf(n_docs, doc_freq.get(word, 0) + (word in query_words))
+            for word in doc_freq.keys() | query_words
         }
-        query_vector = TfidfEmbedder._tfidf_embed(query_tokens, idf, cls._TFIDF_DIM)
-        doc_vectors = [TfidfEmbedder._tfidf_embed(tokens, idf, cls._TFIDF_DIM) for tokens in tokenized]
+        query_vector = TfidfEmbedder._weigh(query_terms, idf, cls._TFIDF_DIM)
+        doc_vectors = [TfidfEmbedder._weigh(terms, idf, cls._TFIDF_DIM) for terms in docs]
 
         scored = [(idx, cls._cosine(query_vector, doc_vector)) for idx, doc_vector in enumerate(doc_vectors)]
         # Family rule: only positively scoring passages are returned. This also

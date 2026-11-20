@@ -49,7 +49,7 @@ class TestTfidfRetriever(RetrieveConnectorContractBase):
     def test_cached_scores_match_one_batch_embedding(self) -> None:
         """The cached corpus side scores exactly as embedding corpus and query in one batch."""
         texts = [doc["text"] for doc in self.sample_corpus()]
-        for query in ("cat pet", "loyal dog engine", "pet pet window"):
+        for query in ("cat pet", "loyal dog engine", "pet pet window", "zebra cat"):
             vectors = TfidfEmbedder._embed_texts(texts + [query], TfidfRetriever._TFIDF_DIM, "default")
             scored = [(i, TfidfRetriever._cosine(vectors[-1], doc)) for i, doc in enumerate(vectors[:-1])]
             expected = sorted(((i, s) for i, s in scored if s > 0.0), key=lambda pair: (-pair[1], pair[0]))
