@@ -165,6 +165,7 @@ class TestVectorStoreArtifact:
         index.add(np.array([[1.0, 0.0]], dtype=np.float32))
         VectorStoreArtifact.save_vector_store_artifact(mock_features, "mixed", index, ["text"], ["doc_1"])
         saved = VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
+        assert saved is not None
 
         metadata_path = Path(saved["mixed"]["metadata_path"])
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))

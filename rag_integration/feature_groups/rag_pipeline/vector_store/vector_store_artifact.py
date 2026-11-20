@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import threading
@@ -80,7 +81,7 @@ class VectorStoreArtifact(BaseArtifact):
             # Sidecar first: the index is what the loader globs for.
             with cls._save_lock:
                 atomic_write(metadata_path, write_metadata)
-                atomic_write(index_path, lambda tmp, index=artifact_data["index"]: faiss.write_index(index, tmp))
+                atomic_write(index_path, functools.partial(faiss.write_index, artifact_data["index"]))
 
             saved_paths[artifact_key] = {
                 "index_path": str(index_path),

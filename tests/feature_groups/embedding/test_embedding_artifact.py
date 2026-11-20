@@ -235,7 +235,9 @@ class TestEmbeddingArtifact:
         mock_features.save_artifact = {}
 
         EmbeddingArtifact.save_embedding_artifact(mock_features, "key", {"embeddings": [[0.1]]})
-        saved = Path(EmbeddingArtifact.custom_saver(mock_features, mock_features.save_artifact)["key"])
+        saved_paths = EmbeddingArtifact.custom_saver(mock_features, mock_features.save_artifact)
+        assert saved_paths is not None
+        saved = Path(saved_paths["key"])
 
         default_dir = tmp_path / "cache" / "rag_integration" / "artifacts"
         assert saved.parent == default_dir

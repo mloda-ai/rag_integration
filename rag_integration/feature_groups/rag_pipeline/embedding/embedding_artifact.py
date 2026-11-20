@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import os
 from pathlib import Path
@@ -78,7 +79,7 @@ class EmbeddingArtifact(BaseArtifact):
             # Generate unique file path for this artifact
             file_path = cls._get_artifact_file_path_for_key(features, artifact_key)
 
-            atomic_write(file_path, lambda tmp, data=artifact_data: joblib.dump(data, tmp))
+            atomic_write(file_path, functools.partial(joblib.dump, artifact_data))
             saved_paths[artifact_key] = str(file_path)
 
         return saved_paths
