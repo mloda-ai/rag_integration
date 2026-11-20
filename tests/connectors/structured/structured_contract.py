@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import pytest
-from mloda.user import Feature, Options, PluginCollector, mlodaAPI
+from mloda.user import Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -100,6 +100,11 @@ class StructuredConnectorContractBase(ABC):
             compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
+        return cls._answer_row(result)
+
+    @classmethod
+    def _answer_row(cls, result: Any) -> dict[str, Any]:
+        connector = cls.connector_class()
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
@@ -208,3 +213,29 @@ class StructuredConnectorContractBase(ABC):
         result = self._run_all(self.count_question())
         (only_value,) = result["rows"][0].values()
         assert only_value == len(self.rows())
+
+    def test_prepared_session_serves_a_question_per_run(self) -> None:
+        connector = self.connector_class()
+        table = {
+            connector.STRUCTURED_BACKEND: self.backend_value(),
+            connector.TABLE: self.table_name(),
+            connector.COLUMNS: self.columns(),
+            connector.ROWS: self.rows(),
+        }
+        plugins = PluginCollector.enabled_feature_groups({connector})
+        feature = Feature(connector.ROOT_FEATURE_NAME, options=Options(context=table))
+        session = mloda.prepare([feature], [PythonDictFramework], plugin_collector=plugins)
+        assert set(session.run_surface.parameters) == {connector.QUESTION}
+        answers = []
+        for question in (self.count_question(), self.filter_question()):
+            run = self._answer_row(session.run(parameters={connector.QUESTION: question}))
+            assert run == self._run_all(question)
+            answers.append(run)
+        assert answers[0] != answers[1]
+        with pytest.raises(ValueError, match=connector.QUESTION):
+            session.run()
+        grouped = Options(group={**table, connector.QUESTION: self.count_question()})
+        with pytest.raises(ValueError, match=connector.QUESTION):
+            mloda.prepare(
+                [Feature(connector.ROOT_FEATURE_NAME, options=grouped)], [PythonDictFramework], plugin_collector=plugins
+            )

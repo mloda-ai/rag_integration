@@ -75,9 +75,7 @@ class AggregateSql(BaseStructuredConnector):
         BaseStructuredConnector.STRUCTURED_BACKEND: property_spec(
             "Use 'aggregate' for aggregation-aware text-to-SQL", context=False
         ),
-        BaseStructuredConnector.QUESTION: property_spec(
-            "Natural-language question to answer over the table", context=False, default=None
-        ),
+        BaseStructuredConnector.QUESTION: BaseStructuredConnector.QUESTION_SPEC,
         BaseStructuredConnector.TABLE: property_spec(
             "Table name (a simple SQL identifier)", context=False, default=None
         ),

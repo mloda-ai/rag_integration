@@ -188,7 +188,7 @@ contracts declared on the family base classes.
 | `generate` | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub anchor |
 | `graph_rag` | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query-overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub anchor + real-lib |
 | `structured` | `question + table -> SQL -> typed rows` (`structured_rows: {sql, rows}`); in-mem SQLite, single-SELECT sqlglot guard | `RuleBasedSql` (deterministic NL->SQL over in-mem SQLite) | `AggregateSql` (aggregation queries) | fixture-stub anchor |
-| `orchestrator` | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack 2.x BM25 pipeline, offline, telemetry off) | `R2RFixtureOrchestrator` (file-fixture REST stub, honest-surface narrowing) | real-lib-inmem + fixture-stub |
+| `orchestrator` | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack BM25 pipeline, offline, telemetry off) | `R2RFixtureOrchestrator` (file-fixture REST stub, honest-surface narrowing) | real-lib-inmem + fixture-stub |
 
 What each family is for:
 

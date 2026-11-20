@@ -100,10 +100,11 @@ graph = [
 structured = [
     "sqlglot>=25",
 ]
-# orchestrator family canonical backend: Haystack 2.x (Apache-2.0). Its in-memory
+# orchestrator family canonical backend: Haystack (Apache-2.0). Its in-memory
 # BM25 pipeline is zero-download (no model, no server), so it runs in CI.
+# 3.0 adds non-shared in-memory stores and a reentrant Pipeline.run.
 orchestrator = [
-    "haystack-ai>=2.0",
+    "haystack-ai>=3.0",
 ]
 
 [tool.setuptools.packages.find]

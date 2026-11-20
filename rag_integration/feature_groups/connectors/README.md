@@ -33,7 +33,7 @@ download or server). The full survey in the design doc also uses
 | [`generate`](generate/) | `query_text + passages -> answer + citations` (`generated_answer: {answer, citations}`), grounded by construction | `ExtractiveResponder` (stdlib sentence extraction) | `TemplateResponder` (multi-citation template) | fixture-stub | [`generate_contract.py`](../../../tests/connectors/generate/generate_contract.py) |
 | [`graph_rag`](graph_rag/) | `query_text + (nodes + edges, or a `graph_source` feature) + top_k -> ranked passages` (`graph_passages`); query overlap + one-hop neighbour bonus | `AdjacencyGraphRag` (stdlib adjacency map, zero-download) | `NetworkxGraphRag` (`networkx`, `graph` extra); parity test pins identical ranking; `TriplesKnowledgeGraph` KG source feeds either backend | fixture-stub | [`graph_rag_contract.py`](../../../tests/connectors/graph_rag/graph_rag_contract.py) |
 | [`structured`](structured/) | `question + table -> SQL -> typed rows` (`structured_rows: {sql, rows}`); in-mem SQLite, single-SELECT `sqlglot` guard | `RuleBasedSql` (rule-based NL->SQL, `structured` extra) | `AggregateSql` (adds avg/min/max/sum intents) | fixture-stub | [`structured_contract.py`](../../../tests/connectors/structured/structured_contract.py) |
-| [`orchestrator`](orchestrator/) | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack 2.x BM25, offline, `orchestrator` extra) | `R2RFixtureOrchestrator` (file-fixture REST stub) | real-lib-inmem | [`orchestrator_contract.py`](../../../tests/connectors/orchestrator/orchestrator_contract.py) |
+| [`orchestrator`](orchestrator/) | `query_text + corpus + top_k -> answer + documents` (internals opaque) (`orchestrated_answer: {answer, documents}`) | `HaystackOrchestrator` (Haystack BM25, offline, `orchestrator` extra) | `R2RFixtureOrchestrator` (file-fixture REST stub) | real-lib-inmem | [`orchestrator_contract.py`](../../../tests/connectors/orchestrator/orchestrator_contract.py) |
 
 ## Families in detail
 
@@ -95,7 +95,7 @@ results = mlodaAPI.run_all(
 )
 ```
 
-In every family that takes `query_text` (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run.
+In every family that takes `query_text` (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run. The structured family's `question` works the same way, so a plan mixing it with the others passes both per run.
 
 ```python
 from mloda.user import mloda
@@ -151,15 +151,17 @@ Answers a natural-language question over a relational table. `RuleBasedSql`
 executed on stdlib `sqlite3`, with `sqlglot` validating the generated SQL is a
 single top-level `SELECT`. Values are always bound parameters and identifiers
 whitelisted. `AggregateSql` (`structured_backend="aggregate"`) adds aggregation
-intents (avg/min/max/sum) on top of the count/filter/list intents.
+intents (avg/min/max/sum) on top of the count/filter/list intents. `question` is
+a runtime parameter: prepare once, then pass each question per run.
 
 ### `orchestrator` -- `query_text + corpus + top_k -> answer + documents`
 
 Wraps a whole external RAG framework as one connector (bring your existing
 pipeline); the internals are the framework's. `HaystackOrchestrator`
 (`orchestrator_backend="haystack"`, `--extra orchestrator`) runs a real Haystack
-2.x in-memory BM25 pipeline, zero-download (no model, no server) so it runs in
-CI. `R2RFixtureOrchestrator` (`orchestrator_backend="r2r"`) models a
+in-memory BM25 pipeline, zero-download (no model, no server) so it runs in
+CI. The pipeline is built once per corpus and reused across runs;
+`HaystackOrchestrator.clear_pipeline_cache()` drops it. `R2RFixtureOrchestrator` (`orchestrator_backend="r2r"`) models a
 server-shaped tool over a static JSON fixture, surfacing only canned documents
 that are in the supplied corpus. Other server-shaped tools can follow the same
 fixture-stub pattern.

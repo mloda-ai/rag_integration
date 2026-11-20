@@ -6,7 +6,8 @@ A structured connector answers a natural-language question over a relational
 table by translating it to SQL and executing it. It is a ROOT FeatureGroup: the
 table (name, columns, rows) is passed inline through ``Options`` and executed in
 an in-memory SQLite database, so the family is self-contained and
-contract-testable without an external database.
+contract-testable without an external database. ``question`` is a runtime
+parameter: a prepared session takes a new question per run.
 
 Output (single row, keyed by the root feature name)::
 
@@ -59,9 +60,12 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, DataCreatorF
 
     STRUCTURED_BACKENDS: ClassVar[dict[str, str]] = {}
 
+    # Runtime: a prepared session takes a new question per run via ``session.run(parameters=...)``.
+    QUESTION_SPEC = property_spec("Natural-language question to answer over the table", default=None, runtime=True)
+
     PROPERTY_MAPPING: ClassVar = {
         STRUCTURED_BACKEND: property_spec("Which structured (text-to-SQL) backend to use", context=False),
-        QUESTION: property_spec("Natural-language question to answer over the table", context=False, default=None),
+        QUESTION: QUESTION_SPEC,
         TABLE: property_spec("Table name (a simple SQL identifier)", context=False, default=None),
         COLUMNS: property_spec("Column names (simple SQL identifiers)", context=False, default=None),
         ROWS: property_spec("Table rows: a list of {column: value} dicts", context=False, default=None),
@@ -185,7 +189,7 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, DataCreatorF
         cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
-            question = str(cls._require_option(options, cls.QUESTION))
+            question = cls._run_query(features, feature, cls.QUESTION)
             table = str(cls._require_option(options, cls.TABLE))
             raw_columns = cls._require_option(options, cls.COLUMNS)
             if not isinstance(raw_columns, (list, tuple)):
