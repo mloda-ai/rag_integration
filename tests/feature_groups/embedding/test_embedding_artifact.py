@@ -64,17 +64,14 @@ class TestEmbeddingArtifact:
         assert loaded["model_name"] == "test-model"
         assert loaded["embedding_dim"] == 3
 
-        # The artifact value names the saved file, wherever artifact_storage_path points.
-        elsewhere = MagicMock()
-        elsewhere.options.get.side_effect = lambda key: (
-            str(tmp_path / "empty") if key == "artifact_storage_path" else None
-        )
+        # A value bound to another key adds that key; the storage dir still serves the rest.
         mock_features_value = MagicMock(
-            artifact_to_load=artifact_key, artifact_value=saved_paths[artifact_key], features=[elsewhere]
+            artifact_to_load="other__embedded", artifact_value=Path(saved_paths[artifact_key]), features=[mock_feature]
         )
-        loaded_from_value = EmbeddingArtifact.load_embedding_artifact(mock_features_value, artifact_key)
-        assert loaded_from_value is not None
-        assert loaded_from_value["embeddings"] == embeddings
+        for key in (artifact_key, "other__embedded"):
+            loaded_by_key = EmbeddingArtifact.load_embedding_artifact(mock_features_value, key)
+            assert loaded_by_key is not None
+            assert loaded_by_key["embeddings"] == embeddings
 
     def test_artifact_not_found_raises_error(self, tmp_path: Path) -> None:
         """Test that loading a non-existent artifact raises ValueError."""

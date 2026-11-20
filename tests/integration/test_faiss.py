@@ -10,6 +10,7 @@ Covers three scenarios:
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -266,7 +267,8 @@ class TestVectorStoreArtifactPersistence:
 
         Rebuilding would mean the artifact never reached the feature group, so
         _build_index fails the run instead of silently recomputing. Run 2 gets the
-        artifact through Options or through run(artifacts=...) on the same session.
+        artifact through Options, or through run(artifacts=...) on the same session
+        with the files moved out of artifact_storage_path.
         """
         with tempfile.TemporaryDirectory() as tmp_dir:
             providers = make_domain_providers("vs_artifact_load_test")
@@ -284,17 +286,21 @@ class TestVectorStoreArtifactPersistence:
             assert feature_name in session.artifact_inputs
 
             # Run 2: load from artifact
+            if load_via == "run_artifacts":
+                moved_dir = Path(tmp_dir) / "moved"
+                moved_dir.mkdir()
+                moved = {kind: shutil.move(path, moved_dir) for kind, path in artifacts1[feature_name].items()}
             with patch.object(
                 FaissFlatIndexer,
                 "_build_index",
                 side_effect=AssertionError("Run 2 rebuilt the index instead of loading it"),
             ):
                 if load_via == "run_artifacts":
-                    result2 = session.run(artifacts=artifacts1)
+                    result2 = session.run(artifacts={feature_name: moved})
                 else:
                     combined_options = {**feature_options, **artifacts1}
                     feature2 = Feature(feature_name, options=Options(combined_options), domain="vs_artifact_load_test")
-                    result2 = mlodaAPI.run_all([feature2], [PythonDictFramework], plugin_collector=plugin_collector)
+                    result2 = mloda.run_all([feature2], [PythonDictFramework], plugin_collector=plugin_collector)
             rows2 = flatten_result(result2)
 
             assert rows1 == rows2, "Rows should match between runs"

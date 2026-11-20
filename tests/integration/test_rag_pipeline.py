@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -364,8 +365,9 @@ class TestEmbeddingArtifactIntegration:
 
         Run 2 must load the embeddings from the artifact. Recomputing them would mean the
         artifact never reached the feature group, so _embed_texts fails the run instead.
-        Run 2 gets the artifact through Options or through run(artifacts=...) on the same
-        session. Both runs publish their stats to an extender: only run 2 reuses the artifact.
+        Run 2 gets the artifact through Options, or through run(artifacts=...) on the same
+        session with the file moved out of artifact_storage_path. Both runs publish their
+        stats to an extender: only run 2 reuses the artifact.
         """
         feature_name = "docs__pii_redacted__chunked__deduped__embedded"
 
@@ -396,17 +398,21 @@ class TestEmbeddingArtifactIntegration:
 
             # Run 2: load from artifact
             capture.attributes.clear()
+            if load_via == "run_artifacts":
+                moved_dir = artifact_path / "moved"
+                moved_dir.mkdir()
+                moved = shutil.move(artifacts1[feature_name], moved_dir)
             with patch.object(
                 MockEmbedder,
                 "_embed_texts",
                 side_effect=AssertionError("Run 2 recomputed embeddings instead of loading"),
             ):
                 if load_via == "run_artifacts":
-                    result2 = session.run(artifacts=artifacts1)
+                    result2 = session.run(artifacts={feature_name: moved})
                 else:
                     combined_options = {**feature_options, **artifacts1}
                     feature2 = Feature(feature_name, options=Options(combined_options), domain="mock_artifact_test")
-                    result2 = mlodaAPI.run_all(
+                    result2 = mloda.run_all(
                         [feature2],
                         [PythonDictFramework],
                         plugin_collector=plugin_collector,

@@ -65,13 +65,13 @@ class TestVectorStoreArtifact:
         assert loaded["metadata"]["texts"] == texts
         assert loaded["metadata"]["doc_ids"] == doc_ids
 
-        # The artifact value names the saved files, wherever artifact_storage_path points.
-        elsewhere = self._make_mock_features(tmp_path / "empty")
-        elsewhere.artifact_to_load = artifact_key
-        elsewhere.artifact_value = saved_paths[artifact_key]
-        loaded_from_value = VectorStoreArtifact.load_vector_store_artifact(elsewhere, artifact_key)
-        assert loaded_from_value is not None
-        assert loaded_from_value["metadata"]["texts"] == texts
+        # A value bound to another key adds that key (sidecar path optional); the storage dir still serves the rest.
+        mock_features.artifact_to_load = "other__indexed"
+        mock_features.artifact_value = {"index_path": saved_paths[artifact_key]["index_path"]}
+        for key in (artifact_key, "other__indexed"):
+            loaded_by_key = VectorStoreArtifact.load_vector_store_artifact(mock_features, key)
+            assert loaded_by_key is not None
+            assert loaded_by_key["metadata"]["texts"] == texts
 
     def test_metadata_sidecar_content(self, tmp_path: Path) -> None:
         """Test that the JSON metadata sidecar contains correct data."""
