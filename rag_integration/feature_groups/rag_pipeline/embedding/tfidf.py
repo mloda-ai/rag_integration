@@ -61,9 +61,14 @@ class TfidfEmbedder(BaseEmbedder):
 
         for word in vocab:
             doc_count = sum(1 for doc in documents if word in doc)
-            idf[word] = math.log((n_docs + 1) / (doc_count + 1)) + 1
+            idf[word] = cls._idf(n_docs, doc_count)
 
         return idf
+
+    @staticmethod
+    def _idf(n_docs: int, doc_count: int) -> float:
+        """Smoothed IDF of a term found in ``doc_count`` of ``n_docs`` documents."""
+        return math.log((n_docs + 1) / (doc_count + 1)) + 1
 
     @classmethod
     def _embed_texts(

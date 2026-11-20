@@ -1,6 +1,6 @@
 """Cross-cutting property mixins shared by the connector-family bases.
 
-Each mixin hoists one concern duplicated inline: option parsing (``OptionsMixin``),
+Each mixin hoists one concern duplicated inline: option and run-value parsing (``OptionsMixin``),
 top_k cut-off (``TopKMixin``), doc collection / doc_id bookkeeping
 (``DocCollectionMixin``), ranking validation (``RankingValidationMixin``), the
 one-query-per-run guard (``SingleQueryPerRunMixin``), and reading an upstream
@@ -91,6 +91,13 @@ class SingleRowSourceMixin:
         return payloads[0]
 
 
+def run_value(features: Any, feature: Any, key: str) -> Any:
+    """The run's value for a runtime key; the plain option for a subclass that did not declare it runtime."""
+    if key in features.runtime_parameters:
+        return features.runtime_parameter(key, feature)
+    return feature.options.get(key)
+
+
 class OptionsMixin:
     """Read required values out of ``Options``."""
 
@@ -104,6 +111,14 @@ class OptionsMixin:
             raise MissingOptionError(f"{cls.__name__} requires '{key}' in {where}.")
         return value
 
+    @classmethod
+    def _run_query(cls, features: Any, feature: Any, key: str) -> str:
+        """The run's query string for runtime key ``key``."""
+        query = cls._require_value(run_value(features, feature, key), key, "options or run(parameters=...)")
+        if not isinstance(query, str):
+            raise InvalidOptionError(f"{cls.__name__} option '{key}' must be a string, got {type(query).__name__}.")
+        return query
+
 
 class TopKMixin:
     """The ``top_k`` cut-off (retrieve, rerank, graph_rag, orchestrator)."""
@@ -112,8 +127,8 @@ class TopKMixin:
     DEFAULT_TOP_K = 5
 
     @classmethod
-    def _get_top_k(cls, options: Options) -> int:
-        return cls._parse_top_k(options.get(cls.TOP_K))
+    def _run_top_k(cls, features: Any, feature: Any) -> int:
+        return cls._parse_top_k(run_value(features, feature, cls.TOP_K))
 
     @classmethod
     def _parse_top_k(cls, val: Any) -> int:

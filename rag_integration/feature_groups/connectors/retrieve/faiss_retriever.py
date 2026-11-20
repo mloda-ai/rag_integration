@@ -1,15 +1,15 @@
 """Dense FAISS retrieve connector (canonical dense backend, issue #36).
 
 The stage pipeline's FAISS search folded in behind the family's inline-corpus
-contract: embeds corpus and query per call with the deterministic
-``HashEmbedder`` and searches an in-memory index. Requires the ``faiss`` extra.
+contract: embeds corpus and query with the deterministic ``HashEmbedder``
+and searches an in-memory index. Requires the ``faiss`` extra.
 Row-shape parity with the stage is pinned by
 ``tests/integration/test_stage_connector_parity.py``.
 """
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import numpy as np
 from mloda.provider import property_spec
@@ -22,7 +22,7 @@ class FaissDenseRetriever(BaseRetrieveConnector):
     """Dense FAISS retrieval over an inline corpus (``retrieve_backend="faiss"``).
 
     Ranks by inner product over unit-normalized hash embeddings, so scores are
-    cosine similarities. Per-call index, no shared state, idempotent. Family
+    cosine similarities. The index is built once per corpus and reused across runs. Family
     rule: at most ``top_k`` passages, only positive scores, so a degenerate
     query yields no passages.
     """
@@ -44,17 +44,19 @@ class FaissDenseRetriever(BaseRetrieveConnector):
     }
 
     @classmethod
-    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
+    def _build_index(cls, texts: tuple[str, ...]) -> Any:
         import faiss
-
-        vectors = HashEmbedder._embed_texts(list(texts) + [query], cls._EMBED_DIM, "default")
-        corpus_array = np.array(vectors[:-1], dtype=np.float32)
-        query_array = np.array([vectors[-1]], dtype=np.float32)
 
         # Unit-length vectors: inner product == cosine, returned best-first.
         index = faiss.IndexFlatIP(cls._EMBED_DIM)
-        index.add(corpus_array)
-        scores, indices = index.search(query_array, top_k)
+        index.add(np.array(HashEmbedder._embed_texts(list(texts), cls._EMBED_DIM, "default"), dtype=np.float32))
+        return index
+
+    @classmethod
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
+        # The hash embedder embeds each text on its own, so the corpus side is query-independent.
+        query_array = np.array(HashEmbedder._embed_texts([query], cls._EMBED_DIM, "default"), dtype=np.float32)
+        scores, indices = cls._index(texts).search(query_array, top_k)
 
         pairs = [(int(idx), float(score)) for idx, score in zip(indices[0], scores[0])]
         # Family rule: only positive scores; a degenerate query yields no pairs.

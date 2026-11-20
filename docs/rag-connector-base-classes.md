@@ -257,8 +257,9 @@ it routes the request to exactly one of the enabled connectors. What changes:
   a ranked passage list) or an `orchestrator` connector (`orchestrator_backend`,
   root `orchestrated_answer`, an answer plus documents). The output shape
   differs because the families answer different questions; the call site and the
-  inputs do not. Pass the inputs as context options: `retrieve` declares
-  `query_text` and `top_k` as runtime parameters, which are never group options.
+  inputs do not. Pass the inputs as context options: every query-taking family
+  declares `query_text` (and `top_k` where it ranks) as runtime parameters,
+  which are never group options.
 
 A swap is safe precisely because of the honest-surface guarantees below: a
 backend either honors the family contract or narrows it visibly (gated by its

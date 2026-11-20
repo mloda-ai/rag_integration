@@ -10,7 +10,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from mloda.user import Feature, Options, PluginCollector, mlodaAPI
+import pytest
+from mloda.user import Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -74,6 +75,11 @@ class RerankConnectorContractBase(ABC):
             compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
+        return cls._passages(result)
+
+    @classmethod
+    def _passages(cls, result: Any) -> list[dict[str, Any]]:
+        connector = cls.connector_class()
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
@@ -172,3 +178,23 @@ class RerankConnectorContractBase(ABC):
         passages = self._run_all(self.sample_query(), candidates, top_k=len(candidates))
         assert passages, "run_all produced no passages"
         assert passages[0]["doc_id"] == self.expected_top_doc_id()
+
+    def test_prepared_session_serves_a_query_per_run(self) -> None:
+        connector = self.connector_class()
+        candidates = self.sample_candidates()
+        options = Options(context={connector.RERANK_BACKEND: self.backend_value(), connector.CANDIDATES: candidates})
+        session = mloda.prepare(
+            [Feature(connector.ROOT_FEATURE_NAME, options=options)],
+            [PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+        )
+        assert set(session.run_surface.parameters) == {connector.QUERY_TEXT, connector.TOP_K}
+        answers = []
+        for query in (self.sample_query(), "zzzz qqqq"):
+            run = self._passages(session.run(parameters={connector.QUERY_TEXT: query, connector.TOP_K: 2}))
+            assert run == self._run_all(query, candidates, top_k=2)
+            answers.append(run)
+        assert answers[0][0]["doc_id"] == self.expected_top_doc_id()
+        assert answers[0] != answers[1]
+        with pytest.raises(ValueError, match=connector.QUERY_TEXT):
+            session.run()

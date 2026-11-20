@@ -101,9 +101,8 @@ class TestTopKParsing:
     """A non-integer ``top_k`` option raises naming the key and the value."""
 
     def test_garbage_top_k_raises(self) -> None:
-        options = Options(context={BaseRetrieveConnector.TOP_K: "not-an-int"})
         with pytest.raises(ValueError, match="top_k.*not-an-int"):
-            BaseRetrieveConnector._get_top_k(options)
+            BaseRetrieveConnector._parse_top_k("not-an-int")
 
 
 class TestCorpusSource:

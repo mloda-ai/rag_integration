@@ -35,14 +35,8 @@ class HaystackOrchestrator(BaseOrchestratorConnector):
         BaseOrchestratorConnector.ORCHESTRATOR_BACKEND: property_spec(
             "Use 'haystack' for a Haystack BM25 pipeline", context=False
         ),
-        BaseOrchestratorConnector.QUERY_TEXT: property_spec(
-            "The query to run through the pipeline", context=False, default=None
-        ),
-        BaseOrchestratorConnector.TOP_K: property_spec(
-            f"Number of documents to surface (default {BaseOrchestratorConnector.DEFAULT_TOP_K})",
-            context=False,
-            default=None,
-        ),
+        BaseOrchestratorConnector.QUERY_TEXT: BaseOrchestratorConnector.QUERY_TEXT_SPEC,
+        BaseOrchestratorConnector.TOP_K: BaseOrchestratorConnector.TOP_K_SPEC,
         BaseOrchestratorConnector.CORPUS: property_spec(
             "Inline corpus: a list of {doc_id, text} dicts", context=False, default=None
         ),

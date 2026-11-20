@@ -11,7 +11,8 @@ dependency (it reuses the existing TF-IDF embedder).
 
 from __future__ import annotations
 
-from typing import ClassVar
+from collections import Counter
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -59,13 +60,25 @@ class TfidfRetriever(BaseRetrieveConnector):
         return sum(q * d for q, d in zip(query_vector, doc_vector))
 
     @classmethod
+    def _build_index(cls, texts: tuple[str, ...]) -> Any:
+        """The tokenized corpus and each term's document frequency."""
+        tokenized = tuple(TfidfEmbedder._tokenize(text) for text in texts)
+        return tokenized, Counter(term for tokens in tokenized for term in set(tokens))
+
+    @classmethod
     def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
-        # ``_embed_texts`` is the embedder's deterministic raw-text vectorization
-        # entry point; embedding the corpus and query in one batch shares a
-        # single IDF/vocabulary so the query and documents live in one space.
-        vectors = TfidfEmbedder._embed_texts(list(texts) + [query], cls._TFIDF_DIM, "default")
-        query_vector = vectors[-1]
-        doc_vectors = vectors[:-1]
+        # IDF spans the corpus plus the query (one shared space), so every document is
+        # re-embedded per query; only tokenization and document frequencies are reused.
+        tokenized, doc_freq = cls._index(texts)
+        query_tokens = TfidfEmbedder._tokenize(query)
+        query_terms = set(query_tokens)
+        n_docs = len(tokenized) + 1
+        idf = {
+            term: TfidfEmbedder._idf(n_docs, doc_freq.get(term, 0) + (term in query_terms))
+            for term in doc_freq.keys() | query_terms
+        }
+        query_vector = TfidfEmbedder._tfidf_embed(query_tokens, idf, cls._TFIDF_DIM)
+        doc_vectors = [TfidfEmbedder._tfidf_embed(tokens, idf, cls._TFIDF_DIM) for tokens in tokenized]
 
         scored = [(idx, cls._cosine(query_vector, doc_vector)) for idx, doc_vector in enumerate(doc_vectors)]
         # Family rule: only positively scoring passages are returned. This also

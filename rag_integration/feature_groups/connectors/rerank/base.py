@@ -71,17 +71,19 @@ class BaseRerankConnector(
     # across backends; empty on the base so it never matches.
     RERANK_BACKENDS: ClassVar[dict[str, str]] = {}
 
+    # Runtime: a prepared session takes a new query per run via ``session.run(parameters=...)``.
+    QUERY_TEXT_SPEC = property_spec("Query the candidates are reranked against", default=None, runtime=True)
+    TOP_K_SPEC = property_spec(
+        f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})", default=None, runtime=True
+    )
+
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
     # keys declare ``default=None`` (mloda treats a key without a default as required) and are
-    # validated in ``calculate_feature``.
+    # validated in ``calculate_feature`` (``query_text`` / ``top_k`` come from runtime parameters).
     PROPERTY_MAPPING: ClassVar = {
         RERANK_BACKEND: property_spec("Which rerank-connector backend to use", context=False),
-        QUERY_TEXT: property_spec("Query the candidates are reranked against", context=False, default=None),
-        TopKMixin.TOP_K: property_spec(
-            f"Number of passages to return after reranking (default {TopKMixin.DEFAULT_TOP_K})",
-            context=False,
-            default=None,
-        ),
+        QUERY_TEXT: QUERY_TEXT_SPEC,
+        TopKMixin.TOP_K: TOP_K_SPEC,
         CANDIDATES: property_spec(
             "Candidate passages to rerank: a list of {doc_id, text} dicts", context=False, default=None
         ),
@@ -164,9 +166,9 @@ class BaseRerankConnector(
         cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
-            query = cls._require_option(options, cls.QUERY_TEXT)
+            query = cls._run_query(features, feature, cls.QUERY_TEXT)
             candidates = cls._require_doc_list(options, cls.CANDIDATES)
-            top_k = cls._get_top_k(options)
-            passages = cls._rerank(str(query), candidates, top_k)
+            top_k = cls._run_top_k(features, feature)
+            passages = cls._rerank(query, candidates, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]
         return []
