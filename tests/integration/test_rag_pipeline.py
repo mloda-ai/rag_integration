@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -357,13 +358,16 @@ class ResultAttributeCapture(Extender):
 class TestEmbeddingArtifactIntegration:
     """Test embedding artifact save and load in a full pipeline."""
 
-    def test_embedding_artifact_save_and_load_without_model(self) -> None:
+    @pytest.mark.parametrize("load_via", ["options", "run_artifacts"])
+    def test_embedding_artifact_save_and_load_without_model(self, load_via: str) -> None:
         """
         Same save/load round trip as below, but runs on CI: no sentence-transformers model needed.
 
         Run 2 must load the embeddings from the artifact. Recomputing them would mean the
         artifact never reached the feature group, so _embed_texts fails the run instead.
-        Both runs publish their stats to an extender: only run 2 reuses the artifact.
+        Run 2 gets the artifact through Options, or through run(artifacts=...) on the same
+        session with the file moved out of artifact_storage_path. Both runs publish their
+        stats to an extender: only run 2 reuses the artifact.
         """
         feature_name = "docs__pii_redacted__chunked__deduped__embedded"
 
@@ -372,47 +376,52 @@ class TestEmbeddingArtifactIntegration:
             providers = make_domain_providers(
                 "mock_artifact_test", FixedSizeChunker, ExactHashDeduplicator, ArtifactMockEmbedder
             )
+            plugin_collector = PluginCollector.enabled_feature_groups(providers)
             feature_options: dict[str, Any] = {"artifact_storage_path": str(artifact_path)}
 
             # Run 1: compute and save
             feature1 = Feature(feature_name, options=Options(feature_options), domain="mock_artifact_test")
-            capture1 = ResultAttributeCapture()
-            api1 = mloda(
-                [feature1],
-                [PythonDictFramework],
-                plugin_collector=PluginCollector.enabled_feature_groups(providers),
-                function_extender={capture1},
+            capture = ResultAttributeCapture()
+            session = mloda.prepare(
+                [feature1], [PythonDictFramework], plugin_collector=plugin_collector, function_extender={capture}
             )
-            api1._batch_run()
-            rows1 = flatten_result(api1.get_result())
-            artifacts1 = api1.get_artifacts()
+            result1 = session.run()
+            rows1 = flatten_result(result1)
+            artifacts1 = result1.artifacts
 
             assert len(rows1) > 0, "Run 1 should produce results"
             assert feature_name in artifacts1, f"Run 1 should save an artifact for {feature_name}, got {artifacts1}"
+            assert feature_name in session.artifact_inputs
             assert list(artifact_path.glob("embedding_artifact_*.joblib")), "Artifact files should be created"
             # doc_003 and doc_004 are identical single-chunk documents.
-            assert capture1.attributes == {"rag.dedup.duplicates_found": 1, "rag.embedding.artifact_reused": False}
+            assert capture.attributes == {"rag.dedup.duplicates_found": 1, "rag.embedding.artifact_reused": False}
 
             # Run 2: load from artifact
-            combined_options = {**feature_options, **artifacts1}
-            feature2 = Feature(feature_name, options=Options(combined_options), domain="mock_artifact_test")
-            capture2 = ResultAttributeCapture()
-            api2 = mloda(
-                [feature2],
-                [PythonDictFramework],
-                plugin_collector=PluginCollector.enabled_feature_groups(providers),
-                function_extender={capture2},
-            )
+            capture.attributes.clear()
+            if load_via == "run_artifacts":
+                moved_dir = artifact_path / "moved"
+                moved_dir.mkdir()
+                moved = shutil.move(artifacts1[feature_name], moved_dir)
             with patch.object(
                 MockEmbedder,
                 "_embed_texts",
                 side_effect=AssertionError("Run 2 recomputed embeddings instead of loading"),
             ):
-                api2._batch_run()
-            rows2 = flatten_result(api2.get_result())
+                if load_via == "run_artifacts":
+                    result2 = session.run(artifacts={feature_name: moved})
+                else:
+                    combined_options = {**feature_options, **artifacts1}
+                    feature2 = Feature(feature_name, options=Options(combined_options), domain="mock_artifact_test")
+                    result2 = mloda.run_all(
+                        [feature2],
+                        [PythonDictFramework],
+                        plugin_collector=plugin_collector,
+                        function_extender={capture},
+                    )
+            rows2 = flatten_result(result2)
 
             assert rows1 == rows2, "Rows should match between runs"
-            assert capture2.attributes == {"rag.dedup.duplicates_found": 1, "rag.embedding.artifact_reused": True}
+            assert capture.attributes == {"rag.dedup.duplicates_found": 1, "rag.embedding.artifact_reused": True}
 
     @requires_sentence_transformer_model
     def test_embedding_artifact_save_and_load(self) -> None:
@@ -446,9 +455,8 @@ class TestEmbeddingArtifactIntegration:
             api1 = mloda(
                 [feature1], [PythonDictFramework], plugin_collector=PluginCollector.enabled_feature_groups(providers)
             )
-            api1._batch_run()
-            results1 = api1.get_result()
-            artifacts1 = api1.get_artifacts()
+            results1 = api1.run()
+            artifacts1 = results1.artifacts
 
             # Extract embeddings from first run
             embeddings_first_run = [
@@ -474,9 +482,7 @@ class TestEmbeddingArtifactIntegration:
             api2 = mloda(
                 [feature2], [PythonDictFramework], plugin_collector=PluginCollector.enabled_feature_groups(providers)
             )
-            api2._batch_run()
-            results2 = api2.get_result()
-            api2.get_artifacts()
+            results2 = api2.run()
 
             # Extract embeddings from second run
             embeddings_second_run = [

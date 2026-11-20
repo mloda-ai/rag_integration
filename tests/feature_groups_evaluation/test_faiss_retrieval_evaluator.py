@@ -80,9 +80,10 @@ class TestFaissRetrievalEvaluator:
         data = _make_data()
         features = _make_features()
 
+        context = make_hook_context()
         with (
             patch.object(FaissRetrievalEvaluator, "_extract_source_features", return_value=[_INDEXED_FEATURE]),
-            make_hook_context().activate() as context,
+            context.activate(),
         ):
             result = FaissRetrievalEvaluator.calculate_feature(data, features)
 

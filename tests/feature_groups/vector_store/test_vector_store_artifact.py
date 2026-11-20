@@ -47,7 +47,8 @@ class TestVectorStoreArtifact:
 
         # Save
         VectorStoreArtifact.save_vector_store_artifact(mock_features, artifact_key, index, texts, doc_ids)
-        VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
+        saved_paths = VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
+        assert saved_paths is not None
 
         # Verify files exist
         faiss_files = list(tmp_path.glob("vector_store_*.faiss"))
@@ -63,6 +64,14 @@ class TestVectorStoreArtifact:
         assert loaded["index"].ntotal == 2
         assert loaded["metadata"]["texts"] == texts
         assert loaded["metadata"]["doc_ids"] == doc_ids
+
+        # A value bound to another key adds that key (sidecar path optional); the storage dir still serves the rest.
+        mock_features.artifact_to_load = "other__indexed"
+        mock_features.artifact_value = {"index_path": saved_paths[artifact_key]["index_path"]}
+        for key in (artifact_key, "other__indexed"):
+            loaded_by_key = VectorStoreArtifact.load_vector_store_artifact(mock_features, key)
+            assert loaded_by_key is not None
+            assert loaded_by_key["metadata"]["texts"] == texts
 
     def test_metadata_sidecar_content(self, tmp_path: Path) -> None:
         """Test that the JSON metadata sidecar contains correct data."""

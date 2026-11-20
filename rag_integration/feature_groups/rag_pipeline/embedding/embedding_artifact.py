@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -99,6 +100,8 @@ class EmbeddingArtifact(BaseArtifact):
         """
         Load embedding artifacts from file(s).
 
+        Files are unpickled by joblib, so storage paths and artifact values must be trusted.
+
         Args:
             features: The feature set
 
@@ -120,14 +123,12 @@ class EmbeddingArtifact(BaseArtifact):
             storage_path = tempfile.gettempdir()
 
         storage_dir = Path(storage_path)
-        if not storage_dir.exists():
-            return None
 
         # Find all embedding artifact files
         pattern = "embedding_artifact_*.joblib"
-        loaded_artifacts = {}
+        loaded_artifacts: dict[str, Any] = {}
 
-        for file_path in storage_dir.glob(pattern):
+        for file_path in storage_dir.glob(pattern) if storage_dir.exists() else ():
             try:
                 # Load the artifact
                 artifact_data = joblib.load(file_path)
@@ -146,10 +147,11 @@ class EmbeddingArtifact(BaseArtifact):
             except (OSError, ValueError) as e:
                 raise OSError(f"Failed to load artifact from {file_path}: {e}") from e
 
-        if loaded_artifacts:
-            return loaded_artifacts
-        else:
-            return None
+        # The saved file this feature was given, via Options or run(artifacts=...), wins for its key.
+        if isinstance(features.artifact_value, (str, os.PathLike)) and isinstance(features.artifact_to_load, str):
+            loaded_artifacts[features.artifact_to_load] = joblib.load(features.artifact_value)
+
+        return loaded_artifacts or None
 
     @classmethod
     def load_embedding_artifact(cls, features: FeatureSet, artifact_key: str) -> dict[str, Any] | None:

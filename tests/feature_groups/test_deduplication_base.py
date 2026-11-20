@@ -103,7 +103,8 @@ class TestBaseRowDeduplicatorKeepStrategies:
     def test_all_unique_keeps_all_rows_with_duplicate_metadata(self) -> None:
         """Strategy "all_unique" keeps every row but still annotates and publishes the duplicates found."""
         data = {"item": ["aa", "aaaa", "bb", "b"]}
-        with make_hook_context().activate() as context:
+        context = make_hook_context()
+        with context.activate():
             result = _LenDeduplicator.calculate_feature(data, _features("all_unique"))
             assert isinstance(result, list)
         assert context.result_attributes == {"rag.dedup.duplicates_found": 2}
@@ -124,7 +125,8 @@ class TestBaseRowDeduplicatorKeepStrategies:
 
     def test_empty_input_keeps_schema_and_publishes_zero(self) -> None:
         """Zero rows return the input, metadata and feature columns, still publishing the duplicates count."""
-        with make_hook_context().activate() as context:
+        context = make_hook_context()
+        with context.activate():
             result = _LenDeduplicator.calculate_feature({"item": []}, _features("first"))
         assert context.result_attributes == {"rag.dedup.duplicates_found": 0}
         assert result == {"item": [], "is_duplicate": [], "duplicate_of": [], "items__deduped": []}

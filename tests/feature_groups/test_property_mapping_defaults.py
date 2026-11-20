@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+from collections.abc import Mapping
 from typing import Any
 
 import pytest
@@ -18,7 +19,7 @@ from mloda.provider import FeatureChainParser, FeatureChainParserMixin, FeatureG
 import rag_integration.feature_groups
 
 
-def _validate(owner_name: str, property_mapping: dict[str, Any] | None) -> list[str]:
+def _validate(owner_name: str, property_mapping: Mapping[str, Any] | None) -> list[str]:
     """Run the upstream validator; returns violation messages."""
     try:
         FeatureChainParser.validate_property_mapping_defaults(owner_name, property_mapping)

@@ -99,35 +99,34 @@ class VectorStoreArtifact(BaseArtifact):
         Returns:
             Dictionary of {artifact_key: {"index": faiss.Index, "metadata": dict}}
         """
-        import faiss
-
-        storage_dir = cls._get_storage_path(features)
-        if not storage_dir.exists():
-            return None
-
         loaded_artifacts: dict[str, Any] = {}
 
-        for index_path in storage_dir.glob("vector_store_*.faiss"):
-            # Find the corresponding metadata file
-            stem = index_path.stem  # e.g. vector_store_abc123
-            metadata_path = index_path.parent / f"{stem}_metadata.json"
+        for index_path in cls._get_storage_path(features).glob("vector_store_*.faiss"):
+            loaded = cls._load_files(index_path)
+            loaded_artifacts[loaded["metadata"].get("artifact_key", index_path.stem)] = loaded
 
-            index = faiss.read_index(str(index_path))
+        # The saved paths this feature was given, via Options or run(artifacts=...), win for its key.
+        saved = features.artifact_value
+        if isinstance(saved, dict) and "index_path" in saved and isinstance(features.artifact_to_load, str):
+            metadata_path = saved.get("metadata_path")
+            loaded_artifacts[features.artifact_to_load] = cls._load_files(
+                Path(saved["index_path"]), Path(metadata_path) if metadata_path else None
+            )
 
-            metadata: dict[str, Any] = {}
-            if metadata_path.exists():
-                with open(metadata_path, encoding="utf-8") as f:
-                    metadata = json.load(f)
+        return loaded_artifacts or None
 
-            artifact_key = metadata.get("artifact_key", stem)
-            loaded_artifacts[artifact_key] = {
-                "index": index,
-                "metadata": metadata,
-            }
+    @staticmethod
+    def _load_files(index_path: Path, metadata_path: Path | None = None) -> dict[str, Any]:
+        """Read one FAISS index and its optional metadata sidecar (default: next to the index)."""
+        import faiss
 
-        if loaded_artifacts:
-            return loaded_artifacts
-        return None
+        if metadata_path is None:
+            metadata_path = index_path.with_name(f"{index_path.stem}_metadata.json")
+        metadata: dict[str, Any] = {}
+        if metadata_path.exists():
+            with open(metadata_path, encoding="utf-8") as f:
+                metadata = json.load(f)
+        return {"index": faiss.read_index(str(index_path)), "metadata": metadata}
 
     @classmethod
     def save_vector_store_artifact(

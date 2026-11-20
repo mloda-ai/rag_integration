@@ -92,7 +92,7 @@
       "specialized_from": []
     }
   ],
-  "format": 8,
+  "format": 9,
   "joins": [],
   "requested_features": [
     "docs__pii_redacted__chunked__deduped__embedded"
