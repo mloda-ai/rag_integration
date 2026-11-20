@@ -23,7 +23,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 )
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
-from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
+from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector, _cached_index
 
 
 class ScopedCorpusSource(DataCreatorFeatureGroup):
@@ -307,6 +307,15 @@ class RetrieveConnectorContractBase(ABC):
         assert self._passages(session.run()) == []
         assert self._passages(session.run(parameters=query)) == top
         assert self._passages(session.run()) == []
+
+        # The corpus index is built on the first run and reused by later ones.
+        connector.clear_index_cache()
+        session.run(parameters=query)
+        built = _cached_index.cache_info()
+        assert self._passages(session.run(parameters={**query, connector.QUERY_TEXT: "zzzz qqqq"})) == []
+        reused = _cached_index.cache_info()
+        assert built.misses > 0
+        assert (reused.misses, reused.hits) == (built.misses, built.hits + built.misses)
 
         grouped = Options(group={**options.context, connector.QUERY_TEXT: self.sample_query()})
         with pytest.raises(ValueError, match=connector.QUERY_TEXT):

@@ -61,9 +61,14 @@ class TfidfEmbedder(BaseEmbedder):
 
         for word in vocab:
             doc_count = sum(1 for doc in documents if word in doc)
-            idf[word] = math.log((n_docs + 1) / (doc_count + 1)) + 1
+            idf[word] = cls._idf(n_docs, doc_count)
 
         return idf
+
+    @staticmethod
+    def _idf(n_docs: int, doc_count: int) -> float:
+        """Smoothed IDF of a term found in ``doc_count`` of ``n_docs`` documents."""
+        return math.log((n_docs + 1) / (doc_count + 1)) + 1
 
     @classmethod
     def _embed_texts(
@@ -118,25 +123,24 @@ class TfidfEmbedder(BaseEmbedder):
         Returns:
             Normalized TF-IDF vector
         """
+        return cls._weigh(cls._hashed_tf(tokens, dim), idf, dim)
+
+    @classmethod
+    def _hashed_tf(cls, tokens: list[str], dim: int) -> tuple[tuple[str, float, int], ...]:
+        """Each term's ``(word, tf, hashed position)``, in first-occurrence order (query-independent)."""
         import hashlib
 
+        return tuple(
+            (word, tf_score, int(hashlib.md5(word.encode("utf-8"), usedforsecurity=False).hexdigest(), 16) % dim)
+            for word, tf_score in cls._compute_tf(tokens).items()
+        )
+
+    @staticmethod
+    def _weigh(terms: tuple[tuple[str, float, int], ...], idf: dict[str, float], dim: int) -> list[float]:
+        """The normalized TF-IDF vector of ``_hashed_tf`` terms."""
         embedding = [0.0] * dim
-
-        if not tokens:
-            return embedding
-
-        # Compute TF
-        tf = cls._compute_tf(tokens)
-
-        # Compute TF-IDF and hash to position
-        for word, tf_score in tf.items():
-            tfidf_score = tf_score * idf.get(word, 1.0)
-
-            # Hash word to position
-            word_hash = int(hashlib.md5(word.encode("utf-8"), usedforsecurity=False).hexdigest(), 16)
-            position = word_hash % dim
-
-            embedding[position] += tfidf_score
+        for word, tf_score, position in terms:
+            embedding[position] += tf_score * idf.get(word, 1.0)
 
         # Normalize
         magnitude = math.sqrt(sum(x * x for x in embedding))

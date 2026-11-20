@@ -24,6 +24,7 @@ requested feature, so the ranked-passage list is the whole contract.
 
 from __future__ import annotations
 
+import functools
 from abc import abstractmethod
 from typing import Any, ClassVar
 
@@ -274,13 +275,7 @@ class BaseRetrieveConnector(
         cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
-            query = cls._require_value(
-                cls._run_value(features, feature, cls.QUERY_TEXT), cls.QUERY_TEXT, "options or run(parameters=...)"
-            )
-            if not isinstance(query, str):
-                raise InvalidOptionError(
-                    f"{cls.__name__} option '{cls.QUERY_TEXT}' must be a string, got {type(query).__name__}."
-                )
+            query = cls._run_query(features, feature, cls.QUERY_TEXT)
             source = options.get(cls.CORPUS_SOURCE)
             if source is not None:
                 if options.get(cls.CORPUS) is not None:
@@ -291,14 +286,36 @@ class BaseRetrieveConnector(
                 corpus = cls._corpus_from_source(data, str(source))
             else:
                 corpus = cls._require_doc_list(options, cls.CORPUS)
-            top_k = cls._parse_top_k(cls._run_value(features, feature, cls.TOP_K))
+            top_k = cls._run_top_k(features, feature)
             passages = cls._retrieve(query, corpus, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]
         return []
 
+    @classmethod
+    def _build_index(cls, texts: tuple[str, ...]) -> Any:
+        """Query-independent state for ``texts``, built once per corpus; ``None`` when a backend keeps none.
+
+        The cached object is shared across runs and threads, so ``_rank`` must only read it.
+        """
+        return None
+
+    @classmethod
+    def _index(cls, texts: list[str]) -> Any:
+        """The cached :meth:`_build_index` result for ``texts``."""
+        return _cached_index(cls, tuple(texts))
+
     @staticmethod
-    def _run_value(features: FeatureSet, feature: Any, key: str) -> Any:
-        """The run's value for a runtime key; the plain option for a subclass that did not declare it runtime."""
-        if key in features.runtime_parameters:
-            return features.runtime_parameter(key, feature)
-        return feature.options.get(key)
+    def clear_index_cache() -> None:
+        """Drop every cached index (the cache holds corpus text in process memory)."""
+        _cached_index.cache_clear()
+
+
+# Up to INDEX_CACHE_SIZE (backend, corpus) indexes stay cached process-wide, least recently used
+# evicted first; hybrid_rrf takes two (bm25s and faiss). Fixed at import. A concurrent miss may
+# build the same index twice.
+INDEX_CACHE_SIZE = 8
+
+
+@functools.lru_cache(maxsize=INDEX_CACHE_SIZE)
+def _cached_index(connector: type[BaseRetrieveConnector], texts: tuple[str, ...]) -> Any:
+    return connector._build_index(texts)

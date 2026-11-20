@@ -95,7 +95,7 @@ results = mlodaAPI.run_all(
 )
 ```
 
-`query_text` and `top_k` are runtime parameters (context only): prepare once, then pass each query per run.
+In every family that takes `query_text` (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run.
 
 ```python
 from mloda.user import mloda
@@ -106,7 +106,7 @@ session = mloda.prepare(
 results = session.run(parameters={"query_text": "engine oil", "top_k": 1})
 ```
 
-The value applies to every retrieve connector step in the plan (the `retrieval` stage keeps its own `query_text`). One run answers one query; run the session again for the next.
+A run value applies to every connector step in the plan (the `retrieval` stage keeps its own `query_text`). To keep a different `top_k` per family, set it as a prepare-time context option on each feature and pass only `query_text` per run. One run answers one query; run the session again for the next. Retrieve backends build their index once per corpus and reuse it across runs; `BaseRetrieveConnector.clear_index_cache()` drops the cached indexes.
 
 ### `rerank` -- `query_text + candidates + top_k -> reordered passages`
 

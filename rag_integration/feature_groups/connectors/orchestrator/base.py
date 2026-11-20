@@ -63,14 +63,18 @@ class BaseOrchestratorConnector(
 
     ORCHESTRATOR_BACKENDS: ClassVar[dict[str, str]] = {}
 
+    # Runtime: a prepared session takes a new query per run via ``session.run(parameters=...)``.
+    QUERY_TEXT_SPEC = property_spec("The query to run through the framework pipeline", default=None, runtime=True)
+    TOP_K_SPEC = property_spec(
+        f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})",
+        default=None,
+        runtime=True,
+    )
+
     PROPERTY_MAPPING: ClassVar = {
         ORCHESTRATOR_BACKEND: property_spec("Which orchestrator (external framework) backend to use", context=False),
-        QUERY_TEXT: property_spec("The query to run through the framework pipeline", context=False, default=None),
-        TopKMixin.TOP_K: property_spec(
-            f"Number of documents the pipeline should surface (default {TopKMixin.DEFAULT_TOP_K})",
-            context=False,
-            default=None,
-        ),
+        QUERY_TEXT: QUERY_TEXT_SPEC,
+        TopKMixin.TOP_K: TOP_K_SPEC,
         CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False, default=None),
     }
 
@@ -155,9 +159,8 @@ class BaseOrchestratorConnector(
         """Run the framework pipeline, return the answer object."""
         cls._assert_single_feature(features)
         for feature in features.features:
-            options = feature.options
-            query = cls._require_option(options, cls.QUERY_TEXT)
-            corpus = cls._require_doc_list(options, cls.CORPUS)
-            top_k = cls._get_top_k(options)
-            return [{cls.ROOT_FEATURE_NAME: cls._answer(str(query), corpus, top_k)}]
+            query = cls._run_query(features, feature, cls.QUERY_TEXT)
+            corpus = cls._require_doc_list(feature.options, cls.CORPUS)
+            top_k = cls._run_top_k(features, feature)
+            return [{cls.ROOT_FEATURE_NAME: cls._answer(query, corpus, top_k)}]
         return []

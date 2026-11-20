@@ -43,12 +43,8 @@ class AdjacencyGraphRag(BaseGraphRagConnector):
         BaseGraphRagConnector.GRAPH_BACKEND: property_spec(
             "Use 'adjacency' for graph-expansion retrieval (no networkx)", context=False
         ),
-        BaseGraphRagConnector.QUERY_TEXT: property_spec(
-            "Raw text query to search the graph", context=False, default=None
-        ),
-        BaseGraphRagConnector.TOP_K: property_spec(
-            f"Number of passages to return (default {BaseGraphRagConnector.DEFAULT_TOP_K})", context=False, default=None
-        ),
+        BaseGraphRagConnector.QUERY_TEXT: BaseGraphRagConnector.QUERY_TEXT_SPEC,
+        BaseGraphRagConnector.TOP_K: BaseGraphRagConnector.TOP_K_SPEC,
         BaseGraphRagConnector.NODES: property_spec(
             "Graph nodes: a list of {doc_id, text} dicts", context=False, default=None
         ),

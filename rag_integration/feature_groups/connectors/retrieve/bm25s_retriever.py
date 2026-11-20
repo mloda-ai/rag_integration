@@ -7,7 +7,7 @@ ranked indices with scores directly). MIT-licensed, numpy-only.
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -17,9 +17,8 @@ from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieve
 class Bm25sRetriever(BaseRetrieveConnector):
     """Lexical BM25 retrieval over an inline corpus.
 
-    Selected with ``retrieve_backend="bm25s"``. Builds an in-memory BM25 index
-    per call (the corpus is per-call), so there is no shared state to cache and
-    repeated calls are idempotent. Family rule: at most ``top_k`` passages come
+    Selected with ``retrieve_backend="bm25s"``. The in-memory BM25 index is
+    built once per corpus and reused across runs. Family rule: at most ``top_k`` passages come
     back and only those scoring positively, so a degenerate query (empty, or
     all out-of-vocabulary) yields no passages.
     """
@@ -42,17 +41,25 @@ class Bm25sRetriever(BaseRetrieveConnector):
     }
 
     @classmethod
-    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
+    def _build_index(cls, texts: tuple[str, ...]) -> Any:
         import bm25s
 
-        corpus_tokens = bm25s.tokenize(texts, stopwords="en", show_progress=False)
+        corpus_tokens = bm25s.tokenize(list(texts), stopwords="en", show_progress=False)
         # Degenerate corpus (e.g. every doc is only stopwords) tokenizes to an
         # empty vocabulary; bm25s would raise on retrieve. Nothing is rankable.
         if len(corpus_tokens.vocab) == 0:
-            return []
-
+            return None
         retriever = bm25s.BM25()
         retriever.index(corpus_tokens, show_progress=False)
+        return retriever
+
+    @classmethod
+    def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
+        import bm25s
+
+        retriever = cls._index(texts)
+        if retriever is None:
+            return []
 
         query_tokens = bm25s.tokenize([query], stopwords="en", show_progress=False)
         # index() is called WITHOUT a corpus, so retrieve() returns integer

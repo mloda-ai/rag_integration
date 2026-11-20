@@ -62,12 +62,15 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     # Filled per concrete; empty on the base so it never matches.
     GENERATE_BACKENDS: ClassVar[dict[str, str]] = {}
 
+    # Runtime: a prepared session takes a new query per run via ``session.run(parameters=...)``.
+    QUERY_TEXT_SPEC = property_spec("The question to answer", default=None, runtime=True)
+
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
     # keys declare ``default=None`` (mloda treats a key without a default as required) and are
-    # validated in ``calculate_feature``.
+    # validated in ``calculate_feature`` (``query_text`` comes from runtime parameters).
     PROPERTY_MAPPING: ClassVar = {
         GENERATE_BACKEND: property_spec("Which generate-connector backend to use", context=False),
-        QUERY_TEXT: property_spec("The question to answer", context=False, default=None),
+        QUERY_TEXT: QUERY_TEXT_SPEC,
         PASSAGES: property_spec("Supporting passages: a list of {doc_id, text} dicts", context=False, default=None),
     }
 
@@ -162,8 +165,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
         """Generate an answer from the passages, return the answer object."""
         cls._assert_single_feature(features)
         for feature in features.features:
-            options = feature.options
-            query = cls._require_option(options, cls.QUERY_TEXT)
-            passages = cls._get_passages(options)
-            return [{cls.ROOT_FEATURE_NAME: cls._answer(str(query), passages)}]
+            query = cls._run_query(features, feature, cls.QUERY_TEXT)
+            passages = cls._get_passages(feature.options)
+            return [{cls.ROOT_FEATURE_NAME: cls._answer(query, passages)}]
         return []

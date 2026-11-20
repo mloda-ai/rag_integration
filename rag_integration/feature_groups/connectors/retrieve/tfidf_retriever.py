@@ -11,7 +11,8 @@ dependency (it reuses the existing TF-IDF embedder).
 
 from __future__ import annotations
 
-from typing import ClassVar
+from collections import Counter
+from typing import Any, ClassVar
 
 from mloda.provider import property_spec
 
@@ -59,13 +60,25 @@ class TfidfRetriever(BaseRetrieveConnector):
         return sum(q * d for q, d in zip(query_vector, doc_vector))
 
     @classmethod
+    def _build_index(cls, texts: tuple[str, ...]) -> Any:
+        """Each document's hashed term frequencies and each term's document frequency."""
+        docs = tuple(TfidfEmbedder._hashed_tf(TfidfEmbedder._tokenize(text), cls._TFIDF_DIM) for text in texts)
+        return docs, Counter(word for terms in docs for word, _, _ in terms)
+
+    @classmethod
     def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
-        # ``_embed_texts`` is the embedder's deterministic raw-text vectorization
-        # entry point; embedding the corpus and query in one batch shares a
-        # single IDF/vocabulary so the query and documents live in one space.
-        vectors = TfidfEmbedder._embed_texts(list(texts) + [query], cls._TFIDF_DIM, "default")
-        query_vector = vectors[-1]
-        doc_vectors = vectors[:-1]
+        # IDF spans the corpus plus the query (one shared space), so each query re-weighs every
+        # document; tokenizing, term frequencies and hashing are reused.
+        docs, doc_freq = cls._index(texts)
+        query_terms = TfidfEmbedder._hashed_tf(TfidfEmbedder._tokenize(query), cls._TFIDF_DIM)
+        query_words = {word for word, _, _ in query_terms}
+        n_docs = len(docs) + 1
+        idf = {
+            word: TfidfEmbedder._idf(n_docs, doc_freq.get(word, 0) + (word in query_words))
+            for word in doc_freq.keys() | query_words
+        }
+        query_vector = TfidfEmbedder._weigh(query_terms, idf, cls._TFIDF_DIM)
+        doc_vectors = [TfidfEmbedder._weigh(terms, idf, cls._TFIDF_DIM) for terms in docs]
 
         scored = [(idx, cls._cosine(query_vector, doc_vector)) for idx, doc_vector in enumerate(doc_vectors)]
         # Family rule: only positively scoring passages are returned. This also

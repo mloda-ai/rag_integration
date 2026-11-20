@@ -14,8 +14,15 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from mloda.user import Feature, Options, PluginCollector, mloda
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from cli.swap_demo import CONNECTORS, CORPUS, QUERY, SHARED_INPUTS, TOP_K, run_connector
+from rag_integration.feature_groups.connectors.rerank.lexical_reranker import LexicalReranker
+from rag_integration.feature_groups.connectors.retrieve.tfidf_retriever import TfidfRetriever
 
 PASSAGES: list[dict[str, str]] = [{"doc_id": doc["doc_id"], "text": doc["text"]} for doc in CORPUS]
 
@@ -97,6 +104,32 @@ class TestAcrossFamilySwap:
         assert answer["answer"], "the orchestrator pipeline answers an on-topic query"
         corpus_ids = {doc["doc_id"] for doc in CORPUS}
         assert all(doc["doc_id"] in corpus_ids for doc in answer["documents"])
+
+    def test_one_run_query_reaches_every_family_in_the_plan(self) -> None:
+        # query_text is plan-wide per run; each family keeps its own prepare-time top_k.
+        retrieve = {"retrieve_backend": "tfidf", "corpus": CORPUS, "top_k": 1}
+        rerank = {"rerank_backend": "lexical", "candidates": PASSAGES, "top_k": 3}
+        session = mloda.prepare(
+            [
+                Feature("retrieved_passages", options=Options(context=retrieve)),
+                Feature("reranked_passages", options=Options(context=rerank)),
+            ],
+            [PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups({TfidfRetriever, LexicalReranker}),
+        )
+        for query, top in ((QUERY, "d2"), ("loyal dog", "d1")):
+            result = session.run(parameters={"query_text": query})
+            rows = {
+                name: value
+                for partition in result
+                for row in columnar_to_rows(partition)
+                for name, value in row.items()
+            }
+            assert rows["retrieved_passages"] == run_connector("retrieved_passages", {**retrieve, "query_text": query})
+            assert rows["reranked_passages"] == LexicalReranker._rerank(query, PASSAGES, 3)
+            assert [p["doc_id"] for p in rows["retrieved_passages"]] == [top]
+            assert len(rows["reranked_passages"]) == 3
+            assert rows["reranked_passages"][0]["doc_id"] == top
 
 
 class TestSelectorGating:

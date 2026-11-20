@@ -9,7 +9,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from mloda.user import Feature, Options, PluginCollector, mlodaAPI
+import pytest
+from mloda.user import Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -85,6 +86,11 @@ class GenerateConnectorContractBase(ABC):
             compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups({connector}),
         )
+        return cls._answer_row(result)
+
+    @classmethod
+    def _answer_row(cls, result: Any) -> dict[str, Any]:
+        connector = cls.connector_class()
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
@@ -177,3 +183,30 @@ class GenerateConnectorContractBase(ABC):
         result = self._run_all(self.sample_query(), self.sample_passages())
         assert self.expected_citation_doc_id() in result["citations"]
         assert self.expected_answer_substring() in result["answer"]
+
+    def test_prepared_session_serves_a_query_per_run(self) -> None:
+        connector = self.connector_class()
+        passages = self.sample_passages()
+        options = Options(context={connector.GENERATE_BACKEND: self.backend_value(), connector.PASSAGES: passages})
+        session = mloda.prepare(
+            [Feature(connector.ROOT_FEATURE_NAME, options=options)],
+            [PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+        )
+        assert set(session.run_surface.parameters) == {connector.QUERY_TEXT}
+        answers = []
+        for query in (self.sample_query(), "zzzz qqqq"):
+            run = self._answer_row(session.run(parameters={connector.QUERY_TEXT: query}))
+            assert run == self._run_all(query, passages)
+            answers.append(run)
+        assert self.expected_citation_doc_id() in answers[0]["citations"]
+        assert answers[0] != answers[1]
+        with pytest.raises(ValueError, match=connector.QUERY_TEXT):
+            session.run()
+        grouped = Options(group={**options.context, connector.QUERY_TEXT: self.sample_query()})
+        with pytest.raises(ValueError, match=connector.QUERY_TEXT):
+            mloda.prepare(
+                [Feature(connector.ROOT_FEATURE_NAME, options=grouped)],
+                [PythonDictFramework],
+                plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+            )

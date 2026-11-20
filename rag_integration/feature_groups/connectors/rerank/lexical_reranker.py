@@ -32,14 +32,8 @@ class LexicalReranker(BaseRerankConnector):
 
     PROPERTY_MAPPING: ClassVar = {
         BaseRerankConnector.RERANK_BACKEND: property_spec("Use 'lexical' for token-overlap reranking", context=False),
-        BaseRerankConnector.QUERY_TEXT: property_spec(
-            "Query the candidates are reranked against", context=False, default=None
-        ),
-        BaseRerankConnector.TOP_K: property_spec(
-            f"Number of passages to return after reranking (default {BaseRerankConnector.DEFAULT_TOP_K})",
-            context=False,
-            default=None,
-        ),
+        BaseRerankConnector.QUERY_TEXT: BaseRerankConnector.QUERY_TEXT_SPEC,
+        BaseRerankConnector.TOP_K: BaseRerankConnector.TOP_K_SPEC,
         BaseRerankConnector.CANDIDATES: property_spec(
             "Candidate passages: a list of {doc_id, text} dicts", context=False, default=None
         ),

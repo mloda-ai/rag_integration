@@ -102,7 +102,8 @@ def test_graph_source_declares_input_feature_with_forwarded_context() -> None:
 
 
 def test_graph_source_forwards_group_options_without_family_keys() -> None:
-    # Group-style caller: Options(dict) puts everything into group options.
+    # Options(dict) puts every key into group options; the engine refuses a group runtime key
+    # (query_text, top_k) at prepare, but the forwarding filter still keeps family keys off the source.
     inputs = AdjacencyGraphRag().input_features(
         Options(_chained_context()), FeatureName(AdjacencyGraphRag.ROOT_FEATURE_NAME)
     )
