@@ -115,7 +115,9 @@ def test_group_context_split_is_stable() -> None:
             assert isinstance(spec, PropertySpec), f"{owner}.{key} is a {type(spec).__name__}, not a PropertySpec"
             is_context = spec.context
             if spec.runtime:
-                # mloda requires runtime parameters to be context.
+                # A runtime parameter is context in every family.
+                if not is_context:
+                    misplaced.append(f"{owner}.{key}: expected context (runtime parameter)")
                 continue
             if is_context is is_connector:
                 expected = "group (pass context=False)" if is_connector else "context"

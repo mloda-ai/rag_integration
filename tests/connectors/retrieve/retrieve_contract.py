@@ -282,7 +282,6 @@ class RetrieveConnectorContractBase(ABC):
         assert self._retrieve(self.sample_query(), self.sample_corpus(), top_k=-3) == []
 
     def test_prepared_session_serves_a_query_per_run(self) -> None:
-        """``query_text`` and ``top_k`` are runtime parameters: one prepared session answers each run's values."""
         connector = self.connector_class()
         options = Options(
             context={connector.RETRIEVE_BACKEND: self.backend_value(), connector.CORPUS: self.sample_corpus()}

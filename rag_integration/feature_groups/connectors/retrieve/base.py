@@ -112,7 +112,7 @@ class BaseRetrieveConnector(
 
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
     # keys declare ``default=None`` (mloda treats a key without a default as required) and are
-    # validated in ``calculate_feature``.
+    # validated in ``calculate_feature`` (``query_text`` / ``top_k`` come from runtime parameters).
     PROPERTY_MAPPING: ClassVar = {
         RETRIEVE_BACKEND: property_spec("Which retrieve-connector backend to use", context=False),
         QUERY_TEXT: QUERY_TEXT_SPEC,
