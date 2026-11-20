@@ -99,9 +99,9 @@ class OptionsMixin:
         return cls._require_value(options.get(key), key)
 
     @classmethod
-    def _require_value(cls, value: Any, key: str) -> Any:
+    def _require_value(cls, value: Any, key: str, where: str = "options") -> Any:
         if value is None:
-            raise MissingOptionError(f"{cls.__name__} requires '{key}' in options.")
+            raise MissingOptionError(f"{cls.__name__} requires '{key}' in {where}.")
         return value
 
 

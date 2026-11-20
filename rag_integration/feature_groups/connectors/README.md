@@ -106,7 +106,7 @@ session = mloda.prepare(
 results = session.run(parameters={"query_text": "engine oil", "top_k": 1})
 ```
 
-The value applies to every retrieve step in the plan. One run answers one query; run the session again for the next.
+The value applies to every retrieve connector step in the plan (the `retrieval` stage keeps its own `query_text`). One run answers one query; run the session again for the next.
 
 ### `rerank` -- `query_text + candidates + top_k -> reordered passages`
 

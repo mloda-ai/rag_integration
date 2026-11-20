@@ -274,7 +274,13 @@ class BaseRetrieveConnector(
         cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
-            query = cls._require_value(features.runtime_parameter(cls.QUERY_TEXT, feature), cls.QUERY_TEXT)
+            query = cls._require_value(
+                cls._run_value(features, feature, cls.QUERY_TEXT), cls.QUERY_TEXT, "options or run(parameters=...)"
+            )
+            if not isinstance(query, str):
+                raise InvalidOptionError(
+                    f"{cls.__name__} option '{cls.QUERY_TEXT}' must be a string, got {type(query).__name__}."
+                )
             source = options.get(cls.CORPUS_SOURCE)
             if source is not None:
                 if options.get(cls.CORPUS) is not None:
@@ -285,7 +291,14 @@ class BaseRetrieveConnector(
                 corpus = cls._corpus_from_source(data, str(source))
             else:
                 corpus = cls._require_doc_list(options, cls.CORPUS)
-            top_k = cls._parse_top_k(features.runtime_parameter(cls.TOP_K, feature))
-            passages = cls._retrieve(str(query), corpus, top_k)
+            top_k = cls._parse_top_k(cls._run_value(features, feature, cls.TOP_K))
+            passages = cls._retrieve(query, corpus, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]
         return []
+
+    @staticmethod
+    def _run_value(features: FeatureSet, feature: Any, key: str) -> Any:
+        """The run's value for a runtime key; the plain option for a subclass that did not declare it runtime."""
+        if key in features.runtime_parameters:
+            return features.runtime_parameter(key, feature)
+        return feature.options.get(key)

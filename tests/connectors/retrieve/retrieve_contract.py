@@ -132,6 +132,7 @@ class RetrieveConnectorContractBase(ABC):
         features = MagicMock()
         features.features = [feature]
         features.runtime_parameter.side_effect = lambda key, feat: feat.options.get(key)
+        features.runtime_parameters = ("query_text", "top_k")
         return features
 
     @classmethod
@@ -292,13 +293,23 @@ class RetrieveConnectorContractBase(ABC):
         assert set(session.run_surface.parameters) == {connector.QUERY_TEXT, connector.TOP_K}
 
         query = {connector.QUERY_TEXT: self.sample_query(), connector.TOP_K: 1}
-        assert len(self._passages(session.run(parameters=query))) == 1
+        top = self._passages(session.run(parameters=query))
+        assert [p["doc_id"] for p in top] == [self.expected_top_doc_id()]
         assert self._passages(session.run(parameters={**query, connector.QUERY_TEXT: "zzzz qqqq"})) == []
-        with pytest.raises(Exception, match=connector.QUERY_TEXT):
+        with pytest.raises(ValueError, match=connector.QUERY_TEXT):
             session.run()
 
+        # A prepare-time context value is the baseline a run may override.
+        baseline = Options(context={**options.context, connector.QUERY_TEXT: "zzzz qqqq"})
+        session = mloda.prepare(
+            [Feature(connector.ROOT_FEATURE_NAME, options=baseline)], [PythonDictFramework], plugin_collector=plugins
+        )
+        assert self._passages(session.run()) == []
+        assert self._passages(session.run(parameters=query)) == top
+        assert self._passages(session.run()) == []
+
         grouped = Options(group={**options.context, connector.QUERY_TEXT: self.sample_query()})
-        with pytest.raises(Exception, match=connector.QUERY_TEXT):
+        with pytest.raises(ValueError, match=connector.QUERY_TEXT):
             mloda.prepare(
                 [Feature(connector.ROOT_FEATURE_NAME, options=grouped)], [PythonDictFramework], plugin_collector=plugins
             )
