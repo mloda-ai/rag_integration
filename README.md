@@ -129,6 +129,8 @@ results = mlodaAPI.run_all(
 )
 ```
 
+Saved artifacts (sentence-transformer embeddings, FAISS indexes with their texts) go to `artifact_storage_path`, or by default to `$XDG_CACHE_HOME/rag_integration/artifacts` (`~/.cache/...`). Point the option at a dir you trust: files there are loaded with pickle.
+
 ## Available Components
 
 ### Text Pipeline

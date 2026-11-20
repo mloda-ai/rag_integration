@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import os
-import tempfile
 from pathlib import Path
 from typing import Any
 
 from mloda.provider import BaseArtifact, FeatureSet
+
+from rag_integration.feature_groups.rag_pipeline.artifact_storage import atomic_write, resolve_storage_dir
 
 
 class EmbeddingArtifact(BaseArtifact):
@@ -41,26 +42,14 @@ class EmbeddingArtifact(BaseArtifact):
         Returns:
             Path object for the artifact file
         """
-        # Get storage path from options or use default temp directory
-        storage_path = None
-
-        options = cls.get_singular_option_from_options(features)
-        if options:
-            storage_path = options.get("artifact_storage_path")
-
-        if storage_path is None:
-            storage_path = tempfile.gettempdir()
-
-        # Simple filename based on artifact key
         # Hash the artifact key to ensure valid filename
         key_hash = hashlib.md5(artifact_key.encode(), usedforsecurity=False).hexdigest()[:12]
-        filename = f"embedding_artifact_{key_hash}.joblib"
+        return cls._get_storage_dir(features, create=True) / f"embedding_artifact_{key_hash}.joblib"
 
-        # Ensure the directory exists
-        storage_dir = Path(storage_path)
-        storage_dir.mkdir(parents=True, exist_ok=True)
-
-        return storage_dir / filename
+    @classmethod
+    def _get_storage_dir(cls, features: FeatureSet, create: bool) -> Path:
+        options = cls.get_singular_option_from_options(features)
+        return resolve_storage_dir(options.get("artifact_storage_path") if options else None, create)
 
     @classmethod
     def custom_saver(cls, features: FeatureSet, artifact: Any) -> Any | None:
@@ -89,8 +78,7 @@ class EmbeddingArtifact(BaseArtifact):
             # Generate unique file path for this artifact
             file_path = cls._get_artifact_file_path_for_key(features, artifact_key)
 
-            # Save this specific artifact
-            joblib.dump(artifact_data, file_path)
+            atomic_write(file_path, lambda tmp, data=artifact_data: joblib.dump(data, tmp))
             saved_paths[artifact_key] = str(file_path)
 
         return saved_paths
@@ -113,16 +101,7 @@ class EmbeddingArtifact(BaseArtifact):
         except ImportError:
             raise ImportError("joblib is required for EmbeddingArtifact. Install with: pip install joblib")
 
-        # Get storage path
-        storage_path = None
-
-        options = cls.get_singular_option_from_options(features)
-        if options:
-            storage_path = options.get("artifact_storage_path")
-        if storage_path is None:
-            storage_path = tempfile.gettempdir()
-
-        storage_dir = Path(storage_path)
+        storage_dir = cls._get_storage_dir(features, create=False)
 
         # Find all embedding artifact files
         pattern = "embedding_artifact_*.joblib"

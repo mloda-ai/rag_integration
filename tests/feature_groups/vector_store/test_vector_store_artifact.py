@@ -10,6 +10,7 @@ import faiss
 import numpy as np
 import pytest
 
+from rag_integration.feature_groups.rag_pipeline import artifact_storage
 from rag_integration.feature_groups.rag_pipeline.vector_store.vector_store_artifact import VectorStoreArtifact
 
 
@@ -156,3 +157,33 @@ class TestVectorStoreArtifact:
         VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
 
         assert VectorStoreArtifact.check_artifact_exists(mock_features, artifact_key)
+
+    def test_sidecar_from_another_index_raises(self, tmp_path: Path) -> None:
+        """A sidecar whose vector count does not match the index fails the load instead of mislabeling hits."""
+        mock_features = self._make_mock_features(tmp_path)
+        index = faiss.IndexFlatL2(2)
+        index.add(np.array([[1.0, 0.0]], dtype=np.float32))
+        VectorStoreArtifact.save_vector_store_artifact(mock_features, "mixed", index, ["text"], ["doc_1"])
+        saved = VectorStoreArtifact.custom_saver(mock_features, mock_features.save_artifact)
+
+        metadata_path = Path(saved["mixed"]["metadata_path"])
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        metadata_path.write_text(json.dumps({**metadata, "num_vectors": 2}), encoding="utf-8")
+
+        mock_features.artifact_to_load = True
+        with pytest.raises(ValueError, match="lists 2 vectors"):
+            VectorStoreArtifact.load_vector_store_artifact(mock_features, "mixed")
+        assert sorted(p.name for p in tmp_path.iterdir()) == sorted(Path(p).name for p in saved["mixed"].values())
+
+    def test_default_storage_is_not_created_by_load(self) -> None:
+        """Without artifact_storage_path the private default dir is used, and loading does not create it."""
+        mock_feature = MagicMock()
+        mock_feature.options.get.return_value = None
+        mock_features = MagicMock(features=[mock_feature], artifact_to_load=True)
+        default_dir = artifact_storage.default_storage_dir()
+        default_dir.rmdir()
+
+        assert VectorStoreArtifact.custom_loader(mock_features) is None
+        assert not default_dir.exists()
+        assert VectorStoreArtifact._get_storage_path(mock_features) == default_dir
+        assert default_dir.is_dir()

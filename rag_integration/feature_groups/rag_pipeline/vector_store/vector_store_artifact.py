@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-import tempfile
+import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import BaseArtifact, FeatureSet
+
+from rag_integration.feature_groups.rag_pipeline.artifact_storage import atomic_write, resolve_storage_dir
 
 
 class VectorStoreArtifact(BaseArtifact):
@@ -23,21 +25,14 @@ class VectorStoreArtifact(BaseArtifact):
         - vector_store_{hash}_metadata.json: Text and doc_id mapping
     """
 
+    # Keeps an index and its sidecar from two concurrent runs from mixing.
+    _save_lock: ClassVar[threading.Lock] = threading.Lock()
+
     @classmethod
-    def _get_storage_path(cls, features: FeatureSet) -> Path:
-        """Get the storage directory from options or use temp directory."""
-        storage_path = None
-
+    def _get_storage_path(cls, features: FeatureSet, create: bool = True) -> Path:
+        """Get the storage directory from options or the private default."""
         options = cls.get_singular_option_from_options(features)
-        if options:
-            storage_path = options.get("artifact_storage_path")
-
-        if storage_path is None:
-            storage_path = tempfile.gettempdir()
-
-        storage_dir = Path(storage_path)
-        storage_dir.mkdir(parents=True, exist_ok=True)
-        return storage_dir
+        return resolve_storage_dir(options.get("artifact_storage_path") if options else None, create)
 
     @classmethod
     def _get_artifact_file_paths(cls, features: FeatureSet, artifact_key: str) -> tuple[Path, Path]:
@@ -76,13 +71,16 @@ class VectorStoreArtifact(BaseArtifact):
         for artifact_key, artifact_data in artifact.items():
             index_path, metadata_path = cls._get_artifact_file_paths(features, artifact_key)
 
-            # Save FAISS index using native serialization
-            faiss.write_index(artifact_data["index"], str(index_path))
-
-            # Save metadata sidecar as JSON
             metadata = artifact_data.get("metadata", {})
-            with open(metadata_path, "w", encoding="utf-8") as f:
-                json.dump(metadata, f, ensure_ascii=False)
+
+            def write_metadata(tmp: str, metadata: dict[str, Any] = metadata) -> None:
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(metadata, f, ensure_ascii=False)
+
+            # Sidecar first: the index is what the loader globs for.
+            with cls._save_lock:
+                atomic_write(metadata_path, write_metadata)
+                atomic_write(index_path, lambda tmp, index=artifact_data["index"]: faiss.write_index(index, tmp))
 
             saved_paths[artifact_key] = {
                 "index_path": str(index_path),
@@ -100,8 +98,9 @@ class VectorStoreArtifact(BaseArtifact):
             Dictionary of {artifact_key: {"index": faiss.Index, "metadata": dict}}
         """
         loaded_artifacts: dict[str, Any] = {}
+        storage_dir = cls._get_storage_path(features, create=False)
 
-        for index_path in cls._get_storage_path(features).glob("vector_store_*.faiss"):
+        for index_path in storage_dir.glob("vector_store_*.faiss") if storage_dir.exists() else ():
             loaded = cls._load_files(index_path)
             loaded_artifacts[loaded["metadata"].get("artifact_key", index_path.stem)] = loaded
 
@@ -126,7 +125,13 @@ class VectorStoreArtifact(BaseArtifact):
         if metadata_path.exists():
             with open(metadata_path, encoding="utf-8") as f:
                 metadata = json.load(f)
-        return {"index": faiss.read_index(str(index_path)), "metadata": metadata}
+        index = faiss.read_index(str(index_path))
+        num_vectors = metadata.get("num_vectors")
+        if num_vectors is not None and num_vectors != index.ntotal:
+            raise ValueError(
+                f"Vector store sidecar {metadata_path} lists {num_vectors} vectors, index {index_path} has {index.ntotal}"
+            )
+        return {"index": index, "metadata": metadata}
 
     @classmethod
     def save_vector_store_artifact(
