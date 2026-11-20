@@ -60,7 +60,6 @@ class BaseStructuredConnector(SingleQueryPerRunMixin, OptionsMixin, DataCreatorF
 
     STRUCTURED_BACKENDS: ClassVar[dict[str, str]] = {}
 
-    # Runtime: a prepared session takes a new question per run via ``session.run(parameters=...)``.
     QUESTION_SPEC = property_spec("Natural-language question to answer over the table", default=None, runtime=True)
 
     PROPERTY_MAPPING: ClassVar = {

@@ -95,7 +95,7 @@ results = mlodaAPI.run_all(
 )
 ```
 
-In every family that takes `query_text` (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run. The structured family's `question` works the same way, so a plan mixing it with the others passes both per run.
+In every family that takes `query_text` (retrieve, rerank, generate, graph_rag, orchestrator), `query_text` (and `top_k` where the family ranks) are runtime parameters (context only): prepare once, then pass each query per run. The structured family's `question` works the same way.
 
 ```python
 from mloda.user import mloda
@@ -151,8 +151,7 @@ Answers a natural-language question over a relational table. `RuleBasedSql`
 executed on stdlib `sqlite3`, with `sqlglot` validating the generated SQL is a
 single top-level `SELECT`. Values are always bound parameters and identifiers
 whitelisted. `AggregateSql` (`structured_backend="aggregate"`) adds aggregation
-intents (avg/min/max/sum) on top of the count/filter/list intents. `question` is
-a runtime parameter: prepare once, then pass each question per run.
+intents (avg/min/max/sum) on top of the count/filter/list intents.
 
 ### `orchestrator` -- `query_text + corpus + top_k -> answer + documents`
 
@@ -160,8 +159,8 @@ Wraps a whole external RAG framework as one connector (bring your existing
 pipeline); the internals are the framework's. `HaystackOrchestrator`
 (`orchestrator_backend="haystack"`, `--extra orchestrator`) runs a real Haystack
 in-memory BM25 pipeline, zero-download (no model, no server) so it runs in
-CI. The pipeline is built once per corpus and reused across runs;
-`HaystackOrchestrator.clear_pipeline_cache()` drops it. `R2RFixtureOrchestrator` (`orchestrator_backend="r2r"`) models a
+CI. The pipeline is cached per corpus; `HaystackOrchestrator.clear_pipeline_cache()`
+drops it. `R2RFixtureOrchestrator` (`orchestrator_backend="r2r"`) models a
 server-shaped tool over a static JSON fixture, surfacing only canned documents
 that are in the supplied corpus. Other server-shaped tools can follow the same
 fixture-stub pattern.
