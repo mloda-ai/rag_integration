@@ -127,6 +127,7 @@ class TestCorpusSource:
         feature.options = options
         features = MagicMock()
         features.features = [feature]
+        features.runtime_parameter.side_effect = lambda key, feat: feat.options.get(key)
         return features
 
     def test_no_corpus_source_stays_root(self) -> None:

@@ -96,7 +96,10 @@ class OptionsMixin:
 
     @classmethod
     def _require_option(cls, options: Options, key: str) -> Any:
-        value = options.get(key)
+        return cls._require_value(options.get(key), key)
+
+    @classmethod
+    def _require_value(cls, value: Any, key: str) -> Any:
         if value is None:
             raise MissingOptionError(f"{cls.__name__} requires '{key}' in options.")
         return value
@@ -110,7 +113,10 @@ class TopKMixin:
 
     @classmethod
     def _get_top_k(cls, options: Options) -> int:
-        val = options.get(cls.TOP_K)
+        return cls._parse_top_k(options.get(cls.TOP_K))
+
+    @classmethod
+    def _parse_top_k(cls, val: Any) -> int:
         if val is None:
             return cls.DEFAULT_TOP_K
         try:

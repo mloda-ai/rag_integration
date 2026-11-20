@@ -104,16 +104,19 @@ class BaseRetrieveConnector(
         context=False,
         default=None,
     )
+    # Runtime: a prepared session takes a new query per run via ``session.run(parameters=...)``.
+    QUERY_TEXT_SPEC = property_spec("Raw text query to search the corpus", default=None, runtime=True)
+    TOP_K_SPEC = property_spec(
+        f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", default=None, runtime=True
+    )
 
     # Selection is via ``match_feature_group_criteria`` on the backend key. The other
     # keys declare ``default=None`` (mloda treats a key without a default as required) and are
     # validated in ``calculate_feature``.
     PROPERTY_MAPPING: ClassVar = {
         RETRIEVE_BACKEND: property_spec("Which retrieve-connector backend to use", context=False),
-        QUERY_TEXT: property_spec("Raw text query to search the corpus", context=False, default=None),
-        TopKMixin.TOP_K: property_spec(
-            f"Number of passages to return (default {TopKMixin.DEFAULT_TOP_K})", context=False, default=None
-        ),
+        QUERY_TEXT: QUERY_TEXT_SPEC,
+        TopKMixin.TOP_K: TOP_K_SPEC,
         CORPUS: property_spec("Inline corpus: a list of {doc_id, text} dicts", context=False, default=None),
         CORPUS_SOURCE: CORPUS_SOURCE_SPEC,
     }
@@ -271,7 +274,7 @@ class BaseRetrieveConnector(
         cls._assert_single_feature(features)
         for feature in features.features:
             options = feature.options
-            query = cls._require_option(options, cls.QUERY_TEXT)
+            query = cls._require_value(features.runtime_parameter(cls.QUERY_TEXT, feature), cls.QUERY_TEXT)
             source = options.get(cls.CORPUS_SOURCE)
             if source is not None:
                 if options.get(cls.CORPUS) is not None:
@@ -282,7 +285,7 @@ class BaseRetrieveConnector(
                 corpus = cls._corpus_from_source(data, str(source))
             else:
                 corpus = cls._require_doc_list(options, cls.CORPUS)
-            top_k = cls._get_top_k(options)
+            top_k = cls._parse_top_k(features.runtime_parameter(cls.TOP_K, feature))
             passages = cls._retrieve(str(query), corpus, top_k)
             return [{cls.ROOT_FEATURE_NAME: passages}]
         return []

@@ -17,7 +17,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureGroup, FeatureSet, collect_match_rejections
-from mloda.user import Feature, Options, PluginCollector, mlodaAPI
+from mloda.user import Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -131,6 +131,7 @@ class RetrieveConnectorContractBase(ABC):
         feature.options = options
         features = MagicMock()
         features.features = [feature]
+        features.runtime_parameter.side_effect = lambda key, feat: feat.options.get(key)
         return features
 
     @classmethod
@@ -151,7 +152,11 @@ class RetrieveConnectorContractBase(ABC):
             ScopedCorpusSource.DOCUMENTS: corpus,
             ScopedCorpusSource.ALLOWED_DOC_IDS: allowed_doc_ids,
         }
-        options = Options(context=values) if category == "context" else Options(group=values)
+        runtime = {connector.QUERY_TEXT: values.pop(connector.QUERY_TEXT), connector.TOP_K: values.pop(connector.TOP_K)}
+        if category == "context":
+            options = Options(context={**values, **runtime})
+        else:
+            options = Options(group=values, context=runtime)  # runtime keys are context only
         return cls._run_options(options, ScopedCorpusSource)
 
     @classmethod
@@ -163,6 +168,11 @@ class RetrieveConnectorContractBase(ABC):
             compute_frameworks=[PythonDictFramework],
             plugin_collector=PluginCollector.enabled_feature_groups({connector, *upstream}),
         )
+        return cls._passages(result)
+
+    @classmethod
+    def _passages(cls, result: Any) -> list[dict[str, Any]]:
+        connector = cls.connector_class()
         for partition in result:
             for row in columnar_to_rows(partition):
                 if connector.ROOT_FEATURE_NAME in row:
@@ -270,6 +280,29 @@ class RetrieveConnectorContractBase(ABC):
 
     def test_top_k_negative_returns_empty(self) -> None:
         assert self._retrieve(self.sample_query(), self.sample_corpus(), top_k=-3) == []
+
+    def test_prepared_session_serves_a_query_per_run(self) -> None:
+        """``query_text`` and ``top_k`` are runtime parameters: one prepared session answers each run's values."""
+        connector = self.connector_class()
+        options = Options(
+            context={connector.RETRIEVE_BACKEND: self.backend_value(), connector.CORPUS: self.sample_corpus()}
+        )
+        plugins = PluginCollector.enabled_feature_groups({connector})
+        feature = Feature(connector.ROOT_FEATURE_NAME, options=options)
+        session = mloda.prepare([feature], [PythonDictFramework], plugin_collector=plugins)
+        assert set(session.run_surface.parameters) == {connector.QUERY_TEXT, connector.TOP_K}
+
+        query = {connector.QUERY_TEXT: self.sample_query(), connector.TOP_K: 1}
+        assert len(self._passages(session.run(parameters=query))) == 1
+        assert self._passages(session.run(parameters={**query, connector.QUERY_TEXT: "zzzz qqqq"})) == []
+        with pytest.raises(Exception, match=connector.QUERY_TEXT):
+            session.run()
+
+        grouped = Options(group={**options.context, connector.QUERY_TEXT: self.sample_query()})
+        with pytest.raises(Exception, match=connector.QUERY_TEXT):
+            mloda.prepare(
+                [Feature(connector.ROOT_FEATURE_NAME, options=grouped)], [PythonDictFramework], plugin_collector=plugins
+            )
 
     def test_default_top_k_is_five(self) -> None:
         """With ``top_k`` absent from the options, ``DEFAULT_TOP_K`` (5) applies.
