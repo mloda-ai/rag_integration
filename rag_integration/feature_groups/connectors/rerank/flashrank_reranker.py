@@ -43,6 +43,7 @@ class FlashRankReranker(BaseRerankConnector):
         BaseRerankConnector.CANDIDATES: property_spec(
             "Candidate passages: a list of {doc_id, text} dicts", context=False, default=None
         ),
+        BaseRerankConnector.CANDIDATES_SOURCE: BaseRerankConnector.CANDIDATES_SOURCE_SPEC,
     }
 
     # Single-slot cache: only DEFAULT_MODEL is ever loaded.

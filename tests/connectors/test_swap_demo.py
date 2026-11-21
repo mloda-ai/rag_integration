@@ -21,10 +21,15 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from cli.swap_demo import CONNECTORS, CORPUS, QUERY, SHARED_INPUTS, TOP_K, run_connector
+from rag_integration.feature_groups.connectors.generate.template_responder import TemplateResponder
 from rag_integration.feature_groups.connectors.rerank.lexical_reranker import LexicalReranker
 from rag_integration.feature_groups.connectors.retrieve.tfidf_retriever import TfidfRetriever
 
 PASSAGES: list[dict[str, str]] = [{"doc_id": doc["doc_id"], "text": doc["text"]} for doc in CORPUS]
+
+
+def _rows(result: Any) -> dict[str, Any]:
+    return {name: value for partition in result for row in columnar_to_rows(partition) for name, value in row.items()}
 
 
 def _assert_passage_shape(passages: list[dict[str, Any]]) -> None:
@@ -118,18 +123,51 @@ class TestAcrossFamilySwap:
             plugin_collector=PluginCollector.enabled_feature_groups({TfidfRetriever, LexicalReranker}),
         )
         for query, top in ((QUERY, "d2"), ("loyal dog", "d1")):
-            result = session.run(parameters={"query_text": query})
-            rows = {
-                name: value
-                for partition in result
-                for row in columnar_to_rows(partition)
-                for name, value in row.items()
-            }
+            rows = _rows(session.run(parameters={"query_text": query}))
             assert rows["retrieved_passages"] == run_connector("retrieved_passages", {**retrieve, "query_text": query})
             assert rows["reranked_passages"] == LexicalReranker._rerank(query, PASSAGES, 3)
             assert [p["doc_id"] for p in rows["retrieved_passages"]] == [top]
             assert len(rows["reranked_passages"]) == 3
             assert rows["reranked_passages"][0]["doc_id"] == top
+
+    def test_one_run_query_drives_a_chained_plan(self) -> None:
+        # generate <- rerank <- retrieve: each consumes its upstream's output; the run's query reaches every step.
+        chain = {
+            "generate_backend": "template",
+            "passages_source": "reranked_passages",
+            "rerank_backend": "lexical",
+            "candidates_source": "retrieved_passages",
+            "retrieve_backend": "tfidf",
+            "corpus": CORPUS,
+        }
+        session = mloda.prepare(
+            [Feature("generated_answer", options=Options(context=chain))],
+            [PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups(
+                {TfidfRetriever, LexicalReranker, TemplateResponder}
+            ),
+        )
+        assert set(session.run_surface.parameters) == {"query_text", "top_k"}
+        answers = []
+        runs: list[dict[str, Any]] = [
+            {"query_text": QUERY},
+            {"query_text": "loyal dog"},
+            {"query_text": QUERY, "top_k": 1},
+        ]
+        for parameters in runs:
+            query = parameters["query_text"]
+            top_k = parameters.get("top_k", TfidfRetriever.DEFAULT_TOP_K)
+            retrieved = TfidfRetriever._retrieve(query, CORPUS, top_k)
+            expected = TemplateResponder._answer(query, LexicalReranker._rerank(query, retrieved, top_k))
+            answer = _rows(session.run(parameters=parameters))["generated_answer"]
+            assert answer == expected
+            answers.append(answer)
+        assert answers[0] != answers[1]
+        # A run top_k reaches both ranking steps.
+        assert len(answers[2]["citations"]) == 1 < len(answers[0]["citations"])
+        # The chain takes its query per run: query_text is kept off the upstream steps.
+        with pytest.raises(ValueError, match="query_text"):
+            session.run()
 
 
 class TestSelectorGating:

@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import pytest
+from mloda.provider import FeatureGroup
 from mloda.user import Feature, Options, PluginCollector, mloda, mlodaAPI
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
@@ -18,6 +19,7 @@ from mloda_plugins.compute_framework.base_implementations.python_dict.python_dic
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.rerank.base import BaseRerankConnector
+from tests.connectors.retrieve.retrieve_contract import ScopedCorpusSource
 
 
 class RerankConnectorContractBase(ABC):
@@ -59,21 +61,40 @@ class RerankConnectorContractBase(ABC):
     @classmethod
     def _run_all(cls, query: str, candidates: list[dict[str, Any]], top_k: int) -> list[dict[str, Any]]:
         connector = cls.connector_class()
-        feature = Feature(
-            connector.ROOT_FEATURE_NAME,
-            options=Options(
-                context={
-                    connector.RERANK_BACKEND: cls.backend_value(),
-                    connector.QUERY_TEXT: query,
-                    connector.CANDIDATES: candidates,
-                    connector.TOP_K: top_k,
-                }
-            ),
-        )
+        context = {
+            connector.RERANK_BACKEND: cls.backend_value(),
+            connector.QUERY_TEXT: query,
+            connector.CANDIDATES: candidates,
+            connector.TOP_K: top_k,
+        }
+        return cls._run_options(Options(context=context))
+
+    @classmethod
+    def _run_from_source(
+        cls, candidates: list[dict[str, Any]], allowed_doc_ids: list[str], category: str
+    ) -> list[dict[str, Any]]:
+        """Run with the candidates taken from ``ScopedCorpusSource`` via ``candidates_source``."""
+        connector = cls.connector_class()
+        values: dict[str, Any] = {
+            connector.RERANK_BACKEND: cls.backend_value(),
+            connector.CANDIDATES_SOURCE: ScopedCorpusSource.ROOT_FEATURE_NAME,
+            ScopedCorpusSource.DOCUMENTS: candidates,
+            ScopedCorpusSource.ALLOWED_DOC_IDS: allowed_doc_ids,
+        }
+        runtime = {connector.QUERY_TEXT: cls.sample_query(), connector.TOP_K: len(candidates)}
+        if category == "context":
+            options = Options(context={**values, **runtime})
+        else:
+            options = Options(group=values, context=runtime)  # runtime keys are context only
+        return cls._run_options(options, ScopedCorpusSource)
+
+    @classmethod
+    def _run_options(cls, options: Options, *upstream: type[FeatureGroup]) -> list[dict[str, Any]]:
+        connector = cls.connector_class()
         result = mlodaAPI.run_all(
-            [feature],
+            [Feature(connector.ROOT_FEATURE_NAME, options=options)],
             compute_frameworks=[PythonDictFramework],
-            plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+            plugin_collector=PluginCollector.enabled_feature_groups({connector, *upstream}),
         )
         return cls._passages(result)
 
@@ -178,6 +199,20 @@ class RerankConnectorContractBase(ABC):
         passages = self._run_all(self.sample_query(), candidates, top_k=len(candidates))
         assert passages, "run_all produced no passages"
         assert passages[0]["doc_id"] == self.expected_top_doc_id()
+
+    @pytest.mark.parametrize("category", ["context", "group"])
+    def test_end_to_end_candidates_source(self, category: str) -> None:
+        """Candidates can come from an upstream feature; a doc it filters out never surfaces."""
+        candidates = self.sample_candidates()
+        doc_ids = [str(doc["doc_id"]) for doc in candidates]
+        top = self.expected_top_doc_id()
+
+        passages = self._run_from_source(candidates, doc_ids, category)
+        assert passages == self._rerank(self.sample_query(), candidates, len(candidates))
+
+        passages = self._run_from_source(candidates, [doc_id for doc_id in doc_ids if doc_id != top], category)
+        assert passages
+        assert top not in {p["doc_id"] for p in passages}
 
     def test_prepared_session_serves_a_query_per_run(self) -> None:
         connector = self.connector_class()

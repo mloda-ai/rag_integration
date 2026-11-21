@@ -2,11 +2,11 @@
 
 Contract: ``query_text + passages -> answer + citations``.
 
-A generate connector takes a query and supporting passages (e.g. from the
-retrieve or rerank families) and produces a grounded answer plus the passage
-ids it drew from. It is a ROOT FeatureGroup here: passages are passed inline
-through ``Options`` so the family is self-contained and contract-testable
-without a network or an LLM.
+A generate connector takes a query and supporting passages and produces a
+grounded answer plus the passage ids it drew from. Passages arrive inline
+through ``Options``, or ``passages_source`` names an upstream feature (e.g.
+``reranked_passages``) whose single row carries them, declared as the
+connector's input.
 
 Output (single row, keyed by the root feature name)::
 
@@ -27,7 +27,7 @@ from abc import abstractmethod
 from typing import Any, ClassVar
 
 from mloda.provider import ComputeFramework, DataCreatorFeatureGroup, FeatureSet, property_spec
-from mloda.user import FeatureName, Options
+from mloda.user import Feature, FeatureName, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
     PythonDictFramework,
 )
@@ -37,12 +37,15 @@ from rag_integration.feature_groups.connectors.mixins import (
     DocCollectionMixin,
     OptionsMixin,
     SingleQueryPerRunMixin,
+    SingleRowSourceMixin,
     backend_selected,
 )
 
 
-class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionMixin, DataCreatorFeatureGroup):
-    """Root FeatureGroup for generate-connector backends.
+class BaseGenerateConnector(
+    SingleQueryPerRunMixin, SingleRowSourceMixin, OptionsMixin, DocCollectionMixin, DataCreatorFeatureGroup
+):
+    """FeatureGroup for generate-connector backends.
 
     A concrete backend declares its selector value in ``GENERATE_BACKENDS`` and
     implements :meth:`_generate`; the base owns option extraction, the
@@ -58,10 +61,19 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
     GENERATE_BACKEND = "generate_backend"
     QUERY_TEXT = "query_text"
     PASSAGES = "passages"
+    PASSAGES_SOURCE = "passages_source"
+
+    FAMILY_OPTION_KEYS = frozenset({GENERATE_BACKEND, PASSAGES_SOURCE, QUERY_TEXT, PASSAGES})
 
     # Filled per concrete; empty on the base so it never matches.
     GENERATE_BACKENDS: ClassVar[dict[str, str]] = {}
 
+    PASSAGES_SOURCE_SPEC = property_spec(
+        "Name of an upstream feature whose single row carries the passages as a list of {doc_id, text} dicts."
+        " Optional: replaces the inline passages",
+        context=False,
+        default=None,
+    )
     # Runtime: a prepared session takes a new query per run via ``session.run(parameters=...)``.
     QUERY_TEXT_SPEC = property_spec("The question to answer", default=None, runtime=True)
 
@@ -72,6 +84,7 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
         GENERATE_BACKEND: property_spec("Which generate-connector backend to use", context=False),
         QUERY_TEXT: QUERY_TEXT_SPEC,
         PASSAGES: property_spec("Supporting passages: a list of {doc_id, text} dicts", context=False, default=None),
+        PASSAGES_SOURCE: PASSAGES_SOURCE_SPEC,
     }
 
     @classmethod
@@ -94,13 +107,13 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
             return False
         return backend_selected(cls.get_class_name(), options, cls.GENERATE_BACKEND, cls.GENERATE_BACKENDS)
 
-    def input_features(self, options: Options, feature_name: FeatureName) -> None:
-        """Root feature: no input features (passages arrive via Options)."""
-        return
+    def input_features(self, options: Options, feature_name: FeatureName) -> set[Feature] | None:
+        """The passages-source feature when ``PASSAGES_SOURCE`` is set, else none (root feature)."""
+        return self._source_input_features(options, self.PASSAGES_SOURCE)
 
     @classmethod
-    def _get_passages(cls, options: Options) -> list[dict[str, Any]]:
-        passages = cls._require_doc_list(options, cls.PASSAGES)
+    def _get_passages(cls, data: Any, options: Options) -> list[dict[str, Any]]:
+        passages = cls._doc_list(data, options, cls.PASSAGES, cls.PASSAGES_SOURCE)
         duplicate = cls._find_duplicate_doc_id(passages)
         if duplicate is not None:
             raise DuplicateDocIdError(
@@ -166,6 +179,6 @@ class BaseGenerateConnector(SingleQueryPerRunMixin, OptionsMixin, DocCollectionM
         cls._assert_single_feature(features)
         for feature in features.features:
             query = cls._run_query(features, feature, cls.QUERY_TEXT)
-            passages = cls._get_passages(feature.options)
+            passages = cls._get_passages(data, feature.options)
             return [{cls.ROOT_FEATURE_NAME: cls._answer(query, passages)}]
         return []

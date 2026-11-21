@@ -3,7 +3,7 @@
 Each mixin hoists one concern duplicated inline: option and run-value parsing (``OptionsMixin``),
 top_k cut-off (``TopKMixin``), doc collection / doc_id bookkeeping
 (``DocCollectionMixin``), ranking validation (``RankingValidationMixin``), the
-one-query-per-run guard (``SingleQueryPerRunMixin``), and reading an upstream
+one-query-per-run guard (``SingleQueryPerRunMixin``), and consuming an upstream
 source's single row (``SingleRowSourceMixin``). They are plain classes listed
 ahead of ``FeatureGroup`` in a base, so mloda discovery still sees only the
 ``FeatureGroup`` leaves; ``cls.__name__`` keeps messages naming the backend.
@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import reprlib
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any
+from typing import Any, ClassVar
 
 from mloda.provider import NAME_STAGE, CoreDeclineCode, record_match_rejection
-from mloda.user import Options
+from mloda.user import Feature, Options
 from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_utils import columnar_to_rows
 
 from rag_integration.feature_groups.connectors.errors import (
@@ -59,36 +59,6 @@ class SingleQueryPerRunMixin:
             raise ValueError(
                 f"{cls.__name__} answers one query per run, but the FeatureSet contains {len(feature_list)} features."
             )
-
-
-class SingleRowSourceMixin:
-    """Read the one payload an upstream source feature produced (``corpus_source``, ``graph_source``)."""
-
-    @classmethod
-    def _single_row_payload(
-        cls,
-        data: Any,
-        source_name: str,
-        *,
-        label: str,
-        expected: str,
-        is_valid: Callable[[Any], bool],
-    ) -> Any:
-        """Return the source's single payload; errors report a row count, never every payload."""
-        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
-        prefix = f"{cls.__name__} {label} source '{source_name}'"
-        if not payloads:
-            raise InvalidOptionError(f"{prefix} produced no row.")
-        if len(payloads) > 1:
-            raise InvalidOptionError(
-                f"{prefix} must produce a single row holding {expected}, got {len(payloads)} rows."
-            )
-        if not is_valid(payloads[0]):
-            # reprlib bounds the message for a large malformed payload.
-            raise InvalidOptionError(
-                f"{prefix} must produce a single row holding {expected}, got {reprlib.repr(payloads[0])}."
-            )
-        return payloads[0]
 
 
 def run_value(features: Any, feature: Any, key: str) -> Any:
@@ -176,6 +146,72 @@ class DocCollectionMixin:
         if value is None:
             raise MissingOptionError(f"{cls.__name__} requires '{key}' in options: a list of {{doc_id, text}} dicts.")
         return list(value)
+
+
+class SingleRowSourceMixin(DocCollectionMixin):
+    """Consume an upstream source feature's single row (``corpus_source``, ``candidates_source``, ...)."""
+
+    # The family's own keys: kept off the source feature.
+    FAMILY_OPTION_KEYS: ClassVar[frozenset[str]] = frozenset()
+
+    def _source_input_features(self, options: Options, source_key: str) -> set[Feature] | None:
+        """Declare the source named by ``source_key`` as input, forwarding options minus ``FAMILY_OPTION_KEYS``.
+
+        Context keys do not propagate on their own; ``forward_group_exclude`` stops the engine's
+        default group forwarding from re-adding query-specific keys to the source.
+        """
+        source = options.get(source_key)
+        if source is None:
+            return None
+        keys = self.FAMILY_OPTION_KEYS
+        group = {key: value for key, value in options.group.items() if key not in keys}
+        context = {key: value for key, value in options.context.items() if key not in keys}
+        return {Feature(str(source), options=Options(group=group, context=context), forward_group_exclude=keys)}
+
+    @classmethod
+    def _doc_list(cls, data: Any, options: Options, inline_key: str, source_key: str) -> list[dict[str, Any]]:
+        """The ``{doc_id, text}`` list from the source's single row, else inline under ``inline_key``."""
+        source = options.get(source_key)
+        if source is None:
+            return cls._require_doc_list(options, inline_key)
+        if options.get(inline_key) is not None:
+            raise InvalidOptionError(
+                f"{cls.__name__} got both '{source_key}' and inline '{inline_key}'; pass one {inline_key} only."
+            )
+        payload = cls._single_row_payload(
+            data,
+            str(source),
+            label=inline_key,
+            expected="a list of {doc_id, text} dicts",
+            is_valid=lambda value: isinstance(value, (list, tuple)) and all(isinstance(d, dict) for d in value),
+        )
+        return list(payload)
+
+    @classmethod
+    def _single_row_payload(
+        cls,
+        data: Any,
+        source_name: str,
+        *,
+        label: str,
+        expected: str,
+        is_valid: Callable[[Any], bool],
+    ) -> Any:
+        """Return the source's single payload; errors report a row count, never every payload."""
+        payloads = [row[source_name] for row in columnar_to_rows(data) if isinstance(row, dict) and source_name in row]
+        prefix = f"{cls.__name__} {label} source '{source_name}'"
+        if not payloads:
+            raise InvalidOptionError(f"{prefix} produced no row.")
+        if len(payloads) > 1:
+            raise InvalidOptionError(
+                f"{prefix} must produce a single row holding {expected}, got {len(payloads)} rows."
+            )
+        if not is_valid(payloads[0]):
+            # reprlib bounds the message for a large malformed payload.
+            raise InvalidOptionError(
+                f"{prefix} must produce a single row holding {expected}, got {reprlib.repr(payloads[0])}."
+            )
+        return payloads[0]
 
 
 class RankingValidationMixin:

@@ -48,6 +48,7 @@ class ExtractiveResponder(BaseGenerateConnector):
         BaseGenerateConnector.PASSAGES: property_spec(
             "Supporting passages: a list of {doc_id, text} dicts", context=False, default=None
         ),
+        BaseGenerateConnector.PASSAGES_SOURCE: BaseGenerateConnector.PASSAGES_SOURCE_SPEC,
     }
 
     @classmethod

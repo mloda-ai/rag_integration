@@ -136,30 +136,8 @@ class BaseGraphRagConnector(
         return backend_selected(cls.get_class_name(), options, cls.GRAPH_BACKEND, cls.GRAPH_BACKENDS)
 
     def input_features(self, options: Options, feature_name: FeatureName) -> set[Feature] | None:
-        """Declare the graph-source feature as input when ``GRAPH_SOURCE`` is set.
-
-        Without ``GRAPH_SOURCE`` this is a root feature (graph arrives via
-        Options); ``input_data`` stays declared for that mode, the engine uses
-        whichever applies. With ``GRAPH_SOURCE``, the named upstream feature is
-        the input. Its options are the parent's group and context options minus
-        ``FAMILY_OPTION_KEYS``: context keys do not propagate on their own, so
-        the source's selector options (e.g. ``kg_backend``) are forwarded
-        explicitly, and ``forward_group_exclude`` keeps the family keys off the
-        source so the engine's default group-option forwarding cannot re-add
-        query-specific keys to it.
-        """
-        source = options.get(self.GRAPH_SOURCE)
-        if source is None:
-            return None
-        forwarded_group = {key: value for key, value in options.group.items() if key not in self.FAMILY_OPTION_KEYS}
-        forwarded_context = {key: value for key, value in options.context.items() if key not in self.FAMILY_OPTION_KEYS}
-        return {
-            Feature(
-                str(source),
-                options=Options(group=forwarded_group, context=forwarded_context),
-                forward_group_exclude=self.FAMILY_OPTION_KEYS,
-            )
-        }
+        """The graph-source feature (e.g. ``knowledge_graph``) when ``GRAPH_SOURCE`` is set, else none."""
+        return self._source_input_features(options, self.GRAPH_SOURCE)
 
     @classmethod
     def _graph_from_source(cls, data: Any, source_name: str) -> dict[str, Any]:
