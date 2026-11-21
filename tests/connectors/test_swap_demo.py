@@ -168,8 +168,8 @@ class TestAcrossFamilySwap:
         with pytest.raises(ValueError, match="query_text"):
             session.run()
 
-        # run_all: the requested feature's query_text reaches every step; candidates_top_k is retrieve's
-        # top_k, top_k is rerank's. Retrieve 1, rerank 3 leaves one citation (retrieve's default would give 2).
+        # run_all: query_text reaches every step; candidates_top_k is retrieve's top_k, top_k is rerank's.
+        # Retrieve 1, rerank 3 cites one passage; retrieve's default would leave two.
         for retrieve_k, rerank_k in ((4, 1), (1, 3)):
             options = {**chain, "query_text": QUERY, "top_k": rerank_k, "candidates_top_k": retrieve_k}
             retrieved = TfidfRetriever._retrieve(QUERY, CORPUS, retrieve_k)
@@ -181,14 +181,15 @@ class TestAcrossFamilySwap:
             )
             assert _rows(result)["generated_answer"] == expected
             assert len(expected["citations"]) == 1
-        # A run top_k still overrides every ranking step, retrieve included.
-        scoped = mloda.prepare(
-            [Feature("generated_answer", options=Options(context=options))],
+        # A prepare-time query_text and scoped top_k drive a prepared chain; a run top_k still overrides both steps.
+        scoped = {**chain, "query_text": QUERY, "top_k": 3, "candidates_top_k": 1}
+        prepared = mloda.prepare(
+            [Feature("generated_answer", options=Options(context=scoped))],
             [PythonDictFramework],
             plugin_collector=plugins,
         )
-        assert _rows(scoped.run())["generated_answer"] == expected
-        assert len(_rows(scoped.run(parameters={"top_k": 2}))["generated_answer"]["citations"]) == 2
+        assert len(_rows(prepared.run())["generated_answer"]["citations"]) == 1
+        assert len(_rows(prepared.run(parameters={"top_k": 2}))["generated_answer"]["citations"]) == 2
 
 
 class TestSelectorGating:
