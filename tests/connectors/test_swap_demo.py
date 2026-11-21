@@ -205,13 +205,19 @@ class TestAcrossFamilySwap:
 
         scoped = {"query_text": QUERY, "candidates_top_k": 1}
         reranked = LexicalReranker._rerank(QUERY, TfidfRetriever._retrieve(QUERY, CORPUS, 1), 3)
-        for query, top_k in ((QUERY, 4), ("loyal dog", 1), (QUERY, 1)):
-            direct = {"query_text": query, "top_k": top_k}
+        # (chain's retrieve top_k, direct query, direct top_k); None leaves the chain's retrieve on its default.
+        for retrieve_k, query, top_k in ((1, QUERY, 4), (1, "loyal dog", 1), (1, QUERY, 1), (None, QUERY, 4)):
+            rerank = scoped if retrieve_k else {"query_text": QUERY}
+            k = retrieve_k or TfidfRetriever.DEFAULT_TOP_K
             result = mloda.run_all(
-                features(scoped, direct), compute_frameworks=[PythonDictFramework], plugin_collector=plugins
+                features(rerank, {"query_text": query, "top_k": top_k}),
+                compute_frameworks=[PythonDictFramework],
+                plugin_collector=plugins,
             )
             rows = _rows(result)
-            assert rows["reranked_passages"] == reranked
+            assert rows["reranked_passages"] == LexicalReranker._rerank(
+                QUERY, TfidfRetriever._retrieve(QUERY, CORPUS, k), 3
+            )
             assert rows["retrieved_passages"] == TfidfRetriever._retrieve(query, CORPUS, top_k)
 
         # Prepared: the run's query reaches both, each keeps its own top_k.

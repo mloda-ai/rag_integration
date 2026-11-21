@@ -173,8 +173,9 @@ class SingleRowSourceMixin(DocCollectionMixin):
             up: options.get(own) for up, own in self.SOURCE_RUNTIME_KEYS.items() if options.get(own) is not None
         }
         source_options = Options(group=group, context={**context, **baselines})
-        # Mark the baselines as received from the consumer, so mloda splits a direct request of the source by value.
-        source_options.inherited_context_keys |= frozenset(baselines)
+        # Mark the runtime keys as received from the consumer, so mloda splits a direct request of the source by
+        # value (an absent key too). Set by hand: inherit_context_keys cannot rename candidates_top_k to top_k.
+        source_options.inherited_context_keys |= frozenset(self.SOURCE_RUNTIME_KEYS)
         return {Feature(str(source), options=source_options, forward_group_exclude=keys)}
 
     @classmethod
