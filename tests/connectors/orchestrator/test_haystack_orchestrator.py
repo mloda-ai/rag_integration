@@ -9,9 +9,16 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from mloda.user import Feature, Options, PluginCollector, mloda
+from mloda_plugins.compute_framework.base_implementations.python_dict.python_dict_framework import (
+    PythonDictFramework,
+)
 
 from rag_integration.feature_groups.connectors.orchestrator.base import BaseOrchestratorConnector
-from rag_integration.feature_groups.connectors.orchestrator.haystack_orchestrator import HaystackOrchestrator
+from rag_integration.feature_groups.connectors.orchestrator.haystack_orchestrator import (
+    HaystackOrchestrator,
+    _cached_pipeline,
+)
 from tests.connectors.orchestrator.orchestrator_contract import OrchestratorConnectorContractBase
 
 # Clean skip (not an error) when the `orchestrator` extra is not installed.
@@ -46,3 +53,22 @@ class TestHaystackOrchestrator(OrchestratorConnectorContractBase):
     @classmethod
     def expected_answer_substring(cls) -> str:
         return "curious pet"
+
+    def test_prepared_session_reuses_the_pipeline(self) -> None:
+        connector = HaystackOrchestrator
+        options = Options(context={connector.ORCHESTRATOR_BACKEND: "haystack", connector.CORPUS: self.sample_corpus()})
+        session = mloda.prepare(
+            [Feature(connector.ROOT_FEATURE_NAME, options=options)],
+            [PythonDictFramework],
+            plugin_collector=PluginCollector.enabled_feature_groups({connector}),
+        )
+        connector.clear_pipeline_cache()
+        # The query matches every doc, so the document count shows each run's top_k.
+        query = {connector.QUERY_TEXT: "cat dogs cars"}
+        first = self._answer_row(session.run(parameters={**query, connector.TOP_K: 1}))
+        built = _cached_pipeline.cache_info()
+        second = self._answer_row(session.run(parameters={**query, connector.TOP_K: 3}))
+        reused = _cached_pipeline.cache_info()
+        assert (built.misses, built.hits) == (1, 0)
+        assert (reused.misses, reused.hits) == (1, 1)
+        assert (len(first["documents"]), len(second["documents"])) == (1, 3)

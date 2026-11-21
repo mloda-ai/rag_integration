@@ -2582,7 +2582,7 @@ requires-dist = [
     { name = "faiss-cpu", marker = "extra == 'advanced'", specifier = ">=1.7.0" },
     { name = "faiss-cpu", marker = "extra == 'faiss'", specifier = ">=1.7.0" },
     { name = "flashrank", marker = "extra == 'rerank'", specifier = ">=0.2.0" },
-    { name = "haystack-ai", marker = "extra == 'orchestrator'", specifier = ">=2.0" },
+    { name = "haystack-ai", marker = "extra == 'orchestrator'", specifier = ">=3.0" },
     { name = "joblib", marker = "extra == 'advanced'", specifier = ">=1.0.0" },
     { name = "mloda", specifier = ">=0.20.0" },
     { name = "mloda-testing", marker = "extra == 'dev'", specifier = ">=0.13.0" },
