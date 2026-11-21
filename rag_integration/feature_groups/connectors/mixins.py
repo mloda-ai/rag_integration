@@ -169,10 +169,14 @@ class SingleRowSourceMixin(DocCollectionMixin):
         keys = self.FAMILY_OPTION_KEYS
         group = {key: value for key, value in options.group.items() if key not in keys}
         context = {key: value for key, value in options.context.items() if key not in keys}
-        for upstream_key, own_key in self.SOURCE_RUNTIME_KEYS.items():
-            if options.get(own_key) is not None:
-                context[upstream_key] = options.get(own_key)
-        return {Feature(str(source), options=Options(group=group, context=context), forward_group_exclude=keys)}
+        baselines = {
+            up: options.get(own) for up, own in self.SOURCE_RUNTIME_KEYS.items() if options.get(own) is not None
+        }
+        source_options = Options(group=group, context={**context, **baselines})
+        # Mark the runtime keys as received from the consumer, so mloda splits a direct request of the source by
+        # value (an absent key too). Set by hand: inherit_context_keys cannot rename candidates_top_k to top_k.
+        source_options.inherited_context_keys |= frozenset(self.SOURCE_RUNTIME_KEYS)
+        return {Feature(str(source), options=source_options, forward_group_exclude=keys)}
 
     @classmethod
     def _doc_list(cls, data: Any, options: Options, inline_key: str, source_key: str) -> list[dict[str, Any]]:
