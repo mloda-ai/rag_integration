@@ -191,6 +191,46 @@ class TestAcrossFamilySwap:
         assert len(_rows(prepared.run())["generated_answer"]["citations"]) == 1
         assert len(_rows(prepared.run(parameters={"top_k": 2}))["generated_answer"]["citations"]) == 2
 
+    def test_a_chain_source_is_requested_next_to_the_chain(self) -> None:
+        # The source's forwarded query_text / top_k split it from a direct request with its own values.
+        backend = {"retrieve_backend": "tfidf", "corpus": CORPUS}
+        chain = {**backend, "rerank_backend": "lexical", "candidates_source": "retrieved_passages", "top_k": 3}
+        plugins = PluginCollector.enabled_feature_groups({TfidfRetriever, LexicalReranker, TemplateResponder})
+
+        def features(rerank: dict[str, Any], direct: dict[str, Any]) -> list[Feature]:
+            return [
+                Feature("reranked_passages", options=Options(context={**chain, **rerank})),
+                Feature("retrieved_passages", options=Options(context={**backend, **direct})),
+            ]
+
+        scoped = {"query_text": QUERY, "candidates_top_k": 1}
+        reranked = LexicalReranker._rerank(QUERY, TfidfRetriever._retrieve(QUERY, CORPUS, 1), 3)
+        for query, top_k in ((QUERY, 4), ("loyal dog", 1), (QUERY, 1)):
+            direct = {"query_text": query, "top_k": top_k}
+            result = mloda.run_all(
+                features(scoped, direct), compute_frameworks=[PythonDictFramework], plugin_collector=plugins
+            )
+            rows = _rows(result)
+            assert rows["reranked_passages"] == reranked
+            assert rows["retrieved_passages"] == TfidfRetriever._retrieve(query, CORPUS, top_k)
+
+        # Prepared: the run's query reaches both, each keeps its own top_k.
+        session = mloda.prepare(
+            features({"candidates_top_k": 1}, {"top_k": 4}), [PythonDictFramework], plugin_collector=plugins
+        )
+        rows = _rows(session.run(parameters={"query_text": QUERY}))
+        assert rows["reranked_passages"] == reranked
+        assert rows["retrieved_passages"] == TfidfRetriever._retrieve(QUERY, CORPUS, 4)
+
+        # A key passed through as plain context (top_k reaching rerank through generate) still has to match.
+        generate = {"generate_backend": "template", "passages_source": "reranked_passages", **chain, **scoped}
+        mismatched = [
+            Feature("generated_answer", options=Options(context=generate)),
+            Feature("reranked_passages", options=Options(context={**chain, **scoped, "top_k": 2})),
+        ]
+        with pytest.raises(ValueError, match="one query per run"):
+            mloda.run_all(mismatched, compute_frameworks=[PythonDictFramework], plugin_collector=plugins)
+
 
 class TestSelectorGating:
     """The gating that makes "enable everything, vary only options" safe."""

@@ -178,6 +178,9 @@ class TestSharedDocSource:
         for upstream_key, own_key in connector.SOURCE_RUNTIME_KEYS.items():
             assert feature.options.context.get(upstream_key) == options.get(own_key)
             assert upstream_key not in feature.options.group
+        # Forwarded baselines split a direct request of the source by value.
+        forwarded = {up for up, own in connector.SOURCE_RUNTIME_KEYS.items() if options.get(own) is not None}
+        assert feature.options.split_context_keys == forwarded
         for family_key in connector.FAMILY_OPTION_KEYS - set(connector.SOURCE_RUNTIME_KEYS):
             assert feature.options.get(family_key) is None
         assert feature.forward_group_exclude == connector.FAMILY_OPTION_KEYS
