@@ -222,14 +222,17 @@ class TestAcrossFamilySwap:
         assert rows["reranked_passages"] == reranked
         assert rows["retrieved_passages"] == TfidfRetriever._retrieve(QUERY, CORPUS, 4)
 
-        # A key passed through as plain context (top_k reaching rerank through generate) still has to match.
+        # A key passed through as plain context (top_k reaching rerank through generate, a corpus) still has to match.
         generate = {"generate_backend": "template", "passages_source": "reranked_passages", **chain, **scoped}
-        mismatched = [
-            Feature("generated_answer", options=Options(context=generate)),
-            Feature("reranked_passages", options=Options(context={**chain, **scoped, "top_k": 2})),
-        ]
-        with pytest.raises(ValueError, match="one query per run"):
-            mloda.run_all(mismatched, compute_frameworks=[PythonDictFramework], plugin_collector=plugins)
+        for mismatched in (
+            [
+                Feature("generated_answer", options=Options(context=generate)),
+                Feature("reranked_passages", options=Options(context={**chain, **scoped, "top_k": 2})),
+            ],
+            features(scoped, {"query_text": QUERY, "top_k": 1, "corpus": CORPUS[:3]}),
+        ):
+            with pytest.raises(ValueError, match="one query per run"):
+                mloda.run_all(mismatched, compute_frameworks=[PythonDictFramework], plugin_collector=plugins)
 
 
 class TestSelectorGating:
