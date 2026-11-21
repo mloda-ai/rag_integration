@@ -156,17 +156,29 @@ class TestSharedDocSource:
         assert connector().input_features(Options(context=backend), FeatureName(connector.ROOT_FEATURE_NAME)) is None
 
     @pytest.mark.parametrize("category", ["context", "group"])
+    @pytest.mark.parametrize("extra", [{"top_k": 3, "candidates_top_k": 20}, {"top_k": 3}], ids=["scoped", "unscoped"])
     def test_declares_source_forwarding_options_without_family_keys(
-        self, connector: Any, backend: dict[str, str], inline_key: str, source_key: str, empty: Any, category: str
+        self,
+        connector: Any,
+        backend: dict[str, str],
+        inline_key: str,
+        source_key: str,
+        empty: Any,
+        category: str,
+        extra: dict[str, Any],
     ) -> None:
-        options = _source_options(backend, source_key, category)
+        options = _source_options(backend, source_key, category, extra)
         inputs = connector().input_features(options, FeatureName(connector.ROOT_FEATURE_NAME))
         assert inputs is not None
         (feature,) = inputs
         assert str(feature.name) == _SOURCE
         assert getattr(feature.options, category).get("tenant") == "acme"
         assert {source_key, inline_key, "query_text", *backend} <= connector.FAMILY_OPTION_KEYS
-        for family_key in connector.FAMILY_OPTION_KEYS:
+        # Run keys reach the source as a context baseline, renamed per SOURCE_RUNTIME_KEYS.
+        for upstream_key, own_key in connector.SOURCE_RUNTIME_KEYS.items():
+            assert feature.options.context.get(upstream_key) == options.get(own_key)
+            assert upstream_key not in feature.options.group
+        for family_key in connector.FAMILY_OPTION_KEYS - set(connector.SOURCE_RUNTIME_KEYS):
             assert feature.options.get(family_key) is None
         assert feature.forward_group_exclude == connector.FAMILY_OPTION_KEYS
 

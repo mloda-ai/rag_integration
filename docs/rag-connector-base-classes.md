@@ -201,7 +201,7 @@ What each family is for:
 - **`generate`** returns prose plus citations, a different out-shape from a
   ranked list (extractive QA, Haystack readers, local LLMs). Passages arrive
   inline or, with `passages_source`, from an upstream feature, so retrieve,
-  rerank and generate chain in one prepared session.
+  rerank and generate chain in one prepared session or one `run_all`.
 - **`graph_rag`** traverses a node/edge graph; the value is connected context
   (GraphRAG, LightRAG, HippoRAG, networkx prototypes). The graph arrives inline
   (`nodes` + `edges`) or, with `graph_source`, from an upstream knowledge-graph

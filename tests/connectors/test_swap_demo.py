@@ -140,12 +140,11 @@ class TestAcrossFamilySwap:
             "retrieve_backend": "tfidf",
             "corpus": CORPUS,
         }
+        plugins = PluginCollector.enabled_feature_groups({TfidfRetriever, LexicalReranker, TemplateResponder})
         session = mloda.prepare(
             [Feature("generated_answer", options=Options(context=chain))],
             [PythonDictFramework],
-            plugin_collector=PluginCollector.enabled_feature_groups(
-                {TfidfRetriever, LexicalReranker, TemplateResponder}
-            ),
+            plugin_collector=plugins,
         )
         assert set(session.run_surface.parameters) == {"query_text", "top_k"}
         answers = []
@@ -165,9 +164,32 @@ class TestAcrossFamilySwap:
         assert answers[0] != answers[1]
         # A run top_k reaches both ranking steps.
         assert len(answers[2]["citations"]) == 1 < len(answers[0]["citations"])
-        # The chain takes its query per run: query_text is kept off the upstream steps.
+        # Without a prepare-time query_text the chain takes it per run.
         with pytest.raises(ValueError, match="query_text"):
             session.run()
+
+        # run_all: query_text reaches every step; candidates_top_k is retrieve's top_k, top_k is rerank's.
+        # Retrieve 1, rerank 3 cites one passage; retrieve's default would leave two.
+        for retrieve_k, rerank_k in ((4, 1), (1, 3)):
+            options = {**chain, "query_text": QUERY, "top_k": rerank_k, "candidates_top_k": retrieve_k}
+            retrieved = TfidfRetriever._retrieve(QUERY, CORPUS, retrieve_k)
+            expected = TemplateResponder._answer(QUERY, LexicalReranker._rerank(QUERY, retrieved, rerank_k))
+            result = mloda.run_all(
+                [Feature("generated_answer", options=Options(context=options))],
+                compute_frameworks=[PythonDictFramework],
+                plugin_collector=plugins,
+            )
+            assert _rows(result)["generated_answer"] == expected
+            assert len(expected["citations"]) == 1
+        # A prepare-time query_text and scoped top_k drive a prepared chain; a run top_k still overrides both steps.
+        scoped = {**chain, "query_text": QUERY, "top_k": 3, "candidates_top_k": 1}
+        prepared = mloda.prepare(
+            [Feature("generated_answer", options=Options(context=scoped))],
+            [PythonDictFramework],
+            plugin_collector=plugins,
+        )
+        assert len(_rows(prepared.run())["generated_answer"]["citations"]) == 1
+        assert len(_rows(prepared.run(parameters={"top_k": 2}))["generated_answer"]["citations"]) == 2
 
 
 class TestSelectorGating:

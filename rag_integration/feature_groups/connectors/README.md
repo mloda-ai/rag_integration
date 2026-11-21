@@ -106,15 +106,15 @@ session = mloda.prepare(
 results = session.run(parameters={"query_text": "engine oil", "top_k": 1})
 ```
 
-A run value applies to every connector step in the plan (the `retrieval` stage keeps its own `query_text`). To keep a different `top_k` per family, set it as a prepare-time context option on each feature and pass only `query_text` per run. One run answers one query; run the session again for the next.
+A run value applies to every connector step in the plan (the `retrieval` stage keeps its own `query_text`). To keep a different `top_k` per family, set it as a prepare-time context option on each feature (in a chain, see `candidates_top_k` below) and pass only `query_text` per run. One run answers one query; run the session again for the next.
 
-The source options chain the families: `generated_answer` with `passages_source="reranked_passages"`, `candidates_source="retrieved_passages"`, the retrieve backend and corpus in one options dict, prepared once, answers each run's `query_text`. Family keys stay off the upstream steps, so a chain needs `mloda.prepare` plus `session.run(parameters={"query_text": ...})`; `run_all` cannot drive it. A run `top_k` applies to every ranking step; a prepare-time `top_k` reaches rerank only, and retrieve keeps its default. Retrieve backends build their index once per corpus and reuse it across runs; `BaseRetrieveConnector.clear_index_cache()` drops the cached indexes.
+The source options chain the families: `generated_answer` with `passages_source="reranked_passages"`, `candidates_source="retrieved_passages"`, the retrieve backend and corpus in one options dict. With `query_text` in those options the chain runs through `run_all`; prepared once, it also answers each run's `query_text`. A prepare-time `top_k` is rerank's and `candidates_top_k` is retrieve's; without it retrieve keeps its default. A run `top_k` still applies to every ranking step. A source requested next to the chain needs the same `query_text` and `top_k`, or the two share one step and fail the one-query guard. Retrieve backends build their index once per corpus and reuse it across runs; `BaseRetrieveConnector.clear_index_cache()` drops the cached indexes.
 
 ### `rerank` -- `query_text + candidates + top_k -> reordered passages`
 
 Takes *candidates* in (already retrieved), not a corpus: inline (`candidates`)
 or, with `candidates_source`, from an upstream feature such as
-`retrieved_passages`. `LexicalReranker`
+`retrieved_passages`, which takes its `top_k` from `candidates_top_k`. `LexicalReranker`
 (`rerank_backend="lexical"`) is pure-Python token overlap, zero-download.
 `FlashRankReranker` (`rerank_backend="flashrank"`, `--extra rerank`) adds a real
 ONNX cross-encoder; its model downloads on first use, so its test runs locally
