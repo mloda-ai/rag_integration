@@ -38,6 +38,7 @@ class LexicalReranker(BaseRerankConnector):
             "Candidate passages: a list of {doc_id, text} dicts", context=False, default=None
         ),
         BaseRerankConnector.CANDIDATES_SOURCE: BaseRerankConnector.CANDIDATES_SOURCE_SPEC,
+        BaseRerankConnector.CANDIDATES_TOP_K: BaseRerankConnector.CANDIDATES_TOP_K_SPEC,
     }
 
     @staticmethod

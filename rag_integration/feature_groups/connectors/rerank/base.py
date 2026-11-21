@@ -72,8 +72,12 @@ class BaseRerankConnector(
     QUERY_TEXT = "query_text"
     CANDIDATES = "candidates"
     CANDIDATES_SOURCE = "candidates_source"
+    CANDIDATES_TOP_K = "candidates_top_k"
 
-    FAMILY_OPTION_KEYS = frozenset({RERANK_BACKEND, CANDIDATES_SOURCE, QUERY_TEXT, TopKMixin.TOP_K, CANDIDATES})
+    FAMILY_OPTION_KEYS = frozenset(
+        {RERANK_BACKEND, CANDIDATES_SOURCE, CANDIDATES_TOP_K, QUERY_TEXT, TopKMixin.TOP_K, CANDIDATES}
+    )
+    SOURCE_RUNTIME_KEYS: ClassVar = {QUERY_TEXT: QUERY_TEXT, TopKMixin.TOP_K: CANDIDATES_TOP_K}
 
     # Filled per concrete: {backend_value: human-readable description}. Disjoint
     # across backends; empty on the base so it never matches.
@@ -82,6 +86,11 @@ class BaseRerankConnector(
     CANDIDATES_SOURCE_SPEC = property_spec(
         "Name of an upstream feature whose single row carries the candidates as a list of {doc_id, text} dicts."
         " Optional: replaces the inline candidates",
+        context=False,
+        default=None,
+    )
+    CANDIDATES_TOP_K_SPEC = property_spec(
+        "top_k handed to the candidates source, e.g. retrieve many, rerank few. A run top_k still overrides it",
         context=False,
         default=None,
     )
@@ -102,6 +111,7 @@ class BaseRerankConnector(
             "Candidate passages to rerank: a list of {doc_id, text} dicts", context=False, default=None
         ),
         CANDIDATES_SOURCE: CANDIDATES_SOURCE_SPEC,
+        CANDIDATES_TOP_K: CANDIDATES_TOP_K_SPEC,
     }
 
     @classmethod

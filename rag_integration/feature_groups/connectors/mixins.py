@@ -153,6 +153,9 @@ class SingleRowSourceMixin(DocCollectionMixin):
 
     # The family's own keys: kept off the source feature.
     FAMILY_OPTION_KEYS: ClassVar[frozenset[str]] = frozenset()
+    # {source key: consumer key} handed to the source as a context baseline; a run value still wins.
+    # Each source key must be a family key, so the filtered group never holds it.
+    SOURCE_RUNTIME_KEYS: ClassVar[Mapping[str, str]] = {}
 
     def _source_input_features(self, options: Options, source_key: str) -> set[Feature] | None:
         """Declare the source named by ``source_key`` as input, forwarding options minus ``FAMILY_OPTION_KEYS``.
@@ -166,6 +169,9 @@ class SingleRowSourceMixin(DocCollectionMixin):
         keys = self.FAMILY_OPTION_KEYS
         group = {key: value for key, value in options.group.items() if key not in keys}
         context = {key: value for key, value in options.context.items() if key not in keys}
+        for upstream_key, own_key in self.SOURCE_RUNTIME_KEYS.items():
+            if options.get(own_key) is not None:
+                context[upstream_key] = options.get(own_key)
         return {Feature(str(source), options=Options(group=group, context=context), forward_group_exclude=keys)}
 
     @classmethod

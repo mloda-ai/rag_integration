@@ -64,6 +64,7 @@ class BaseGenerateConnector(
     PASSAGES_SOURCE = "passages_source"
 
     FAMILY_OPTION_KEYS = frozenset({GENERATE_BACKEND, PASSAGES_SOURCE, QUERY_TEXT, PASSAGES})
+    SOURCE_RUNTIME_KEYS: ClassVar = {QUERY_TEXT: QUERY_TEXT}
 
     # Filled per concrete; empty on the base so it never matches.
     GENERATE_BACKENDS: ClassVar[dict[str, str]] = {}
