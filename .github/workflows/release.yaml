@@ -192,13 +192,13 @@ jobs:
           curl -fsSL -o "testpypi/${wheel_url##*/}" "$wheel_url"
           (cd testpypi && grep -F -- "${wheel_url##*/}" ../served.sha256 | sha256sum -c -)
 
-      # classification needs only the base dependency (mloda), so this proves the install resolves.
+      # Imports every module with only the base dependency installed, as a plain pip install would.
       - name: Install and import as a user would
         run: |
           wheel=$(ls testpypi/*.whl)
           uv venv --python 3.11 smoke
           uv pip install --python smoke "rag-integration @ file://$PWD/$wheel"
-          smoke/bin/python -c "import importlib.metadata as m, rag_integration.feature_groups.classification; assert m.version('rag-integration') == '$VERSION'"
+          smoke/bin/python -c "import importlib, importlib.metadata as m, pkgutil, rag_integration; [importlib.import_module(i.name) for i in pkgutil.walk_packages(rag_integration.__path__, 'rag_integration.')]; assert m.version('rag-integration') == '$VERSION'"
 
   # Only a smoke-tested version gets its files on the GitHub release, where publish-pypi.yaml takes them.
   attach_to_release:
