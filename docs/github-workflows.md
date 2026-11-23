@@ -73,9 +73,9 @@ To configure the required secrets for the release workflow:
 
 ### Trusted Publishing (PyPI and TestPyPI)
 
-Uploads use [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API token is stored. Set both publishers up before the next Release run, or it stops at the TestPyPI upload (re-run the failed jobs once fixed).
+Uploads use [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API token is stored. Set up the TestPyPI publisher before the next Release run (otherwise it stops at the upload; re-run the failed jobs once fixed) and the PyPI publisher before the first Publish to PyPI run.
 
-1. In the repository, go to **Settings** > **Environments** and create `testpypi` and `pypi` (creating them up front lets you restrict both to `main` and require reviewers on `pypi`)
-2. On TestPyPI, where the project does not exist yet, add a pending publisher under [Your account > Publishing](https://test.pypi.org/manage/account/publishing/): project `rag-integration`, owner `mloda-ai`, repository `rag_integration`, workflow `release.yaml`, environment `testpypi`
+1. In the repository, go to **Settings** > **Environments** and create `testpypi` and `pypi`, each with a deployment branch rule allowing only `main`, plus required reviewers on `pypi`. The publishers do not check the branch, and the workflows' own `main` check can be edited away on another branch, so this rule is what guards publishing
+2. On TestPyPI, where the project does not exist yet, add a pending publisher (it does not reserve the name, so add it right before the first Release run) under [Your account > Publishing](https://test.pypi.org/manage/account/publishing/): project `rag-integration`, owner `mloda-ai`, repository `rag_integration`, workflow `release.yaml`, environment `testpypi`
 3. On [PyPI](https://pypi.org/manage/project/rag-integration/settings/publishing/), add a GitHub publisher: owner `mloda-ai`, repository `rag_integration`, workflow `publish-pypi.yaml`, environment `pypi`
 4. After the first successful PyPI publish, delete the old `PYPI_API_TOKEN` repository secret and revoke the token on PyPI
