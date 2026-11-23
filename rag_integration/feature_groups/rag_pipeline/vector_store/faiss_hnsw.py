@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-import numpy as np
 from mloda.provider import DefaultOptionKeys, property_spec
 
 from rag_integration.feature_groups.rag_pipeline.vector_store.base import BaseVectorStore
@@ -48,6 +47,7 @@ class FaissHNSWIndexer(BaseVectorStore):
     def _build_index(cls, embeddings: list[list[float]], dimension: int) -> Any:
         """Build a FAISS IndexHNSWFlat from embeddings."""
         import faiss
+        import numpy as np
 
         m = 32
         index = faiss.IndexHNSWFlat(dimension, m)

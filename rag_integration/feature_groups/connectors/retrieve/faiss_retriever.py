@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-import numpy as np
 from mloda.provider import property_spec
 
 from rag_integration.feature_groups.connectors.retrieve.base import BaseRetrieveConnector
@@ -46,6 +45,7 @@ class FaissDenseRetriever(BaseRetrieveConnector):
     @classmethod
     def _build_index(cls, texts: tuple[str, ...]) -> Any:
         import faiss
+        import numpy as np
 
         # Unit-length vectors: inner product == cosine, returned best-first.
         index = faiss.IndexFlatIP(cls._EMBED_DIM)
@@ -54,6 +54,8 @@ class FaissDenseRetriever(BaseRetrieveConnector):
 
     @classmethod
     def _rank(cls, query: str, texts: list[str], top_k: int) -> list[tuple[int, float]]:
+        import numpy as np
+
         # The hash embedder embeds each text on its own, so the corpus side is query-independent.
         query_array = np.array(HashEmbedder._embed_texts([query], cls._EMBED_DIM, "default"), dtype=np.float32)
         scores, indices = cls._index(texts).search(query_array, top_k)

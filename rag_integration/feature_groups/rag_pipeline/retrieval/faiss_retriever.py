@@ -6,7 +6,6 @@ import json
 import threading
 from typing import Any, ClassVar
 
-import numpy as np
 from mloda.provider import property_spec
 from mloda.user import Options
 
@@ -105,6 +104,8 @@ class FaissRetriever(BaseRetriever):
         Returns:
             Dict with keys: indices, distances, texts, doc_ids
         """
+        import numpy as np
+
         index_path = options.get(cls.INDEX_PATH)
         metadata_path = options.get(cls.METADATA_PATH)
 
