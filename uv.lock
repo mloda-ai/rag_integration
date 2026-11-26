@@ -1335,23 +1335,22 @@ wheels = [
 
 [[package]]
 name = "mloda"
-version = "0.20.0"
+version = "0.21.0"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/6b/ba3721a820c64ad42036d1cd6e92a06b00ec94c20a1dc89ae4392409f9dc/mloda-0.20.0-py3-none-any.whl", hash = "sha256:b742173735a4e54e85ef6e88e0cd40a555b23c62fe24792eb02a1be252155a2d", size = 973643, upload-time = "2026-11-13T15:38:33.493Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/4a/4c5dc58f99d0434dd0928cd1e2afec628957ecf702715c455e259aa0e0e5/mloda-0.21.0-py3-none-any.whl", hash = "sha256:0168b81a2e3b287e477bcb68dbc96304154ddf360936772fc366ceb7e439408e", size = 980051, upload-time = "2026-11-20T17:01:48.542Z" },
 ]
 
 [[package]]
 name = "mloda-testing"
-version = "0.13.0"
+version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mloda" },
-    { name = "pyarrow" },
     { name = "pytest" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/eb/92c88a688c69d9a8f0717cc1600061cd3d09527d2fa1a3479af65701fca5/mloda_testing-0.13.0-py3-none-any.whl", hash = "sha256:9217aef7a2d413aa5f21ca13eec22de541213f10abf87d4cc415b18c4a4e8e41", size = 271777, upload-time = "2026-11-13T16:49:05.247Z" },
+    { url = "https://files.pythonhosted.org/packages/af/8d/1aecf6d85062b90e8270673e0a4a61043a1b30c794e1a35e5b4735a6b25f/mloda_testing-0.15.0-py3-none-any.whl", hash = "sha256:267a6df54c65a3a14ea1a655a19e8c72965e1913dd4e35334a4d2e43ac4cb8bf", size = 337647, upload-time = "2026-11-23T17:37:27.491Z" },
 ]
 
 [[package]]
@@ -3678,7 +3677,7 @@ wheels = [
 
 [[package]]
 name = "transformers"
-version = "5.23.0"
+version = "5.24.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
@@ -3691,9 +3690,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7e/d3/1ff04cfc1ddbc6853af16973b17cd437426b4303599bc3e84af11fe55057/transformers-5.23.0.tar.gz", hash = "sha256:19d647a4d5d903a7c644ca5cde2d86efc3dde7d8c687ae7988806ff2205efa71", size = 10614788, upload-time = "2026-11-13T14:10:39.947Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/3b/1680200d94d5e567443223dce26f9c6c26c6366ce5232981923c6c01e9d6/transformers-5.24.0.tar.gz", hash = "sha256:906cb8c3cb2123575e263962586a4d21a979ce97feeb95fe6aaf66fe6ae88bf3", size = 10751687, upload-time = "2026-11-21T12:24:32.616Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/62/8c06b0b932cc9a5dac7ce48bf23737107143e75f9b20fd99e97dde1463c3/transformers-5.23.0-py3-none-any.whl", hash = "sha256:018e82fd07490ad5bb58414f65e31576033dc7f36bed10c574843f69b90991bf", size = 13336114, upload-time = "2026-11-13T14:10:36.154Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/6c/0a5b01b84e605e811f25d091262f199894c0839dcd7f2a289254cf7a16a7/transformers-5.24.0-py3-none-any.whl", hash = "sha256:ff5ebedf9359f94bb63772b6380eba6e7104d010cbbb2cb82c788817ea7486f6", size = 13549890, upload-time = "2026-11-21T12:24:29.434Z" },
 ]
 
 [[package]]
